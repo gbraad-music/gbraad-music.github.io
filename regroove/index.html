@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Tracker module player and live performance tool">
+    <meta name="theme-color" content="#CF1A37">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Regroove">
+    <title>Regroove</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="96x96" href="favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512x512.png">
+    <style>
+        :root {
+            --accent: #CF1A37;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #aaaaaa;
+            --border: #333333;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .content {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Top Banner */
+        .top-banner {
+            background: var(--accent);
+            padding: 0 20px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        .hamburger-button {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.8em;
+            cursor: pointer;
+            padding: 5px 10px;
+            transition: opacity 0.2s;
+            line-height: 1;
+        }
+
+        .hamburger-button:hover {
+            opacity: 0.8;
+        }
+
+        .banner-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-primary);
+        }
+
+        /* Hamburger Menu */
+        .menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .menu-overlay.active {
+            display: block;
+        }
+
+        .menu-panel {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 300px;
+            height: 100vh;
+            background: var(--bg-secondary);
+            z-index: 1000;
+            transition: left 0.3s ease;
+            padding: 20px;
+        }
+
+        .menu-panel.active {
+            left: 0;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .menu-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 2em;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .menu-close:hover {
+            color: var(--text-primary);
+        }
+
+        .menu-items {
+            margin-top: 60px;
+        }
+
+        .menu-item {
+            display: block;
+            width: 100%;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            font-size: 1em;
+            cursor: pointer;
+            text-align: left;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+
+        .menu-item:hover {
+            background: #3a3a3a;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1001;
+        }
+
+        .modal-overlay.active {
+            display: block;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 500px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            z-index: 1002;
+        }
+
+        .modal.active {
+            display: block;
+        }
+
+        .modal-header {
+            background: var(--accent);
+            padding: 15px 20px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.3em;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 2em;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            margin: 0;
+            transition: opacity 0.2s;
+        }
+
+        .modal-close:hover {
+            opacity: 0.7;
+        }
+
+        .modal-body {
+            padding: 25px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .modal-body h3 {
+            margin: 0 0 5px 0;
+            color: var(--accent);
+            font-size: 1.5em;
+        }
+
+        .modal-body p {
+            margin: 10px 0;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        /* Hidden file input */
+        #fileInput {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            width: 1px;
+            height: 1px;
+        }
+
+        /* VERY visible load button - only shown on iOS/iPadOS */
+        #loadButton {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ff6600;
+            color: white;
+            border: 4px solid #ff8833;
+            border-radius: 12px;
+            padding: 24px 48px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10000;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            display: none; /* Hidden by default */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            animation: pulse 2s infinite;
+        }
+
+        /* Show button ONLY on iOS/iPadOS */
+        body.is-ios #loadButton {
+            display: block;
+        }
+
+        /* Hide button once file is loaded - must be more specific */
+        body.is-ios #loadButton.loaded {
+            display: none !important;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        #loadButton:active {
+            background: #cc5200;
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div class="top-banner">
+        <button class="hamburger-button" id="hamburgerBtn">☰</button>
+        <div class="banner-title">Regroove</div>
+    </div>
+
+    <!-- Hamburger Menu -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+    <div class="menu-panel" id="menuPanel">
+        <button class="menu-close" id="menuClose">×</button>
+        <div class="menu-items">
+            <button class="menu-item" id="loadModuleBtn">📁 Load module</button>
+            <button class="menu-item" id="creditsBtn">About / Credits</button>
+        </div>
+    </div>
+
+    <!-- Credits Modal -->
+    <div class="modal-overlay" id="creditsOverlay"></div>
+    <div class="modal" id="creditsModal">
+        <div class="modal-header">
+            <h2>About Regroove</h2>
+            <button class="modal-close" id="creditsClose">×</button>
+        </div>
+        <div class="modal-body">
+            <h3>Regroove</h3>
+            <p>Tracker module player and live performance tool</p>
+            <p style="margin-top: 20px; font-size: 0.9em; color: #999;">
+                Created by Gerard Braad &lt;me@gbraad.nl&gt;
+            </p>
+        </div>
+    </div>
+
+    <!-- Content area with canvas -->
+    <div class="content">
+        <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
+        <input type="file" id="fileInput" accept=".mod,.xm,.s3m,.it,.mptm,.umx,.mo3,.mdl,.dbm,.far,.ult,.stm,.669,.mtm,.ams,.dsm,.amf,.okt,.ptm,.psm,.mt2,.gdm">
+        <label for="fileInput" id="loadButton">📁 TAP TO LOAD MODULE FILE</label>
+    </div>
+    <script type='text/javascript'>
+        // Menu functionality
+        var menuApp = {
+            toggleMenu: function() {
+                var overlay = document.getElementById('menuOverlay');
+                var panel = document.getElementById('menuPanel');
+                overlay.classList.toggle('active');
+                panel.classList.toggle('active');
+            },
+            closeMenu: function() {
+                var overlay = document.getElementById('menuOverlay');
+                var panel = document.getElementById('menuPanel');
+                overlay.classList.remove('active');
+                panel.classList.remove('active');
+            },
+            showCredits: function() {
+                var overlay = document.getElementById('creditsOverlay');
+                var modal = document.getElementById('creditsModal');
+                overlay.classList.add('active');
+                modal.classList.add('active');
+                this.closeMenu();
+            },
+            closeCredits: function() {
+                var overlay = document.getElementById('creditsOverlay');
+                var modal = document.getElementById('creditsModal');
+                overlay.classList.remove('active');
+                modal.classList.remove('active');
+            }
+        };
+
+        // Set up menu event listeners
+        document.getElementById('hamburgerBtn').addEventListener('click', function() {
+            menuApp.toggleMenu();
+        });
+
+        document.getElementById('menuClose').addEventListener('click', function() {
+            menuApp.closeMenu();
+        });
+
+        document.getElementById('menuOverlay').addEventListener('click', function() {
+            menuApp.closeMenu();
+        });
+
+        // Load module button in menu
+        document.getElementById('loadModuleBtn').addEventListener('click', function() {
+            document.getElementById('fileInput').click();
+            menuApp.closeMenu();
+        });
+
+        // Credits button in menu
+        document.getElementById('creditsBtn').addEventListener('click', function() {
+            menuApp.showCredits();
+        });
+
+        // Credits modal close handlers
+        document.getElementById('creditsClose').addEventListener('click', function() {
+            menuApp.closeCredits();
+        });
+
+        document.getElementById('creditsOverlay').addEventListener('click', function() {
+            menuApp.closeCredits();
+        });
+
+        // Detect iOS/iPadOS and show load button only on Apple devices
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if (isIOS) {
+            document.body.classList.add('is-ios');
+        }
+
+        var Module = {
+            canvas: document.getElementById('canvas'),
+            setStatus: function(text) {},
+            monitorRunDependencies: function(left) {}
+        };
+        if (navigator.requestMIDIAccess) {
+            navigator.requestMIDIAccess({ sysex: true }).then(
+                function(access) { console.log('MIDI OK'); },
+                function(err) { console.log('MIDI denied'); }
+            );
+        }
+
+        // Set up file input handler (for iPadOS/Safari compatibility)
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (!file) return;
+
+            var reader = new FileReader();
+            reader.onload = function(event) {
+                var data = new Uint8Array(event.target.result);
+                var filename = file.name;
+
+                // Wait for WASM to be ready
+                if (typeof Module.FS === 'undefined') {
+                    console.error('WASM not ready yet');
+                    return;
+                }
+
+                // Create /tmp directory if it doesn't exist
+                try {
+                    Module.FS.mkdir('/tmp');
+                } catch(e) {}
+
+                // Write file to WASM virtual filesystem
+                var path = '/tmp/' + filename;
+                Module.FS.writeFile(path, data);
+
+                // Call C++ function to load the module
+                if (Module.ccall) {
+                    Module.ccall('wasm_load_module_callback', 'void', ['string'], [path]);
+                }
+
+                // Hide the load button once file is loaded
+                document.getElementById('loadButton').classList.add('loaded');
+
+                // Reset input so same file can be loaded again
+                e.target.value = '';
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // Make file input globally accessible so WASM can trigger it (for ImGui button)
+        window.openFileDialog = function() {
+            document.getElementById('fileInput').click();
+        };
+
+        // Register service worker for PWA support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('./service-worker.js').then(
+                    function(registration) {
+                        console.log('ServiceWorker registered:', registration.scope);
+                    },
+                    function(err) {
+                        console.log('ServiceWorker registration failed:', err);
+                    }
+                );
+            });
+        }
+    </script>
+    <script async type="text/javascript" src="regroove.js"></script>
+</body>
+</html>

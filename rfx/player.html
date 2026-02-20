@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Web-based audio effects processor with WASM">
+    <meta name="theme-color" content="#CF1A37">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RFX Tester">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+    <link rel="icon" type="image/png" sizes="96x96" href="./favicon-96x96.png">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <title>Regroove Player</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="top-banner">
+        <a href="index.html" class="back-button">◄</a>
+        <div class="banner-title">Effects Tester</div>
+    </div>
+    <div class="container">
+        <div style="display: grid; grid-template-columns: 1fr auto; gap: 15px; margin-bottom: 20px;">
+            <!-- Audio Source Section -->
+            <div class="control-section" style="margin-bottom: 0;">
+                <div class="section-title">Audio Source</div>
+
+                <div class="controls-grid">
+                    <div class="file-input">
+                        <button>📁 Load File(s)</button>
+                        <input type="file" id="audioFile" accept="*" multiple>
+                    </div>
+
+                    <button id="micBtn">🎤 Input/Mic</button>
+                    <button id="playBtn" disabled>▶ Play</button>
+                    <button id="stopBtn" disabled>◼ Stop</button>
+
+                    <select id="testSignal">
+                        <option value="">Test Signal</option>
+                        <option value="sine">Sine 440Hz</option>
+                        <option value="noise">White Noise</option>
+                        <option value="sweep">Frequency Sweep</option>
+                    </select>
+
+                    <button id="renderBtn" style="display: none;">💾 Render to WAV</button>
+                </div>
+
+                <div id="audioSourceInfo" class="device-selector" style="display: none;">
+                    <!-- Shows mic selector OR file name (mutually exclusive) -->
+                    <select id="micDeviceList" style="display: none;">
+                        <option value="">Select Microphone...</option>
+                    </select>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: nowrap;">
+                        <div id="currentFileName" style="display: none; color: var(--text-primary); font-size: 0.85em; padding: 10px 15px; background: var(--bg-tertiary); border: 1px solid var(--border); letter-spacing: 1px; font-family: Arial, sans-serif; box-sizing: border-box; min-height: 38px; flex: 1; min-width: 0; overflow: hidden;">
+                            <span style="color: var(--text-secondary); text-transform: uppercase;">Playing:</span> <span id="fileNameText" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; max-width: 100%; vertical-align: bottom;"></span>
+                        </div>
+                        <div id="playlistNavButtons" style="display: none; gap: 5px; align-items: center; flex-shrink: 0;">
+                            <button id="btnPrevTrackTop" title="Previous Track">◄ Prev</button>
+                            <button id="btnNextTrackTop" title="Next Track">Next ►</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="playbackProgress" style="visibility: hidden; cursor: pointer; margin-top: 10px; height: 26px;" title="Click to seek">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75em; color: var(--text-secondary); margin-bottom: 3px;">
+                        <span id="currentTime">0:00</span>
+                        <span id="totalTime">0:00</span>
+                    </div>
+                    <div style="background: var(--bg-tertiary); height: 8px; border: 1px solid var(--border); position: relative; border-radius: 2px;">
+                        <div id="progressBar" style="background: #CF1A37; height: 100%; width: 0%; transition: width 0.1s; pointer-events: none; border-radius: 2px;"></div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <div class="visualizer-container" style="flex: 2.5; height: 200px;">
+                        <canvas id="visualizer"></canvas>
+                    </div>
+                    <div class="visualizer-container" style="flex: 2.5; height: 200px;">
+                        <canvas id="spectrum"></canvas>
+                    </div>
+                    <div class="visualizer-container" style="flex: 1.0; height: 200px;">
+                        <canvas id="vumeter"></canvas>
+                        <canvas id="freq-viz-player" style="display: none;"></canvas>
+                        <button id="toggleVuFreq" class="viz-toggle-btn" title="Toggle VU / Freq Bars">VU ⇄ FREQ</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playback Section -->
+            <div class="control-section" style="margin-bottom: 0;">
+                <div class="section-title">Playback</div>
+
+                <div style="display: flex; gap: 12px; justify-content: center; padding-top: 10px;">
+                    <!-- Tempo Fader -->
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                        <div style="text-align: center; color: var(--text-secondary); font-size: 0.65em; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Tempo</div>
+                        <svg-slider id="tempoFader" value="64" min="0" max="127" width="45" color="#CF1A37" style="height: 280px;"></svg-slider>
+                        <div id="tempoValue" style="text-align: center; color: var(--text-primary); font-size: 0.75em; font-weight: bold; min-height: 1.2em;">0.0%</div>
+                    </div>
+
+                    <!-- Volume Fader -->
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                        <div style="text-align: center; color: var(--text-secondary); font-size: 0.65em; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Vol</div>
+                        <svg-slider id="gainFader" value="127" min="0" max="127" width="45" color="#CF1A37" style="height: 280px;"></svg-slider>
+                        <div id="gainValue" style="text-align: center; color: var(--text-primary); font-size: 0.75em; font-weight: bold; min-height: 1.2em;">100%</div>
+                    </div>
+                </div>
+
+                <!-- Output Device Selector -->
+                <div style="margin-top: 15px; padding: 0 10px;">
+                    <select id="outputDeviceList" style="width: 120px; font-size: 0.6em; padding: 4px 6px;">
+                        <option value="">Default Output</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Playlist Section (shown when multiple files loaded) -->
+        <div id="playlistSection" class="control-section" style="display: none;">
+            <div class="section-title" style="cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between;" id="playlistSectionTitle">
+                <span>Playlist (<span id="totalTracks">0</span> tracks)</span>
+                <span id="playlistToggle" style="font-size: 0.8em; transition: transform 0.3s;">▼</span>
+            </div>
+
+            <div id="playlistContent" style="overflow: hidden; transition: max-height 0.3s ease-out;">
+                <!-- Track list -->
+                <div id="playlistTrackList" style="margin-top: 15px; max-height: 300px; overflow-y: auto; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 4px; padding: 10px;">
+                    <!-- Tracks will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- MOD/MED Player Controls -->
+        <div id="modmedControls" class="control-section" style="display: none;">
+            <div class="section-title">MOD/MED Player</div>
+
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; justify-content: center;">
+                <!-- File info -->
+                <div id="modmedFileInfo" style="flex: 1 0 100%; text-align: center; color: var(--text-secondary); font-size: 0.85em; margin-bottom: 10px;">
+                    <span id="modmedTypeName" style="color: #0066FF;">No file loaded</span>
+                </div>
+
+                <!-- Position display -->
+                <div style="flex: 0 0 auto; display: flex; gap: 10px; font-family: monospace; font-size: 0.9em;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                        <span style="color: var(--text-secondary); font-size: 0.7em;">ORDER</span>
+                        <span id="modmedOrderPos" style="color: var(--text-primary); font-weight: bold; min-width: 2ch;">00</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                        <span style="color: var(--text-secondary); font-size: 0.7em;">LENGTH</span>
+                        <span id="modmedSongLength" style="color: var(--text-primary); font-weight: bold; min-width: 2ch;">--</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                        <span style="color: var(--text-secondary); font-size: 0.7em;">ROW</span>
+                        <span id="modmedRowPos" style="color: var(--text-primary); font-weight: bold; min-width: 3ch;">000</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                        <span style="color: var(--text-secondary); font-size: 0.7em;">BPM</span>
+                        <span id="modmedBpm" style="color: var(--text-primary); font-weight: bold; min-width: 3ch;">125</span>
+                    </div>
+                </div>
+
+                <!-- Pattern navigation -->
+                <div style="flex: 0 0 auto; display: flex; gap: 6px; align-items: center;">
+                    <button id="modmedPrevPattern" class="modmed-button" title="Previous Pattern">◄</button>
+                    <button id="modmedNextPattern" class="modmed-button" title="Next Pattern">►</button>
+                    <button id="modmedLoopPattern" class="modmed-loop-button" title="Loop Current Pattern">⟲</button>
+                </div>
+
+                <!-- Channel mute buttons (will be populated dynamically based on file channels) -->
+                <div id="modmedChannelMutes" style="display: flex; gap: 6px; align-items: center;">
+                    <!-- Buttons added dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <div class="control-section" id="model1Section">
+            <div class="section-title">
+                <span>MODEL 1 Input Processing</span>
+                <button class="fullscreen-btn" id="btnModel1Fullscreen">⛶</button>
+            </div>
+            <div id="model1-effects" class="effects-grid"></div>
+        </div>
+
+        <div class="control-section" id="essentialEffectsSection">
+            <div class="section-title">
+                <span>Essential Effects</span>
+                <button class="fullscreen-btn" id="btnEssentialFullscreen">⛶</button>
+            </div>
+            <div id="essential-effects" class="effects-grid"></div>
+        </div>
+
+        <div class="control-section" id="additionalEffectsSection">
+            <div class="section-title">
+                <span>Additional Effects</span>
+                <button class="fullscreen-btn" id="btnAdditionalFullscreen">⛶</button>
+            </div>
+            <div id="additional-effects" class="effects-grid"></div>
+        </div>
+    </div>
+
+    <!-- Custom UI components from Revision -->
+    <script type="module" src="components/svg-slider.js"></script>
+    <script type="module" src="components/pad-knob.js"></script>
+    <script type="module" src="components/fader-components.js"></script>
+
+    <!-- Extracted visualization components -->
+    <script src="components/vu-meter.js"></script>
+    <script src="components/waveform-display.js"></script>
+    <script src="components/spectrum-analyzer.js"></script>
+    <script src="components/freq-bars-analyzer.js"></script>
+
+    <script src="player.js" type="module"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => {
+                        console.log('Service Worker registered');
+
+                        // Check for updates periodically (not on every load to avoid loops)
+                        // Uncomment if needed: reg.update();
+
+                        // Notify when new service worker is available (don't auto-reload)
+                        reg.addEventListener('updatefound', () => {
+                            const newWorker = reg.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+                                    console.log('✅ New service worker activated (refresh manually to update)');
+                                    // Don't auto-reload to avoid infinite loops
+                                }
+                            });
+                        });
+                    })
+                    .catch(err => console.warn('Service Worker registration failed:', err));
+
+                // Listen for service worker updates
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    console.log('Service worker updated');
+                });
+            });
+        }
+    </script>
+
+    <!-- Fullscreen Scope Functionality -->
+    <script>
+        // Track popup windows for each visualizer
+        const popupWindows = new Map();
+        window.popupWindows = popupWindows; // Expose globally for player.js
+        let videoPopupWindow = null;
+
+        // Pop-out video to separate window
+        function popOutVideo(videoElement) {
+            if (!videoElement) {
+                console.error('[PopOut] No video element provided');
+                return;
+            }
+
+            // Don't open duplicate video popups
+            if (videoPopupWindow && !videoPopupWindow.closed) {
+                videoPopupWindow.focus();
+                return;
+            }
+
+            const popup = window.open('', 'video_popup', 'width=1280,height=720,resizable=yes,scrollbars=no,location=no,menubar=no,status=no,toolbar=no');
+            if (!popup) {
+                alert('Pop-up blocked! Please allow pop-ups for this site.');
+                return;
+            }
+
+            popup.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Video Player - Regroove</title>
+                    <style>
+                        body {
+                            margin: 0;
+                            background: #0a0a0a;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            overflow: hidden;
+                        }
+                        video {
+                            max-width: 100%;
+                            max-height: 100vh;
+                            display: block;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <video id="video_popup" controls autoplay></video>
+                </body>
+                </html>
+            `);
+            popup.document.close();
+
+            const popupVideo = popup.document.getElementById('video_popup');
+
+            // Sync video source and current time
+            popupVideo.src = videoElement.src;
+            popupVideo.currentTime = videoElement.currentTime;
+
+            // Sync playback state
+            if (!videoElement.paused) {
+                popupVideo.play();
+            }
+
+            videoPopupWindow = popup;
+            console.log('[PopOut] Opened video in new window');
+
+            // Handle popup close
+            popup.addEventListener('beforeunload', () => {
+                videoPopupWindow = null;
+                console.log('[PopOut] Closed video popup');
+            });
+
+            // Sync playback between main and popup
+            const syncToPopup = () => {
+                if (!popup.closed && popupVideo) {
+                    popupVideo.currentTime = videoElement.currentTime;
+                    if (videoElement.paused && !popupVideo.paused) {
+                        popupVideo.pause();
+                    } else if (!videoElement.paused && popupVideo.paused) {
+                        popupVideo.play();
+                    }
+                }
+            };
+
+            const syncFromPopup = () => {
+                if (!popup.closed && popupVideo) {
+                    videoElement.currentTime = popupVideo.currentTime;
+                    if (popupVideo.paused && !videoElement.paused) {
+                        videoElement.pause();
+                    } else if (!popupVideo.paused && videoElement.paused) {
+                        videoElement.play();
+                    }
+                }
+            };
+
+            // Sync every second
+            const syncInterval = setInterval(() => {
+                if (popup.closed) {
+                    clearInterval(syncInterval);
+                    return;
+                }
+                syncToPopup();
+            }, 1000);
+
+            // Sync on popup events
+            popupVideo.addEventListener('play', syncFromPopup);
+            popupVideo.addEventListener('pause', syncFromPopup);
+            popupVideo.addEventListener('seeked', syncFromPopup);
+        }
+
+        // Expose globally
+        window.popOutVideo = popOutVideo;
+
+        // Pop-out visualizer to separate window
+        function popOutVisualizer(container) {
+            // Get the currently visible canvas (not just the first one)
+            const canvases = container.querySelectorAll('canvas');
+            let canvas = null;
+            for (const c of canvases) {
+                if (c.style.display !== 'none') {
+                    canvas = c;
+                    break;
+                }
+            }
+
+            if (!canvas) {
+                // Fallback to first canvas if none are explicitly visible
+                canvas = container.querySelector('canvas');
+            }
+
+            if (!canvas) return;
+
+            const canvasId = canvas.id;
+
+            // Don't open duplicate popups
+            if (popupWindows.has(canvasId)) {
+                popupWindows.get(canvasId).focus();
+                return;
+            }
+
+            const popup = window.open('', `scope_${canvasId}`, 'width=800,height=600,resizable=yes,scrollbars=no,location=no,menubar=no,status=no,toolbar=no');
+            if (!popup) {
+                alert('Pop-up blocked! Please allow pop-ups for this site.');
+                return;
+            }
+
+            popup.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>${canvasId.toUpperCase()} - Regroove Scope</title>
+                    <style>
+                        body {
+                            margin: 0;
+                            background: #0a0a0a;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            overflow: hidden;
+                        }
+                        canvas {
+                            width: 100%;
+                            height: 100vh;
+                            display: block;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <canvas id="${canvasId}_popup"></canvas>
+                </body>
+                </html>
+            `);
+            popup.document.close();
+
+            const popupCanvas = popup.document.getElementById(`${canvasId}_popup`);
+            popupCanvas.width = 800;
+            popupCanvas.height = 600;
+
+            // Store reference to popup and its canvas
+            popupWindows.set(canvasId, { window: popup, canvas: popupCanvas });
+            console.log(`[PopOut] Opened ${canvasId} in new window`);
+
+            // Handle popup close
+            popup.addEventListener('beforeunload', () => {
+                popupWindows.delete(canvasId);
+                console.log(`[PopOut] Closed ${canvasId} popup`);
+            });
+
+            // Resize popup canvas when window resizes
+            popup.addEventListener('resize', () => {
+                popupCanvas.width = popup.innerWidth;
+                popupCanvas.height = popup.innerHeight;
+            });
+        }
+
+        // Enable fullscreen and pop-out for all visualizer containers
+        function setupFullscreen() {
+            const containers = document.querySelectorAll('.visualizer-container');
+            console.log('[Fullscreen Setup] Found', containers.length, 'visualizer containers');
+
+            containers.forEach((container, idx) => {
+                // Check if buttons already exist
+                if (container.querySelector('.viz-popout-btn')) {
+                    console.log(`[Fullscreen Setup] Container ${idx} already has buttons, skipping`);
+                    return;
+                }
+
+                // Add pop-out button
+                const popoutBtn = document.createElement('button');
+                popoutBtn.className = 'viz-popout-btn';
+                popoutBtn.textContent = '⧉';
+                popoutBtn.title = 'Pop out (PIP mode)';
+                popoutBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    popOutVisualizer(container);
+                });
+                container.appendChild(popoutBtn);
+                console.log(`[Fullscreen Setup] Added ⧉ button to container ${idx}`);
+
+                // Add fullscreen button
+                const fullscreenBtn = document.createElement('button');
+                fullscreenBtn.className = 'viz-fullscreen-btn';
+                fullscreenBtn.textContent = '⛶';
+                fullscreenBtn.title = 'Fullscreen';
+                fullscreenBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (document.fullscreenElement === container) {
+                        document.exitFullscreen();
+                    } else {
+                        if (container.requestFullscreen) {
+                            container.requestFullscreen();
+                        } else if (container.webkitRequestFullscreen) {
+                            container.webkitRequestFullscreen();
+                        } else if (container.msRequestFullscreen) {
+                            container.msRequestFullscreen();
+                        }
+                    }
+                });
+                container.appendChild(fullscreenBtn);
+                console.log(`[Fullscreen Setup] Added ⛶ button to container ${idx}`);
+
+                // Allow clicking canvas for fullscreen (legacy behavior)
+                container.addEventListener('click', (e) => {
+                    if (e.target === container || e.target.tagName === 'CANVAS') {
+                        if (document.fullscreenElement === container) {
+                            document.exitFullscreen();
+                        } else {
+                            if (container.requestFullscreen) {
+                                container.requestFullscreen();
+                            }
+                        }
+                    }
+                });
+
+                console.log(`[Fullscreen Setup] Fully configured container ${idx}`);
+            });
+
+            console.log('[Fullscreen Setup] All containers configured');
+
+            // Handle resize when entering/exiting fullscreen
+            let previousFullscreenElement = null;
+
+            document.addEventListener('fullscreenchange', () => {
+                // Resize canvas when ENTERING fullscreen
+                if (document.fullscreenElement) {
+                    previousFullscreenElement = document.fullscreenElement;
+                    const canvas = document.fullscreenElement.querySelector('canvas');
+                    if (canvas) {
+                        setTimeout(() => {
+                            canvas.width = canvas.offsetWidth;
+                            canvas.height = canvas.offsetHeight;
+                        }, 100);
+                    }
+
+                    // Add fullscreen-knob class to all knobs for enhanced touch sizing
+                    const knobs = document.fullscreenElement.querySelectorAll('pad-knob');
+                    knobs.forEach(knob => knob.classList.add('fullscreen-knob'));
+                }
+                // Resize canvas when EXITING fullscreen
+                else if (previousFullscreenElement) {
+                    const canvas = previousFullscreenElement.querySelector('canvas');
+                    if (canvas) {
+                        setTimeout(() => {
+                            canvas.width = canvas.offsetWidth;
+                            canvas.height = canvas.offsetHeight;
+                        }, 100);
+                    }
+
+                    // Remove fullscreen-knob class from all knobs
+                    const knobs = previousFullscreenElement.querySelectorAll('pad-knob');
+                    knobs.forEach(knob => knob.classList.remove('fullscreen-knob'));
+
+                    previousFullscreenElement = null;
+                }
+            });
+        }
+
+        // Expose globally
+        window.setupFullscreen = setupFullscreen;
+
+        // Run after effects.js loads
+        if (document.readyState === 'loading') {
+            console.log('[Fullscreen Setup] Waiting for DOMContentLoaded...');
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('[Fullscreen Setup] DOMContentLoaded fired, running setupFullscreen');
+                setupFullscreen();
+            });
+        } else {
+            console.log('[Fullscreen Setup] DOM already loaded, running setupFullscreen immediately');
+            setupFullscreen();
+        }
+
+        // Also try after a delay to ensure canvases are created
+        console.log('[Fullscreen Setup] Will retry after 1 second...');
+        setTimeout(() => {
+            console.log('[Fullscreen Setup] 1 second delay complete, running setupFullscreen again');
+            setupFullscreen();
+        }, 1000);
+    </script>
+</body>
+</html>

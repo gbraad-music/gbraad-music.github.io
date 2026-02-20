@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revision - MIDI VJ Tool</title>
+    <meta name="description" content="Beat-matched visual performance tool with MIDI control">
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#000000">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Status Bar - Overlay */
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background-color: rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            z-index: 1000;
+        }
+
+        .status-bar > div:first-child {
+            font-weight: bold;
+            font-size: 14px;
+            letter-spacing: 1px;
+            color: #888888;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .status-bar button {
+            background-color: #1a1a1a;
+            color: #888888;
+            border: 1px solid #2a2a2a;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            margin-left: 8px;
+            position: relative;
+            z-index: 1001;
+            pointer-events: auto;
+        }
+
+        .status-bar button:hover {
+            background-color: #2a2a2a;
+            color: #ffffff;
+        }
+
+        /* Permission button states */
+        #permissions-btn.perm-granted {
+            background-color: #00aa00 !important;
+            border-color: #00cc00 !important;
+            color: #ffffff !important;
+        }
+
+        #permissions-btn.perm-denied {
+            background-color: #cc0000 !important;
+            border-color: #ff0000 !important;
+            color: #ffffff !important;
+        }
+
+        #permissions-btn.perm-partial {
+            background-color: #cc6600 !important;
+            border-color: #ff8800 !important;
+            color: #ffffff !important;
+        }
+
+        .midi-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #444444;
+            margin-left: 10px;
+        }
+
+        .midi-indicator.connected {
+            background-color: #00ff00;
+            box-shadow: 0 0 8px #00ff00;
+        }
+
+        .midi-indicator.spp {
+            background-color: #ffcc00;
+            box-shadow: 0 0 8px #ffcc00;
+            animation: pulse-spp 0.3s ease-out;
+        }
+
+        @keyframes pulse-spp {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .midi-indicator.remote {
+            background-color: #0066FF;
+            box-shadow: 0 0 8px #0066FF;
+        }
+
+        /* Main Canvas - Full Screen */
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: #000000;
+        }
+
+        /* Control Panel - Overlay */
+        .control-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background-color: rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid #1a1a1a;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 20px;
+            z-index: 1000;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 10px;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-group .value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .scene-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .scene-button {
+            width: 60px;
+            height: 60px;
+            background-color: #1a1a1a;
+            border: 2px solid #2a2a2a;
+            border-radius: 4px;
+            color: #888888;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scene-button:hover {
+            background-color: #2a2a2a;
+            border-color: #3a3a3a;
+        }
+
+        .scene-button.active {
+            background-color: #0066FF;
+            border-color: #0088FF;
+            color: #ffffff;
+        }
+
+        /* URL parameter fullscreen mode (for OBS browser sources) */
+        body.url-fullscreen .status-bar,
+        body.url-fullscreen .control-panel {
+            display: none !important;
+        }
+
+        /* Fullscreen API mode - hide overlays */
+        body:fullscreen .status-bar,
+        body:fullscreen .control-panel {
+            display: none !important;
+        }
+
+        body:-webkit-full-screen .status-bar,
+        body:-webkit-full-screen .control-panel {
+            display: none !important;
+        }
+
+        body:-moz-full-screen .status-bar,
+        body:-moz-full-screen .control-panel {
+            display: none !important;
+        }
+
+        /* Canvas fade transitions for mode switching */
+        /* Note: Milkdrop excluded - it has built-in crossfade */
+        #builtin-canvas,
+        #threejs-canvas,
+        #video-canvas,
+        #media-canvas {
+            transition: opacity 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div>REVISION</div>
+        <div id="status-message" style="flex: 1; margin-left: 20px; color: #ff6600; font-size: 12px; display: none;"></div>
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <button id="permissions-btn" title="Request camera, audio, and MIDI permissions">PERMISSIONS</button>
+            <button id="control-btn">CONTROL</button>
+            <button id="fullscreen-btn">FULLSCREEN</button>
+            <span class="midi-indicator" id="midi-indicator" title="MIDI Connection Status"></span>
+            <span class="midi-indicator" id="audio-indicator" title="Audio Input Status"></span>
+            <span class="midi-indicator" id="spp-indicator" title="SPP Activity"></span>
+            <span class="midi-indicator" id="remote-indicator" title="Remote Control Connection"></span>
+        </div>
+    </div>
+
+    <!-- Canvas for each renderer mode -->
+    <div id="canvas-container" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100vh; background: #000; overflow: hidden;">
+        <canvas id="builtin-canvas" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 1;"></canvas>
+
+        <!-- Black screen layer - prevents WebGL showing through during transitions -->
+        <div id="black-screen" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; pointer-events: none; z-index: 2;"></div>
+
+        <canvas id="threejs-canvas" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; z-index: 3;"></canvas>
+        <canvas id="milkdrop-canvas" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; z-index: 3;"></canvas>
+        <canvas id="video-canvas" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; z-index: 3;"></canvas>
+        <canvas id="media-canvas" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; z-index: 3;"></canvas>
+        <canvas id="stream-canvas" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; z-index: 3;"></canvas>
+        <div id="webpage-container" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; pointer-events: auto; z-index: 3;"></div>
+
+        <!-- Fullscreen drop zone overlay (only visible when dragging) -->
+        <div id="fullscreen-drop-zone" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 102, 255, 0.1); border: 4px dashed #0066FF; display: none; pointer-events: none; z-index: 9999; align-items: center; justify-content: center;">
+            <div style="font-size: 48px; color: #0066FF; font-weight: bold; text-shadow: 0 0 20px rgba(0, 102, 255, 0.5);">📁 Drop Media File</div>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <div class="control-group">
+            <label>BPM</label>
+            <div class="value" id="bpm-display">120</div>
+        </div>
+
+        <div class="control-group">
+            <label>Position</label>
+            <div class="value" id="position-display">0.0.0</div>
+        </div>
+
+        <div class="control-group">
+            <label>Mode</label>
+            <div class="value" id="mode-display">Built-in</div>
+        </div>
+
+        <div class="control-group">
+            <label>Audio Source</label>
+            <div class="value" id="audio-source-display">-</div>
+        </div>
+
+        <div class="control-group">
+            <label>Reactive Input</label>
+            <div class="value" id="reactive-input-display">-</div>
+        </div>
+    </div>
+
+
+    <!-- External Libraries (Optional - for enhanced features) -->
+    <!-- Three.js for 3D scenes (global build) -->
+    <script src="external/three.min.js"></script>
+
+    <!-- Butterchurn for Milkdrop presets (local files) -->
+    <script src="external/butterchurn.min.js"></script>
+    <script src="external/butterchurnPresets.min.js"></script>
+
+    <!-- Core Scripts -->
+    <script src="utils/library-loader.js"></script>
+    <script src="utils/mobile-compat.js"></script>
+    <script src="utils/settings-manager.js"></script>
+    <script src="utils/wake-lock.js"></script>
+    <script src="utils/osc-client.js"></script>
+
+    <!-- Input Sources -->
+    <script src="inputs/input-manager.js"></script>
+    <script src="inputs/midi-input-source.js"></script>
+    <script src="inputs/midi-output-source.js"></script>
+    <script src="inputs/webrtc-midi-source.js"></script>
+    <script src="effects/regroove_effects.js"></script>
+    <script src="effects/effect-eq.js"></script>
+    <script src="inputs/audio-input-source.js"></script>
+    <script src="inputs/frequency-analyzer.js"></script>
+    <script src="inputs/midi-audio-synth.js"></script>
+    <script src="inputs/rgresonate1-synth.js"></script>
+    <script src="inputs/rg909-drum.js"></script>
+
+    <!-- HLS.js for live streaming (local file) -->
+    <script src="external/hls.min.js"></script>
+
+    <!-- Renderers and Presets -->
+    <script src="visuals/renderer.js"></script>
+    <script src="scenes/scene-manager.js"></script>
+    <script src="presets/preset-manager.js"></script>
+    <script src="renderers/milkdrop-renderer.js"></script>
+    <script src="renderers/threejs-renderer.js"></script>
+    <script src="renderers/video-renderer.js"></script>
+    <script src="renderers/stream-renderer.js"></script>
+    <script src="renderers/webpage-renderer.js"></script>
+
+    <!-- Three.js Base Preset Class -->
+    <script src="presets/threejs/BasePreset.js"></script>
+
+    <!-- Legacy MIDI Manager (for backwards compatibility) -->
+    <script src="utils/midi-manager.js"></script>
+
+    <!-- Remote Channel for WebSocket communication -->
+    <script src="utils/remote-channel.js"></script>
+
+    <!-- WebRTC MIDI for low-latency MIDI over network -->
+    <script type="module" src="utils/midi-rtc-bridge.js"></script>
+
+    <!-- Main Application -->
+    <script src="app.js"></script>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        // Detect Electron environment
+        const isElectron = typeof process !== 'undefined' && process.versions && process.versions.electron;
+
+        if (isElectron) {
+            console.log('[Revision] Running in Electron - Service Worker disabled');
+        }
+
+        // Only register service worker in browser (not Electron)
+        if ('serviceWorker' in navigator && !isElectron) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => {
+                        console.log('[PWA] Service Worker registered:', reg.scope);
+
+                        // Check for updates every time the page loads
+                        // DISABLED: Causes annoying reload loops
+                        // reg.update();
+
+                        // Auto-reload when new service worker takes over
+                        // DISABLED: User can manually reload when needed
+                        // reg.addEventListener('updatefound', () => {
+                        //     const newWorker = reg.installing;
+                        //     newWorker.addEventListener('statechange', () => {
+                        //         if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+                        //             console.log('[PWA] New service worker activated - reloading page');
+                        //             window.location.reload();
+                        //         }
+                        //     });
+                        // });
+                    })
+                    .catch(err => console.error('[PWA] Service Worker registration failed:', err));
+
+                // Listen for service worker updates
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    console.log('[PWA] Service worker updated');
+                });
+            });
+        }
+    </script>
+</body>
+</html>

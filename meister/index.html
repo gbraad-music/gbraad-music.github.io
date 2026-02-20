@@ -1,0 +1,2455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="WebMIDI Controller Interface for Regroove">
+    <title>Regroove Meister</title>
+    <link rel="manifest" href="./manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #000000;
+            color: #888888;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh; /* Fallback for browsers without custom properties */
+            height: calc(var(--vh, 1vh) * 100); /* Use JS-calculated viewport height */
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pads-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 10px;
+            padding: 10px 10px 4px 10px;
+            box-sizing: border-box; /* Include padding in height calculation */
+            min-height: 0; /* Important for flex children with grid */
+            max-height: 100%; /* Prevent overflow */
+            overflow: hidden; /* Prevent scrollbars */
+        }
+
+        /* Position Sequencer */
+        .position-sequencer {
+            height: 50px;
+            min-height: 50px;
+            max-height: 50px;
+            background: #000000;
+            border-top: 2px solid #000000;
+            flex-shrink: 0;
+            flex-grow: 0;
+            display: flex;
+            align-items: center;
+            padding: 6px 10px;
+            overflow: visible;
+        }
+
+        .sequencer-buttons {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            gap: 2px;
+        }
+
+        .seq-button {
+            flex: 1;
+            background: #2a3a2a;
+            border: 3px solid #000000;
+            cursor: pointer;
+            transition: background 0.3s ease-out;
+            position: relative;
+            border-radius: 6px;
+        }
+
+        .seq-button:hover {
+            background: #3a4a3a;
+        }
+
+        .seq-button:active {
+            background: #4a5a4a;
+        }
+
+        .seq-button.active {
+            background: #4a6a4a;
+            transition: background 0.05s ease-in;
+        }
+
+        .seq-button.quarter {
+            margin-right: 4px;
+        }
+
+        .seq-button.loop-end {
+            animation: pulse-yellow 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse-yellow {
+            0%, 100% {
+                background: #3a3a1a;
+            }
+            50% {
+                background: #5a5a2a;
+            }
+        }
+
+        /* Settings overlay - Full viewport mode */
+        .settings-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000000;
+            display: none;
+            z-index: 1000;
+            flex-direction: column;
+        }
+
+        .settings-overlay.active {
+            display: flex;
+        }
+
+        /* Fader editor should appear on top of other overlays (like split scene editor) */
+        #fader-editor-overlay {
+            z-index: 1100;
+        }
+
+        .settings-panel {
+            background: #000000;
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .settings-panel-header {
+            flex-shrink: 0;
+            padding: 20px;
+            border-bottom: 1px solid #1a1a1a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .settings-panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .settings-header {
+            font-size: 1.5em;
+            color: #aaa;
+            margin: 0;
+            font-weight: normal;
+            letter-spacing: 1px;
+        }
+
+        .setting-group {
+            margin-bottom: 20px;
+        }
+
+        .setting-label {
+            display: block;
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        select, input[type="file"], button {
+            width: 100%;
+            padding: 10px;
+            background: #0a0a0a;
+            color: #888;
+            border: 1px solid #333;
+            font-family: inherit;
+            font-size: 0.9em;
+        }
+
+        select:focus, input:focus, button:focus {
+            outline: none;
+            border-color: #555;
+        }
+
+        button {
+            cursor: pointer;
+            margin-top: 5px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #1a1a1a;
+        }
+
+        button:active {
+            background: #2a2a2a;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        /* Hamburger menu */
+        .menu-button {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            z-index: 999;
+            opacity: 0.3;
+            transition: opacity 0.2s;
+        }
+
+        .menu-button:hover {
+            opacity: 1;
+        }
+
+        .menu-button span {
+            width: 20px;
+            height: 2px;
+            background: #666;
+            display: block;
+        }
+
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 25px;
+            background: #0a0a0a;
+            border-bottom: 1px solid #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            font-size: 0.75em;
+            color: #555;
+            z-index: 998;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .status-bar > div:first-child {
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .status-bar > button {
+            flex-shrink: 1;
+            min-width: 0;
+        }
+
+        .status-bar.visible {
+            opacity: 1;
+        }
+
+        .midi-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .midi-indicator::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #333;
+        }
+
+        .midi-indicator.connected::before {
+            background: #4a9eff;
+        }
+
+        .close-settings {
+            width: auto;
+            padding: 10px 20px;
+            margin: 0;
+            background: #1a1a1a;
+            border: 1px solid #333;
+        }
+
+        .close-settings:hover {
+            background: #2a2a2a;
+        }
+
+        /* Tabbed Settings Interface */
+        .settings-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid #1a1a1a;
+            flex-shrink: 0;
+            padding: 0 20px;
+        }
+
+        .settings-tab {
+            padding: 15px 30px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: normal;
+        }
+
+        .settings-tab:hover {
+            color: #888;
+            background: #0a0a0a;
+        }
+
+        .settings-tab.active {
+            color: #ddd;
+            border-bottom-color: #4a9eff;
+            background: #0a0a0a;
+        }
+
+        .tab-content {
+            display: none;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Compact table styles */
+        .settings-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+        }
+
+        .settings-table th {
+            text-align: left;
+            color: #666;
+            font-weight: normal;
+            padding: 8px 5px;
+            border-bottom: 1px solid #333;
+        }
+
+        .settings-table td {
+            padding: 8px 5px;
+            border-bottom: 1px solid #222;
+        }
+
+        .settings-table tr:hover {
+            background: #0f0f0f;
+        }
+
+        .settings-table select,
+        .settings-table input {
+            width: 100%;
+            padding: 5px;
+            font-size: 0.9em;
+        }
+
+        .settings-table button {
+            padding: 5px 10px;
+            width: auto;
+            font-size: 0.85em;
+        }
+
+        .device-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 3px;
+            font-size: 0.85em;
+            color: #888;
+        }
+
+        .device-badge.input {
+            border-color: #4a9eff;
+            color: #4a9eff;
+        }
+
+        .device-badge.routed {
+            border-color: #ff9e4a;
+            color: #ff9e4a;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #555;
+            padding: 30px;
+            font-size: 0.9em;
+        }
+
+        .scene-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+        }
+
+        .scene-item.active {
+            border-color: #CF1A37;
+            background: #1a0a0a;
+        }
+
+        .scene-name {
+            font-size: 1em;
+            color: #ddd;
+            font-weight: bold;
+        }
+
+        .scene-switch-btn {
+            padding: 8px 20px;
+            background: #2a2a2a;
+            color: #ddd;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            min-width: 80px;
+        }
+
+        .scene-item.active .scene-switch-btn {
+            background: #CF1A37;
+            color: #fff;
+        }
+
+        .scene-switch-btn:hover {
+            background: #3a3a3a;
+        }
+
+        .scene-item.active .scene-switch-btn:hover {
+            background: #dd5555;
+        }
+
+        .scene-quick-selector {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 400px;
+            background: #0a0a0a;
+            transform: translateY(-100%);
+            z-index: 999;
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .scene-quick-selector.active {
+            transform: translateY(0);
+        }
+
+        .scene-quick-header {
+            padding: 8px 20px;
+            background: #1a1a1a;
+            color: #CF1A37;
+            font-weight: bold;
+            font-size: 0.9em;
+            text-align: center;
+            border-top: 2px solid #CF1A37;
+            cursor: pointer;
+            order: 2;
+        }
+
+        .scene-quick-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            align-content: start;
+            order: 1;
+        }
+
+        .scene-quick-item {
+            padding: 20px;
+            background: #1a1a1a;
+            border: 2px solid #2a2a2a;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .scene-quick-item:hover {
+            background: #2a2a2a;
+            border-color: #3a3a3a;
+        }
+
+        .scene-quick-item.active {
+            background: #1a0a0a;
+            border-color: #CF1A37;
+        }
+
+        .scene-quick-item-name {
+            color: #ddd;
+            font-weight: bold;
+            font-size: 1em;
+            margin-bottom: 5px;
+        }
+
+        .scene-quick-item.active .scene-quick-item-name {
+            color: #CF1A37;
+        }
+
+        .scene-quick-item-type {
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .learn-button {
+            background: #1a3a1a !important;
+            color: #4a9e4a;
+            border-color: #2a4a2a;
+        }
+
+        .learn-button:hover {
+            background: #2a4a2a !important;
+        }
+
+        .learn-button.active {
+            background: #2a5a2a !important;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .action-select {
+            font-size: 0.85em;
+            padding: 5px;
+        }
+    </style>
+    <script src="./non-blocking-dialog.js"></script>
+    <script type="module" src="./regroove-pad.js"></script>
+    <script type="module" src="./pad-knob.js"></script>
+    <script src="./regroove-state.js"></script>
+
+    <!-- Display Message System -->
+    <script src="./display-message-manager.js"></script>
+    <script src="./adapters/basic-text-display-adapter.js"></script>
+    <script src="./adapters/fire-oled-adapter.js"></script>
+    <script src="./adapters/web-display-adapter.js"></script>
+    <script src="./components/display-widget.js"></script>
+    <script src="./components/fire-display.js"></script>
+    <script src="./components/sequencer-display.js"></script>
+    <script src="./components/piano-keyboard.js"></script>
+    <script src="./utils/display-message-builder.js"></script>
+    <script src="./display-system-init.js"></script>
+
+    <script type="module" src="./meister-controller.js"></script>
+</head>
+<body>
+    <div class="status-bar" id="status-bar">
+        <div>REGROOVE MEISTER</div>
+        <button id="scene-selector" style="background: transparent; color: #CF1A37; border: none; padding: 0; font-size: 0.75em; cursor: pointer; font-family: inherit; font-weight: bold; text-transform: uppercase;">
+            Pads
+        </button>
+        <div class="midi-indicator" id="midi-indicator">MIDI</div>
+    </div>
+
+    <div class="container">
+        <div class="pads-grid" id="pads-grid"></div>
+
+        <!-- Quick Scene Selector (swipe up/down to show) -->
+        <div class="scene-quick-selector" id="scene-quick-selector">
+            <div class="scene-quick-header">SCENES</div>
+            <div class="scene-quick-list" id="scene-quick-list"></div>
+        </div>
+
+        <!-- Position Sequencer -->
+        <div class="position-sequencer" id="position-sequencer">
+            <div class="sequencer-buttons" id="sequencer-buttons"></div>
+        </div>
+    </div>
+
+    <div class="menu-button" id="menu-button">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <div class="settings-overlay" id="settings-overlay">
+        <div class="settings-panel">
+            <!-- Header -->
+            <div class="settings-panel-header">
+                <div class="settings-header">SETTINGS</div>
+                <button class="close-settings" id="close-settings">✕ CLOSE</button>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="settings-tabs">
+                <button class="settings-tab active" data-tab="general">General</button>
+                <button class="settings-tab" data-tab="scenes">Scenes</button>
+                <button class="settings-tab" data-tab="devices">Devices</button>
+                <button class="settings-tab" data-tab="midi">MIDI</button>
+                <button class="settings-tab" data-tab="keyboard">Keyboard</button>
+            </div>
+
+            <!-- Tab Content Container -->
+            <div class="settings-panel-content">
+                <!-- General Tab -->
+                <div class="tab-content active" id="tab-general">
+                <div class="setting-group">
+                    <label class="setting-label">CONFIGURATION FILE (.RCX)</label>
+                    <div class="button-group">
+                        <button id="load-config">📁 LOAD</button>
+                        <button id="save-config">💾 SAVE</button>
+                    </div>
+                    <input type="file" id="file-input" accept=".rcx,.json" style="display:none;">
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">RECEIVE SPP POSITION</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="receive-spp" style="width: auto;">
+                        <label for="receive-spp" style="margin: 0; color: #888;">Show position bar</label>
+                    </div>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        Displays a visual position indicator when receiving MIDI Song Position Pointer messages
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">ABOUT</label>
+                    <div style="color: #555; font-size: 0.8em; line-height: 1.5;">
+                        Regroove Meister v2.0 (Device System)<br>
+                        WebMIDI Controller Interface<br>
+                        Cache: <span id="cache-version" style="color: #888;">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scenes Tab -->
+            <div class="tab-content" id="tab-scenes">
+                <div class="setting-group">
+                    <div id="scenes-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
+
+                <div class="setting-group">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <button id="new-pad-scene-btn" style="padding: 12px; font-size: 0.95em;">➕ NEW PAD SCENE</button>
+                        <button id="new-knobs-scene-btn" style="padding: 12px; font-size: 0.95em;">➕ NEW CONTROL GRID</button>
+                        <button id="new-scene-btn" style="padding: 12px; font-size: 0.95em;">➕ NEW MIXER SCENE</button>
+                        <button id="new-effects-btn" style="padding: 12px; font-size: 0.95em;">➕ NEW EFFECTS SCENE</button>
+                        <button id="new-piano-scene-btn" style="padding: 12px; font-size: 0.95em;">➕ NEW PIANO SCENE</button>
+                        <button id="new-split-scene-btn" style="padding: 12px; font-size: 0.95em;">➕ NEW SPLIT SCENE</button>
+                        <button id="new-sequencer-scene-btn" style="padding: 12px; font-size: 0.95em;">➕ NEW SEQUENCER SCENE</button>
+                        <button id="new-fire-scene-btn" style="padding: 12px; font-size: 0.95em;">🔥 NEW FIRE SEQUENCER</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Devices Tab (Regroove Instances) -->
+            <div class="tab-content" id="tab-devices">
+                <table class="settings-table" id="devices-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th style="width: 80px;">MIDI Ch</th>
+                            <th style="width: 80px;">Device ID</th>
+                            <th style="width: 150px;">MIDI Output</th>
+                            <th style="width: 80px;">Default</th>
+                            <th style="width: 100px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="devices-list">
+                        <tr>
+                            <td colspan="6" class="empty-state">No device instances configured<br>Add a device instance to get started</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="margin-bottom: 15px;">
+                    <button id="add-device-btn">➕ ADD DEVICE INSTANCE</button>
+                </div>
+
+                <div style="margin-top: 15px; padding: 10px; background: #0a0a0a; border: 1px solid #333; font-size: 0.8em; color: #666;">
+                    <strong>Default Device:</strong> Pads and faders without explicit device binding will use the default device instance.
+                </div>
+            </div>
+
+            <!-- MIDI Tab (Combined Devices + Mappings + Output + Clock) -->
+            <div class="tab-content" id="tab-midi">
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: #888; font-size: 1em; margin-bottom: 10px; font-weight: normal;">MIDI OUTPUT</h3>
+                    <div class="setting-group" style="margin-bottom: 0;">
+                        <label class="setting-label">MIDI OUTPUT PORT</label>
+                        <select id="midi-output">
+                            <option value="">No MIDI Access</option>
+                        </select>
+                        <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                            Physical MIDI port for sending messages to Regroove and other devices
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MIDI Input Selection -->
+                <div style="border-top: 2px solid #1a1a1a; padding-top: 20px; margin-bottom: 20px;">
+                    <h3 style="color: #888; font-size: 1em; margin-bottom: 10px; font-weight: normal;">MIDI INPUT DEVICES</h3>
+                    <div style="color: #555; font-size: 0.75em; margin-bottom: 15px;">
+                        Select which MIDI input devices should be listened to. Disabled devices will not lock the hardware.
+                    </div>
+                    <table class="settings-table" id="midi-inputs-table">
+                        <thead>
+                            <tr>
+                                <th>Device Name</th>
+                                <th style="width: 100px; text-align: center;">Enabled</th>
+                            </tr>
+                        </thead>
+                        <tbody id="midi-inputs-list">
+                            <tr><td colspan="2" class="empty-state">No MIDI input devices detected</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- STATE POLLING section removed - polling is now managed per-scene via scene configuration -->
+
+                <div style="border-top: 2px solid #1a1a1a; padding-top: 20px; margin-bottom: 20px;">
+                    <h3 style="color: #888; font-size: 1em; margin-bottom: 10px; font-weight: normal;">MIDI CLOCK MASTER</h3>
+                    <div class="setting-group" style="margin-bottom: 0;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="clock-master" style="width: auto;">
+                            <label for="clock-master" style="margin: 0; color: #888;">Send MIDI Clock</label>
+                        </div>
+                        <div style="color: #555; font-size: 0.8em; margin-top: 8px;">
+                            Tempo (BPM): <input type="number" id="clock-bpm" min="20" max="300" value="120"
+                                style="width: 60px; padding: 5px; background: #0a0a0a; color: #888; border: 1px solid #333;">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="border-top: 2px solid #1a1a1a; padding-top: 20px; margin-bottom: 20px;">
+                    <h3 style="color: #888; font-size: 1em; margin-bottom: 10px; font-weight: normal;">MIDI INPUT ROUTING</h3>
+                    <div style="margin-bottom: 10px; color: #666; font-size: 0.85em;">
+                        Configure MIDI input routing:<br>
+                        <strong>OFF</strong> = Parse into actions (default) |
+                        <strong>PASS-THROUGH</strong> = Forward to output unchanged |
+                        <strong>DEVICE</strong> = Route to device with channel mapping
+                    </div>
+
+                    <table class="settings-table" id="midi-input-routing-table">
+                        <thead>
+                            <tr>
+                                <th>Input Device</th>
+                                <th style="width: 120px;">Mode</th>
+                                <th>Targets</th>
+                                <th style="width: 100px;">Active</th>
+                                <th style="width: 80px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="midi-input-routing-list">
+                            <tr>
+                                <td colspan="5" class="empty-state">No MIDI input devices detected</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="border-top: 2px solid #1a1a1a; padding-top: 20px;">
+                    <h3 style="color: #888; font-size: 1em; margin-bottom: 10px; font-weight: normal;">MIDI MAPPINGS</h3>
+                    <div style="margin-bottom: 15px;">
+                        <button id="midi-learn-btn" class="learn-button">🎹 MIDI LEARN</button>
+                        <select id="learn-action-select" class="action-select" style="margin-left: 10px; width: calc(50% - 75px);">
+                            <option value="">-- Select action --</option>
+                        </select>
+                        <select id="learn-target-device-select" class="action-select" style="margin-left: 10px; width: calc(50% - 75px);">
+                            <option value="0">Target: Default Device (0)</option>
+                        </select>
+                    </div>
+
+                    <table class="settings-table" id="midi-mappings-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">From</th>
+                                <th style="width: 50px;">Type</th>
+                                <th style="width: 50px;">#</th>
+                                <th>Action</th>
+                                <th style="width: 100px;">Target</th>
+                                <th style="width: 60px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="midi-mappings-list">
+                            <tr>
+                                <td colspan="6" class="empty-state">No MIDI mappings configured<br>Use MIDI Learn to add mappings</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- WebRTC-MIDI Connection Section -->
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: #888; font-size: 1em; margin-bottom: 10px; font-weight: normal;">WebRTC-MIDI CONNECTION</h3>
+                    <div style="color: #555; font-size: 0.75em; margin-bottom: 15px;">
+                        Receive MIDI over WebRTC from remote MIDI bridges. This allows Meister to receive MIDI from devices on other computers or network-isolated environments.
+                    </div>
+
+                    <!-- Connection Status -->
+                    <div style="background: #0a0a0a; padding: 15px; border-radius: 4px; margin-bottom: 15px; border-left: 3px solid #333;" id="webrtc-status-panel">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="color: #666; font-size: 0.75em; margin-bottom: 5px;">STATUS</div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #555;" id="webrtc-status-indicator"></span>
+                                    <span style="color: #888; font-size: 0.9em; font-weight: bold;" id="webrtc-status-text">Disconnected</span>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="color: #666; font-size: 0.75em; margin-bottom: 5px;">TARGETS</div>
+                                <div style="color: #888; font-size: 0.9em; font-weight: bold;" id="webrtc-targets-count">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;" id="webrtc-stats-panel" hidden>
+                        <div style="background: #0a0a0a; padding: 10px; border-radius: 4px;">
+                            <div style="color: #666; font-size: 0.7em;">MESSAGES</div>
+                            <div style="color: #4a9eff; font-size: 1.2em; font-weight: bold;" id="webrtc-messages">0</div>
+                        </div>
+                        <div style="background: #0a0a0a; padding: 10px; border-radius: 4px;">
+                            <div style="color: #666; font-size: 0.7em;">LATENCY</div>
+                            <div style="color: #4a9eff; font-size: 1.2em; font-weight: bold;" id="webrtc-latency">0ms</div>
+                        </div>
+                        <div style="background: #0a0a0a; padding: 10px; border-radius: 4px;">
+                            <div style="color: #666; font-size: 0.7em;">BYTES</div>
+                            <div style="color: #4a9eff; font-size: 1.2em; font-weight: bold;" id="webrtc-bytes">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Virtual Devices List -->
+                    <div style="margin-bottom: 20px;" id="webrtc-devices-panel" hidden>
+                        <div style="color: #666; font-size: 0.85em; margin-bottom: 10px; font-weight: bold;">VIRTUAL MIDI DEVICES</div>
+                        <div style="background: #0a0a0a; padding: 10px; border-radius: 4px;">
+                            <div id="webrtc-devices-list" style="color: #666; font-size: 0.8em;">
+                                No virtual devices
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="border-top: 2px solid #1a1a1a; padding-top: 20px; margin-bottom: 20px;">
+                    <h3 style="color: #888; font-size: 1em; margin-bottom: 10px; font-weight: normal;">SETUP CONNECTION</h3>
+
+                    <div class="setting-group">
+                        <label class="setting-label">STEP 1: COPY OFFER FROM SENDER</label>
+                        <textarea id="webrtc-offer-input" placeholder="Paste the SDP offer from the MIDI bridge sender here..."
+                            style="width: 100%; height: 150px; padding: 10px; background: #0a0a0a; color: #888; border: 1px solid #333; font-family: monospace; font-size: 0.75em; resize: vertical;"></textarea>
+                        <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                            The sender will generate an SDP offer. Paste it here.
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <button id="webrtc-process-offer" style="background: #2a4a2a; color: #4a9e4a;">
+                            🔄 PROCESS OFFER & GENERATE ANSWER
+                        </button>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">STEP 2: COPY ANSWER TO SENDER</label>
+                        <textarea id="webrtc-answer-output" placeholder="The SDP answer will appear here after processing the offer..."
+                            style="width: 100%; height: 150px; padding: 10px; background: #0a0a0a; color: #4a9eff; border: 1px solid #333; font-family: monospace; font-size: 0.75em; resize: vertical;" readonly></textarea>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button id="webrtc-copy-answer" style="flex: 1; background: #1a3a4a; color: #4a9eff;" disabled>
+                                📋 COPY ANSWER
+                            </button>
+                            <button id="webrtc-clear-fields" style="flex: 1;">
+                                🗑️ CLEAR FIELDS
+                            </button>
+                        </div>
+                        <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                            Copy this answer and paste it back into the sender to complete the connection.
+                        </div>
+                    </div>
+                </div>
+
+                <div style="border-top: 2px solid #1a1a1a; padding-top: 20px;">
+                    <button id="webrtc-disconnect" style="background: #4a2a2a; color: #ff6b6b;" disabled>
+                        ❌ DISCONNECT
+                    </button>
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: #0a1a0a; border-radius: 4px; border-left: 3px solid #4a9eff;">
+                    <div style="color: #4a9eff; font-size: 0.85em; font-weight: bold; margin-bottom: 8px;">💡 HOW IT WORKS</div>
+                    <div style="color: #888; font-size: 0.75em; line-height: 1.6;">
+                        1. On the sender machine (MIDI bridge), generate an SDP offer<br>
+                        2. Copy that offer and paste it into STEP 1 above<br>
+                        3. Click "PROCESS OFFER" to generate an answer<br>
+                        4. Copy the answer from STEP 2 and paste it back into the sender<br>
+                        5. The connection will establish and virtual MIDI devices will appear
+                    </div>
+                </div>
+            </div>
+
+            <!-- Keyboard Shortcuts Tab -->
+            <div class="tab-content" id="tab-keyboard">
+                <table class="settings-table" id="keyboard-shortcuts-table">
+                    <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Modifiers</th>
+                            <th>Action</th>
+                            <th style="width: 60px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="keyboard-shortcuts-list">
+                        <tr>
+                            <td colspan="4" class="empty-state">Loading keyboard shortcuts...</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="margin-bottom: 15px;">
+                    <button id="add-keyboard-shortcut-btn">⌨️ ADD SHORTCUT</button>
+                </div>
+
+                <div style="margin-top: 15px; padding: 10px; background: #0a0a0a; border: 1px solid #333; font-size: 0.8em; color: #666;">
+                    <strong>Default Shortcuts:</strong><br>
+                    Space=Play/Pause | Esc=Stop | [/]=Prev/Next Order | PgUp/PgDn=Prev/Next File | C=Clock Toggle | +/-=BPM
+                </div>
+            </div>
+            </div><!-- End settings-panel-content -->
+        </div>
+    </div>
+
+    <!-- Pad Editor Overlay -->
+    <div class="settings-overlay" id="pad-editor-overlay">
+        <div class="settings-panel">
+            <div class="settings-panel-header">
+                <div class="settings-header" id="pad-editor-title">EDIT PAD</div>
+                <button class="close-settings" id="close-pad-editor">✕ CLOSE</button>
+            </div>
+
+            <div class="settings-panel-content">
+
+            <div class="setting-group">
+                <label class="setting-label">LABEL (use \n for line breaks, {order} {pattern} {row} for position)</label>
+                <input type="text" id="pad-label" placeholder="PLAY\nPAUSE" style="width: 100%;">
+                <div id="pad-label-error" style="color: #ff6b6b; font-size: 0.8em; margin-top: 5px; display: none;">
+                    ⚠ Label is required (or use CLEAR to remove pad)
+                </div>
+                <div style="color: #555; font-size: 0.7em; margin-top: 3px;">
+                    Examples: "Order {order}" or "Pat {pattern}\nRow {row}"
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">SUBLABEL (optional, supports {order} {pattern} {row})</label>
+                <input type="text" id="pad-sublabel" placeholder="Small text" style="width: 100%;">
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">MESSAGE TYPE</label>
+                <select id="pad-message-type">
+                    <option value="regroove">Regroove Action (CC)</option>
+                    <option value="action">Action System (MIDI, Routing)</option>
+                    <option value="sequencer">Sequencer Control</option>
+                    <option value="sysex">Regroove SysEx</option>
+                    <option value="cc">Control Change (CC)</option>
+                    <option value="note">Note On/Off</option>
+                    <option value="mmc">MIDI Machine Control (MMC)</option>
+                    <option value="ccknob">CC Knob (Embedded)</option>
+                    <option value="display">Display Widget (Device Status)</option>
+                </select>
+            </div>
+
+            <div class="setting-group" id="pad-regroove-field">
+                <label class="setting-label">REGROOVE ACTION (supports both legacy CC and new action IDs)</label>
+                <select id="pad-regroove-action">
+                    <optgroup label="Transport">
+                        <option value="41" data-action="102">Play/Pause</option>
+                        <option value="42" data-action="101">Stop</option>
+                        <option value="45" data-action="103">Retrigger</option>
+                        <option value="46" data-action="104">Loop Toggle</option>
+                        <option value="44" data-action="110">Next Order</option>
+                        <option value="43" data-action="111">Previous Order</option>
+                    </optgroup>
+                    <optgroup label="File Browser">
+                        <option value="60" data-action="120">File Load</option>
+                        <option value="61" data-action="122">File Previous</option>
+                        <option value="62" data-action="121">File Next</option>
+                    </optgroup>
+                    <optgroup label="MIDI Sync">
+                        <option value="70" data-action="140">Sync Tempo Toggle</option>
+                        <option value="71" data-action="141">Receive Transport Toggle</option>
+                        <option value="72" data-action="142">Receive SPP Toggle</option>
+                        <option value="73" data-action="143">Receive Sync Toggle</option>
+                        <option value="74" data-action="144">Send Sync Toggle</option>
+                        <option value="75">Send SPP Toggle</option>
+                        <option value="76">SPP Sync Mode Toggle</option>
+                        <option value="77">Sync Module Toggle</option>
+                    </optgroup>
+                    <optgroup label="Channel Control">
+                        <option value="48" data-action="130" data-param="0">Channel 1 Mute</option>
+                        <option value="49" data-action="130" data-param="1">Channel 2 Mute</option>
+                        <option value="50" data-action="130" data-param="2">Channel 3 Mute</option>
+                        <option value="51" data-action="130" data-param="3">Channel 4 Mute</option>
+                        <option value="52" data-action="130" data-param="4">Channel 5 Mute</option>
+                        <option value="53" data-action="130" data-param="5">Channel 6 Mute</option>
+                        <option value="54" data-action="130" data-param="6">Channel 7 Mute</option>
+                        <option value="55" data-action="130" data-param="7">Channel 8 Mute</option>
+                        <option value="32" data-action="131" data-param="0">Channel 1 Solo</option>
+                        <option value="33" data-action="131" data-param="1">Channel 2 Solo</option>
+                        <option value="34" data-action="131" data-param="2">Channel 3 Solo</option>
+                        <option value="35" data-action="131" data-param="3">Channel 4 Solo</option>
+                        <option value="36" data-action="131" data-param="4">Channel 5 Solo</option>
+                        <option value="37" data-action="131" data-param="5">Channel 6 Solo</option>
+                        <option value="38" data-action="131" data-param="6">Channel 7 Solo</option>
+                        <option value="39" data-action="131" data-param="7">Channel 8 Solo</option>
+                    </optgroup>
+                    <optgroup label="Performance">
+                        <option value="80" data-action="150">Record Performance</option>
+                        <option value="81" data-action="151">Tap Tempo</option>
+                    </optgroup>
+                </select>
+                <div style="color: #555; font-size: 0.7em; margin-top: 3px;">
+                    Legacy CC values are still supported for backward compatibility
+                </div>
+            </div>
+
+            <div class="setting-group" id="pad-action-field" style="display: none;">
+                <label class="setting-label">ACTION</label>
+                <select id="pad-action-select">
+                    <optgroup label="MIDI Clock">
+                        <option value="" data-action="200">Clock Master Toggle</option>
+                        <option value="" data-action="201">Clock Start</option>
+                        <option value="" data-action="202">Clock Stop</option>
+                        <option value="" data-action="204">Clock BPM +1</option>
+                        <option value="" data-action="205">Clock BPM -1</option>
+                    </optgroup>
+                    <optgroup label="Input Routing">
+                        <option value="" data-action="602" data-param="0">Switch All Input Routes</option>
+                        <option value="" data-action="602" data-param="custom">Switch Specific Input...</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="setting-group" id="pad-sequencer-field" style="display: none;">
+                <label class="setting-label">SEQUENCER ACTION</label>
+                <select id="pad-sequencer-action">
+                    <optgroup label="Meister Sequencer">
+                        <option value="play" data-action="700">Play Sequencer</option>
+                        <option value="stop" data-action="701">Stop Sequencer</option>
+                        <option value="play_stop" data-action="702">Play/Stop Toggle</option>
+                        <option value="mute_track" data-action="710">Mute Track</option>
+                        <option value="solo_track" data-action="711">Solo Track</option>
+                    </optgroup>
+                    <optgroup label="Device Sequencer (Samplecrate)">
+                        <option value="device_play" data-action="720">Play Slot</option>
+                        <option value="device_stop" data-action="721">Stop Slot</option>
+                        <option value="device_play_stop" data-action="722">Play/Stop Slot</option>
+                        <option value="device_mute" data-action="723">Mute Slot</option>
+                        <option value="device_solo" data-action="724">Solo Slot</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="setting-group" id="pad-sequencer-scene-field" style="display: none;">
+                <label class="setting-label">SEQUENCER SCENE</label>
+                <select id="pad-sequencer-scene-select" style="width: 100%;">
+                    <option value="">-- Select Sequencer --</option>
+                </select>
+                <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                    Which sequencer scene to control
+                </div>
+            </div>
+
+            <div class="setting-group" id="pad-sequencer-track-field" style="display: none;">
+                <label class="setting-label">TRACK NUMBER</label>
+                <select id="pad-sequencer-track-number" style="width: 100%;">
+                    <option value="1">Track 1</option>
+                    <option value="2">Track 2</option>
+                    <option value="3">Track 3</option>
+                    <option value="4">Track 4</option>
+                </select>
+                <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                    Which track to mute/solo
+                </div>
+            </div>
+
+            <div class="setting-group" id="pad-device-sequencer-field" style="display: none;">
+                <label class="setting-label">TARGET DEVICE</label>
+                <select id="pad-device-seq-device-select" style="width: 100%;">
+                    <option value="">-- Select Device --</option>
+                </select>
+                <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                    Which Samplecrate/Regroove device to control
+                </div>
+            </div>
+
+            <div class="setting-group" id="pad-device-sequencer-slot-field" style="display: none;">
+                <label class="setting-label">SEQUENCE SLOT</label>
+                <select id="pad-device-seq-slot-select" style="width: 100%;">
+                    <option value="0">S1</option>
+                    <option value="1">S2</option>
+                    <option value="2">S3</option>
+                    <option value="3">S4</option>
+                    <option value="4">S5</option>
+                    <option value="5">S6</option>
+                    <option value="6">S7</option>
+                    <option value="7">S8</option>
+                    <option value="8">S9</option>
+                    <option value="9">S10</option>
+                    <option value="10">S11</option>
+                    <option value="11">S12</option>
+                    <option value="12">S13</option>
+                    <option value="13">S14</option>
+                    <option value="14">S15</option>
+                    <option value="15">S16</option>
+                </select>
+                <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                    Which sequence slot to control
+                </div>
+            </div>
+
+            <div class="setting-group" id="pad-cc-field" style="display: none;">
+                <label class="setting-label">CC NUMBER (0-127)</label>
+                <input type="number" id="pad-cc" min="0" max="127" placeholder="41" style="width: 100%;">
+            </div>
+
+            <div class="setting-group" id="pad-note-field" style="display: none;">
+                <label class="setting-label">NOTE</label>
+                <div style="margin-bottom: 10px;">
+                    <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px;" id="pad-note-buttons">
+                        <!-- Note buttons will be populated here -->
+                    </div>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 0.8em; color: #666;">OCTAVE</label>
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;" id="pad-octave-buttons">
+                        <!-- Octave buttons will be populated here -->
+                    </div>
+                </div>
+                <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                    Selected: <span id="pad-note-display" style="color: #4a9eff; font-weight: bold;">C-4 (60)</span>
+                </div>
+                <input type="hidden" id="pad-note" value="60">
+            </div>
+
+            <div class="setting-group" id="pad-note-program-field" style="display: none;">
+                <label class="setting-label">PROGRAM CHANGE (OPTIONAL)</label>
+                <select id="pad-note-program" style="width: 100%;">
+                    <option value="-1">No Program Change</option>
+                </select>
+                <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                    Send program change before note on
+                </div>
+            </div>
+
+            <div class="setting-group" id="pad-mmc-field" style="display: none;">
+                <label class="setting-label">MMC COMMAND</label>
+                <select id="pad-mmc-command">
+                    <option value="stop">Stop</option>
+                    <option value="play">Play</option>
+                    <option value="deferred_play">Deferred Play</option>
+                    <option value="fast_forward">Fast Forward</option>
+                    <option value="rewind">Rewind</option>
+                    <option value="record_strobe">Record Strobe</option>
+                    <option value="record_exit">Record Exit</option>
+                    <option value="record_pause">Record Pause</option>
+                    <option value="pause">Pause</option>
+                    <option value="eject">Eject</option>
+                    <option value="chase">Chase</option>
+                    <option value="reset">Reset</option>
+                    <option value="locate">Locate (Go to Order+Row)</option>
+                    <option value="shuttle">Shuttle</option>
+                </select>
+                <div id="pad-mmc-locate-params" style="display: none; margin-top: 10px;">
+                    <label class="setting-label">LOCATE PARAMETERS</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label style="font-size: 0.75em; color: #666;">Order (0-127)</label>
+                            <input type="number" id="pad-mmc-locate-order" min="0" max="127" value="0" style="width: 100%;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75em; color: #666;">Row (0-127)</label>
+                            <input type="number" id="pad-mmc-locate-row" min="0" max="127" value="0" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-group" id="pad-sysex-field" style="display: none;">
+                <label class="setting-label">SYSEX ACTION</label>
+                <select id="pad-sysex-action">
+                    <optgroup label="Transport">
+                        <option value="play">Play (0x20)</option>
+                        <option value="stop">Stop (0x21)</option>
+                        <option value="pause">Pause (0x22)</option>
+                        <option value="retrigger">Retrigger (0x23)</option>
+                        <option value="next_order">Next Order - Queued (0x24)</option>
+                        <option value="prev_order">Previous Order - Queued (0x25)</option>
+                    </optgroup>
+                    <optgroup label="Position">
+                        <option value="jump_to_order_row">Jump to Order+Row (0x40)</option>
+                    </optgroup>
+                    <optgroup label="File">
+                        <option value="file_load">Load File by Index (0x10)</option>
+                    </optgroup>
+                    <optgroup label="Loop">
+                        <option value="set_loop_current">Toggle Loop Current (0x43)</option>
+                    </optgroup>
+                    <optgroup label="Channel Control">
+                        <option value="channel_mute">Toggle Channel Mute (0x30)</option>
+                        <option value="channel_solo">Toggle Channel Solo (0x31)</option>
+                    </optgroup>
+                </select>
+                <div id="pad-sysex-jump-params" style="display: none; margin-top: 10px;">
+                    <label class="setting-label">JUMP PARAMETERS</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label style="font-size: 0.75em; color: #666;">Order (0-127)</label>
+                            <input type="number" id="pad-sysex-jump-order" min="0" max="127" value="0" style="width: 100%;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75em; color: #666;">Row (0-127)</label>
+                            <input type="number" id="pad-sysex-jump-row" min="0" max="127" value="0" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+                <div id="pad-sysex-file-params" style="display: none; margin-top: 10px;">
+                    <label class="setting-label">FILENAME</label>
+                    <input type="text" id="pad-sysex-filename" placeholder="song.xm" style="width: 100%;">
+                    <div style="color: #666; font-size: 0.75em; margin-top: 5px;">
+                        Relative to Regroove's current directory
+                    </div>
+                </div>
+                <div id="pad-sysex-channel-params" style="display: none; margin-top: 10px;">
+                    <label class="setting-label">CHANNEL</label>
+                    <select id="pad-sysex-channel" style="width: 100%;">
+                        <!-- Populated by JavaScript with CH1-CH64 -->
+                    </select>
+                    <div style="color: #666; font-size: 0.75em; margin-top: 5px;">
+                        Channel to mute/solo
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-group" id="pad-routing-input-params" style="display: none;">
+                <label class="setting-label">MIDI INPUT TO SWITCH</label>
+                <select id="pad-routing-input-select" style="width: 100%;">
+                    <option value="">All Inputs</option>
+                </select>
+                <div style="color: #666; font-size: 0.75em; margin-top: 5px;">
+                    Select which MIDI input's routing to switch, or "All Inputs" to switch all configured routes
+                </div>
+            </div>
+
+            <div class="setting-group" id="pad-display-field" style="display: none;">
+                <label class="setting-label">SOURCE</label>
+                <select id="pad-display-source-type" style="width: 100%; margin-bottom: 10px;">
+                    <option value="scene">Scene (Fire Sequencer, Sequencer)</option>
+                    <option value="device">Device (Regroove, SampleCrate)</option>
+                </select>
+
+                <div id="pad-display-scene-select-container" style="display: none;">
+                    <select id="pad-display-scene" style="width: 100%;">
+                        <option value="">-- Select Scene --</option>
+                    </select>
+                    <div style="color: #666; font-size: 0.75em; margin-top: 5px;">
+                        Display will show real-time status from this scene
+                    </div>
+                </div>
+
+                <div id="pad-display-device-select-container" style="display: none;">
+                    <select id="pad-display-device" style="width: 100%;">
+                        <option value="">-- Select Device --</option>
+                    </select>
+                    <div style="color: #666; font-size: 0.75em; margin-top: 5px;">
+                        Display will poll status from this device
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-group" id="pad-display-mode-field" style="display: none;">
+                <label class="setting-label">UPDATE MODE</label>
+                <select id="pad-display-mode" style="width: 100%;">
+                    <option value="push">Push (updates from Display Messages)</option>
+                    <option value="poll">Poll (periodic status queries)</option>
+                </select>
+                <div style="color: #666; font-size: 0.75em; margin-top: 5px;">
+                    Push mode for real-time updates, Poll mode to request status periodically
+                </div>
+            </div>
+
+            <div class="setting-group" id="pad-display-interval-field" style="display: none;">
+                <label class="setting-label">UPDATE INTERVAL (ms)</label>
+                <input type="number" id="pad-display-interval" min="50" max="5000" value="100" style="width: 100%;">
+                <div style="color: #666; font-size: 0.75em; margin-top: 5px;">
+                    How often to update (lower = smoother, higher = less CPU)
+                </div>
+            </div>
+
+            <div class="setting-group" id="pad-device-field">
+                <label class="setting-label">DEVICE BINDING</label>
+                <select id="pad-device-binding" style="width: 100%;">
+                    <option value="">Default Device</option>
+                </select>
+                <div style="color: #555; font-size: 0.7em; margin-top: 3px;">
+                    Select which device instance this pad controls
+                </div>
+            </div>
+
+            <!-- Embedded Knob (CC Knob) -->
+            <div style="border-top: 2px solid #1a1a1a; margin: 20px 0; padding-top: 20px;">
+                <div class="setting-group">
+                    <label class="setting-label">EMBEDDED CC KNOB</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="pad-knob-enabled" style="width: auto;">
+                        <label for="pad-knob-enabled" style="margin: 0; color: #888;">Add rotary knob to pad</label>
+                    </div>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        Embeds a mini rotary knob inside the pad for CC control
+                    </div>
+                </div>
+
+                <div id="pad-knob-config" style="display: none;">
+                    <div class="setting-group">
+                        <label class="setting-label">CC NUMBER (0-127)</label>
+                        <input type="number" id="pad-knob-cc" min="0" max="127" value="1" style="width: 100%;">
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">MIN VALUE</label>
+                        <input type="number" id="pad-knob-min" min="0" max="127" value="0" style="width: 100%;">
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">MAX VALUE</label>
+                        <input type="number" id="pad-knob-max" min="0" max="127" value="127" style="width: 100%;">
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">INITIAL VALUE</label>
+                        <input type="number" id="pad-knob-value" min="0" max="127" value="64" style="width: 100%;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secondary Action (Shift + Click) -->
+            <div style="border-top: 2px solid #1a1a1a; margin: 20px 0; padding-top: 20px;">
+                <div class="setting-group">
+                    <label class="setting-label">SECONDARY ACTION (SHIFT + CLICK)</label>
+                    <select id="pad-secondary-message-type">
+                        <option value="none">None</option>
+                        <option value="regroove">Action System</option>
+                        <option value="cc">Control Change (CC)</option>
+                        <option value="note">Note On/Off</option>
+                        <option value="mmc">MIDI Machine Control (MMC)</option>
+                    </select>
+                </div>
+
+                <div class="setting-group" id="pad-secondary-regroove-field" style="display: none;">
+                    <label class="setting-label">ACTION</label>
+                    <select id="pad-secondary-regroove-action">
+                        <optgroup label="Transport">
+                            <option value="41" data-action="102">Play/Pause</option>
+                            <option value="42" data-action="101">Stop</option>
+                            <option value="45" data-action="103">Retrigger</option>
+                            <option value="46" data-action="104">Loop Toggle</option>
+                            <option value="44" data-action="110">Next Order</option>
+                            <option value="43" data-action="111">Previous Order</option>
+                        </optgroup>
+                        <optgroup label="File Browser">
+                            <option value="60" data-action="120">File Load</option>
+                            <option value="61" data-action="122">File Previous</option>
+                            <option value="62" data-action="121">File Next</option>
+                        </optgroup>
+                        <optgroup label="MIDI Sync">
+                            <option value="70" data-action="140">Sync Tempo Toggle</option>
+                            <option value="71" data-action="141">Receive Transport Toggle</option>
+                            <option value="72" data-action="142">Receive SPP Toggle</option>
+                        </optgroup>
+                        <optgroup label="Channel Control">
+                            <option value="48" data-action="130" data-param="0">Channel 1 Mute</option>
+                            <option value="49" data-action="130" data-param="1">Channel 2 Mute</option>
+                            <option value="50" data-action="130" data-param="2">Channel 3 Mute</option>
+                            <option value="51" data-action="130" data-param="3">Channel 4 Mute</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="setting-group" id="pad-secondary-cc-field" style="display: none;">
+                    <label class="setting-label">SECONDARY CC NUMBER (0-127)</label>
+                    <input type="number" id="pad-secondary-cc" min="0" max="127" placeholder="47" style="width: 100%;">
+                </div>
+
+                <div class="setting-group" id="pad-secondary-note-field" style="display: none;">
+                    <label class="setting-label">SECONDARY NOTE NUMBER (0-127)</label>
+                    <input type="number" id="pad-secondary-note" min="0" max="127" placeholder="61" style="width: 100%;">
+                </div>
+
+                <div class="setting-group" id="pad-secondary-mmc-field" style="display: none;">
+                    <label class="setting-label">SECONDARY MMC COMMAND</label>
+                    <select id="pad-secondary-mmc-command">
+                        <option value="stop">Stop</option>
+                        <option value="play">Play</option>
+                        <option value="pause">Pause</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="save-pad">💾 SAVE</button>
+                <button id="clear-pad">🗑️ CLEAR</button>
+            </div>
+            </div><!-- End settings-panel-content -->
+        </div>
+    </div>
+
+    <!-- Scene Editor Overlay -->
+    <div class="settings-overlay" id="scene-editor-overlay">
+        <div class="settings-panel">
+            <div class="settings-panel-header">
+                <div class="settings-header">EDIT MIXER SCENE</div>
+                <button class="close-settings" id="close-scene-editor">✕ CLOSE</button>
+            </div>
+
+            <div class="settings-panel-content">
+                <div class="setting-group">
+                    <label class="setting-label">SCENE NAME</label>
+                    <input type="text" id="scene-name" placeholder="My Mixer" style="width: 100%;">
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">LAYOUT</label>
+                    <select id="scene-layout">
+                        <option value="1x5">1 Row × 5 Faders</option>
+                        <option value="1x8">1 Row × 8 Faders</option>
+                        <option value="1x10">1 Row × 10 Faders</option>
+                        <option value="1x12">1 Row × 12 Faders</option>
+                        <option value="2x8">2 Rows × 8 Faders</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label" style="font-size: 0.85em; color: #888;">QUICK TEMPLATES</label>
+                    <div style="display: flex; gap: 8px;">
+                        <button id="template-1x10-btn" style="flex: 1; padding: 8px; font-size: 0.85em; background: #2a2a2a;">📐 8CH+Mix+Tempo</button>
+                        <button id="template-1x12-btn" style="flex: 1; padding: 8px; font-size: 0.85em; background: #2a2a2a;">📐 8CH+In+Mix+Sep+Tempo</button>
+                    </div>
+                    <div style="margin-top: 4px; font-size: 0.75em; color: #666;">
+                        Click to auto-populate faders with template layout
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">POLLING INTERVAL</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="range" id="scene-polling-interval" min="50" max="1000" step="50" value="250"
+                            style="flex: 1; accent-color: #4a9eff;">
+                        <span id="scene-polling-interval-value" style="color: #888; min-width: 60px; text-align: right;">250ms</span>
+                    </div>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        How often to poll devices when this scene is active. Lower = more responsive, higher = less MIDI traffic.
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">FADER SLOTS</label>
+                    <div style="color: #666; font-size: 0.8em; margin-bottom: 10px;">
+                        Click a slot to configure it
+                    </div>
+                    <div id="scene-fader-grid" style="display: grid; gap: 8px; margin-bottom: 15px;"></div>
+                </div>
+
+                <div class="button-group">
+                    <button id="save-scene">💾 SAVE SCENE</button>
+                    <button id="delete-scene">🗑️ DELETE SCENE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fader Slot Editor Overlay -->
+    <div class="settings-overlay" id="fader-editor-overlay">
+        <div class="settings-panel">
+            <div class="settings-panel-header">
+                <div class="settings-header" id="fader-editor-title">EDIT FADER SLOT</div>
+                <button class="close-settings" id="close-fader-editor">✕ CLOSE</button>
+            </div>
+
+            <div class="settings-panel-content">
+                <div class="setting-group">
+                    <label class="setting-label">FADER TYPE</label>
+                    <select id="fader-type">
+                        <option value="EMPTY">Empty (Placeholder)</option>
+                        <option value="MIX">Mix / Master</option>
+                        <option value="INPUT">Input</option>
+                        <option value="CHANNEL">Channel</option>
+                        <option value="PROGRAM">Program (Samplecrate)</option>
+                        <option value="TEMPO">Tempo</option>
+                        <option value="STEREO">Stereo Separation</option>
+                        <option value="CC_FADER">CC Fader (Generic MIDI CC)</option>
+                        <option value="SEQUENCER_TRACK">Sequencer Track Volume</option>
+                        <option value="SEQUENCER_MASTER">Sequencer Master Volume</option>
+                    </select>
+                </div>
+
+                <div class="setting-group" id="fader-label-field" style="display: none;">
+                    <label class="setting-label">LABEL</label>
+                    <input type="text" id="fader-label" placeholder="Master" style="width: 100%;">
+                </div>
+
+                <div class="setting-group" id="fader-cc-field" style="display: none;">
+                    <label class="setting-label">CC NUMBER (0-127)</label>
+                    <input type="number" id="fader-cc" min="0" max="127" value="1" style="width: 100%;">
+                </div>
+
+                <div class="setting-group" id="fader-cc-min-field" style="display: none;">
+                    <label class="setting-label">MIN VALUE</label>
+                    <input type="number" id="fader-cc-min" min="0" max="127" value="0" style="width: 100%;">
+                </div>
+
+                <div class="setting-group" id="fader-cc-max-field" style="display: none;">
+                    <label class="setting-label">MAX VALUE</label>
+                    <input type="number" id="fader-cc-max" min="0" max="127" value="127" style="width: 100%;">
+                </div>
+
+                <div class="setting-group" id="fader-channel-field" style="display: none;">
+                    <label class="setting-label">CHANNEL NUMBER (0-7)</label>
+                    <input type="number" id="fader-channel" min="0" max="7" value="0" style="width: 100%;">
+                </div>
+
+                <div class="setting-group" id="fader-program-field" style="display: none;">
+                    <label class="setting-label">PROGRAM</label>
+                    <select id="fader-program" style="width: 100%;">
+                        <option value="0">P1</option>
+                        <option value="1">P2</option>
+                        <option value="2">P3</option>
+                        <option value="3">P4</option>
+                        <option value="4">P5</option>
+                        <option value="5">P6</option>
+                        <option value="6">P7</option>
+                        <option value="7">P8</option>
+                        <option value="8">P9</option>
+                        <option value="9">P10</option>
+                        <option value="10">P11</option>
+                        <option value="11">P12</option>
+                        <option value="12">P13</option>
+                        <option value="13">P14</option>
+                        <option value="14">P15</option>
+                        <option value="15">P16</option>
+                        <option value="16">P17</option>
+                        <option value="17">P18</option>
+                        <option value="18">P19</option>
+                        <option value="19">P20</option>
+                        <option value="20">P21</option>
+                        <option value="21">P22</option>
+                        <option value="22">P23</option>
+                        <option value="23">P24</option>
+                        <option value="24">P25</option>
+                        <option value="25">P26</option>
+                        <option value="26">P27</option>
+                        <option value="27">P28</option>
+                        <option value="28">P29</option>
+                        <option value="29">P30</option>
+                        <option value="30">P31</option>
+                        <option value="31">P32</option>
+                    </select>
+                </div>
+
+                <div class="setting-group" id="fader-device-field" style="display: none;">
+                    <label class="setting-label">DEVICE BINDING</label>
+                    <select id="fader-device-binding" style="width: 100%;">
+                        <option value="">Default Device</option>
+                    </select>
+                    <div style="color: #555; font-size: 0.7em; margin-top: 3px;">
+                        Select which device instance this fader controls
+                    </div>
+                </div>
+
+                <div class="setting-group" id="fader-sequencer-field" style="display: none;">
+                    <label class="setting-label">SEQUENCER SCENE</label>
+                    <select id="fader-sequencer-scene" style="width: 100%;">
+                        <option value="">-- Select Sequencer --</option>
+                    </select>
+                    <div style="color: #555; font-size: 0.7em; margin-top: 3px;">
+                        Select which sequencer scene to control
+                    </div>
+                </div>
+
+                <div class="setting-group" id="fader-sequencer-track-field" style="display: none;">
+                    <label class="setting-label">TRACK NUMBER (1-4)</label>
+                    <input type="number" id="fader-sequencer-track" min="1" max="4" value="1" style="width: 100%;">
+                    <div style="color: #555; font-size: 0.7em; margin-top: 3px;">
+                        Which track to control (volume/mute/solo)
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="save-fader">💾 SAVE</button>
+                    <button id="clear-fader">🗑️ CLEAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pad Scene Editor Overlay -->
+    <!-- Effects Scene Editor Overlay -->
+    <div class="settings-overlay" id="effects-scene-editor-overlay">
+        <div class="settings-panel">
+            <div class="settings-panel-header">
+                <div class="settings-header" id="effects-scene-editor-title">NEW EFFECTS SCENE</div>
+                <button class="close-settings" id="close-effects-scene-editor">✕ CLOSE</button>
+            </div>
+
+            <div class="settings-panel-content">
+                <div class="setting-group">
+                    <label class="setting-label">SCENE NAME</label>
+                    <input type="text" id="effects-scene-name" placeholder="My Effects" style="width: 100%;">
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">DEVICE BINDING</label>
+                    <select id="effects-scene-device" style="width: 100%;">
+                        <option value="">-- Select Device --</option>
+                    </select>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        Which device's effects to control
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">EFFECTS TARGET</label>
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+                        <label style="display: flex; align-items: center; gap: 5px; margin: 0;">
+                            <input type="radio" name="effects-target" id="effects-target-regroove" value="regroove" checked style="width: auto; margin: 0;">
+                            <span style="color: #888;">Regroove</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; margin: 0;">
+                            <input type="radio" name="effects-target" id="effects-target-samplecrate" value="samplecrate" style="width: auto; margin: 0;">
+                            <span style="color: #888;">Samplecrate</span>
+                        </label>
+                    </div>
+                    <div id="samplecrate-program-selector" style="display: none;">
+                        <label class="setting-label">SAMPLECRATE PROGRAM</label>
+                        <select id="effects-scene-program-select" style="width: 100%;">
+                            <!-- Programs 1-31 (wire: 0-30) -->
+                        </select>
+                        <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                            Select which Samplecrate program's effects to control
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">POLLING INTERVAL</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="range" id="effects-scene-polling-interval" min="50" max="1000" step="50" value="250"
+                            style="flex: 1; accent-color: #4a9eff;">
+                        <span id="effects-scene-polling-interval-value" style="color: #888; min-width: 60px; text-align: right;">250ms</span>
+                    </div>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        How often to poll FX state. Lower = more responsive, higher = less MIDI traffic.
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="save-effects-scene">💾 SAVE SCENE</button>
+                    <button id="delete-effects-scene">🗑️ DELETE SCENE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Piano Scene Editor Overlay -->
+    <div class="settings-overlay" id="piano-scene-editor-overlay">
+        <div class="settings-panel">
+            <div class="settings-panel-header">
+                <div class="settings-header" id="piano-scene-editor-title">NEW PIANO SCENE</div>
+                <button class="close-settings" id="close-piano-scene-editor">✕ CLOSE</button>
+            </div>
+
+            <div class="settings-panel-content">
+                <div class="setting-group">
+                    <label class="setting-label">SCENE NAME</label>
+                    <input type="text" id="piano-scene-name" placeholder="My Piano" style="width: 100%;">
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">DEVICE BINDING</label>
+                    <select id="piano-scene-device" style="width: 100%;">
+                        <option value="">Default Device</option>
+                    </select>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        Which device instance to send notes to
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">MIDI CHANNEL</label>
+                    <select id="piano-scene-channel" style="width: 100%;">
+                        <option value="0">Channel 1</option>
+                        <option value="1">Channel 2</option>
+                        <option value="2">Channel 3</option>
+                        <option value="3">Channel 4</option>
+                        <option value="4">Channel 5</option>
+                        <option value="5">Channel 6</option>
+                        <option value="6">Channel 7</option>
+                        <option value="7">Channel 8</option>
+                        <option value="8">Channel 9</option>
+                        <option value="9">Channel 10</option>
+                        <option value="10">Channel 11</option>
+                        <option value="11">Channel 12</option>
+                        <option value="12">Channel 13</option>
+                        <option value="13">Channel 14</option>
+                        <option value="14">Channel 15</option>
+                        <option value="15">Channel 16</option>
+                    </select>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        MIDI channel to send notes on (overrides device's channel if set)
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">DEFAULT OCTAVE</label>
+                    <select id="piano-scene-octave" style="width: 100%;">
+                        <option value="0">Octave 0</option>
+                        <option value="1">Octave 1</option>
+                        <option value="2">Octave 2</option>
+                        <option value="3" selected>Octave 3</option>
+                        <option value="4">Octave 4 (Middle C)</option>
+                        <option value="5">Octave 5</option>
+                        <option value="6">Octave 6</option>
+                        <option value="7">Octave 7</option>
+                        <option value="8">Octave 8</option>
+                    </select>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        Starting octave when scene opens (can be changed with OCT +/- buttons)
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">PROGRAM CHANGE</label>
+                    <select id="piano-scene-program" style="width: 100%;">
+                        <option value="-1">No Program Change</option>
+                    </select>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        Send program change message when scene loads (can be changed with PROG +/- buttons)
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="save-piano-scene">💾 SAVE SCENE</button>
+                    <button id="delete-piano-scene">🗑️ DELETE SCENE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-overlay" id="sequencer-scene-editor-overlay">
+        <div class="settings-panel">
+            <div class="settings-panel-header">
+                <div class="settings-header" id="sequencer-scene-editor-title">NEW SEQUENCER SCENE</div>
+                <button class="close-settings" id="close-sequencer-scene-editor">✕ CLOSE</button>
+            </div>
+
+            <div class="settings-panel-content">
+                <div class="setting-group">
+                    <label class="setting-label">SCENE NAME</label>
+                    <input type="text" id="sequencer-scene-name" placeholder="My Sequencer" style="width: 100%;">
+                </div>
+
+                <div class="button-group">
+                    <button id="save-sequencer-scene">💾 SAVE SCENE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fire Sequencer Scene Editor -->
+    <div class="settings-overlay" id="fire-scene-editor-overlay">
+        <div class="settings-panel">
+            <div class="settings-panel-header">
+                <div class="settings-header" id="fire-scene-editor-title">NEW FIRE SEQUENCER</div>
+                <button class="close-settings" id="close-fire-scene-editor">✕ CLOSE</button>
+            </div>
+
+            <div class="settings-panel-content">
+                <div class="setting-group">
+                    <label class="setting-label">SCENE NAME</label>
+                    <input type="text" id="fire-scene-name" placeholder="Fire Controller" style="width: 100%;">
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">MODE</label>
+                    <select id="fire-scene-mode" style="width: 100%;">
+                        <option value="compatible">Fire Compatible (Standalone)</option>
+                        <option value="linked">Linked to Sequencer</option>
+                    </select>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        <strong>Compatible:</strong> Acts as Akai Fire hardware replacement<br>
+                        <strong>Linked:</strong> Controls internal sequencer scene
+                    </div>
+                </div>
+
+                <div class="setting-group" id="fire-linked-sequencer-field" style="display: none;">
+                    <label class="setting-label">LINKED SEQUENCER</label>
+                    <select id="fire-linked-sequencer" style="width: 100%;">
+                        <option value="">-- Select Sequencer --</option>
+                    </select>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        Which sequencer scene to control (device routing is handled by the sequencer)
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">MIDI CONTROL DEVICE</label>
+                    <select id="fire-midi-input-device" style="width: 100%;">
+                        <option value="">None (Software Only)</option>
+                    </select>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        Select device from Devices Tab (defines MIDI I/O and device type)
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">DISPLAY RENDER MODE</label>
+                    <select id="fire-render-mode" style="width: 100%;">
+                        <option value="text">Text</option>
+                        <option value="graphic">Graphical</option>
+                    </select>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        Text mode for readability, Graphical mode to simulate physical Fire display
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="fire-persistent" style="width: auto; cursor: pointer;">
+                        <span class="setting-label" style="margin: 0;">PERSISTENT (stay active in background)</span>
+                    </label>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        When enabled, scene stays active when switching to other scenes (LEDs remain lit, MIDI input keeps working)
+                    </div>
+                </div>
+
+                <div class="setting-group" id="fire-compatible-output-field">
+                    <label class="setting-label">MIDI OUTPUT DEVICE</label>
+                    <select id="fire-midi-output" style="width: 100%;">
+                        <option value="">Default MIDI Output</option>
+                    </select>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        MIDI output for Fire Compatible mode
+                    </div>
+                </div>
+
+                <div class="setting-group" id="fire-compatible-channel-field">
+                    <label class="setting-label">MIDI CHANNEL</label>
+                    <select id="fire-midi-channel" style="width: 100%;">
+                        <option value="0">Channel 1</option>
+                        <option value="1">Channel 2</option>
+                        <option value="2">Channel 3</option>
+                        <option value="3">Channel 4</option>
+                        <option value="4">Channel 5</option>
+                        <option value="5">Channel 6</option>
+                        <option value="6">Channel 7</option>
+                        <option value="7">Channel 8</option>
+                        <option value="8">Channel 9</option>
+                        <option value="9">Channel 10</option>
+                        <option value="10">Channel 11</option>
+                        <option value="11">Channel 12</option>
+                        <option value="12">Channel 13</option>
+                        <option value="13">Channel 14</option>
+                        <option value="14">Channel 15</option>
+                        <option value="15">Channel 16</option>
+                    </select>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        MIDI channel for Fire Compatible mode
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">BUTTON LAYOUT REFERENCE</label>
+                    <div style="background: #1a1a1a; padding: 12px; border-radius: 4px; font-family: monospace; font-size: 0.7em; line-height: 1.6;">
+                        <div style="color: #4a9eff; font-weight: bold; margin-bottom: 8px;">TOP ROW:</div>
+                        <div style="color: #888; margin-left: 10px;">
+                            4 Knobs (VOL, PAN, FILT, RES) | LCD Display | SELECT Knob | ENTER (0x19) | Nav (L/R/U/D)
+                        </div>
+                        <div style="color: #4a9eff; font-weight: bold; margin: 12px 0 8px 0;">TRACK ROWS:</div>
+                        <div style="color: #888; margin-left: 10px;">
+                            4 Tracks × (Knob + SOLO/MUTE stack + 16 Steps grouped 4-4-4-4)
+                        </div>
+                        <div style="color: #4a9eff; font-weight: bold; margin: 12px 0 8px 0;">BOTTOM ROW:</div>
+                        <div style="color: #888; margin-left: 10px;">
+                            Left: STEP (0x2C), NOTE (0x2D), DRUM (0x2E), PERF (0x2F), SHIFT (0x30), ALT (0x31)
+                        </div>
+                        <div style="color: #888; margin-left: 10px; margin-top: 4px;">
+                            Right: MODE (0x1A), BRWSR (0x21), PTRN (0x32), PLAY (0x33), STOP (0x34), RECORD (0x35)
+                        </div>
+                        <div style="color: #666; font-size: 0.9em; margin-top: 8px; margin-left: 10px;">
+                            Note: SELECT is rotary encoder (CC 0x76). ENTER (0x19) toggles USER mode (VOL/PAN/LOW/HIGH).
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="save-fire-scene">💾 SAVE SCENE</button>
+                    <button id="delete-fire-scene" style="display: none;">🗑️ DELETE SCENE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Control Grid Scene Editor -->
+    <div class="settings-overlay" id="control-grid-scene-editor-overlay">
+        <div class="settings-panel">
+            <div class="settings-panel-header">
+                <div class="settings-header" id="control-grid-scene-editor-title">EDIT CONTROL GRID SCENE</div>
+                <button class="close-settings" id="close-control-grid-scene-editor">✕ CLOSE</button>
+            </div>
+
+            <div class="settings-panel-content">
+                <div class="setting-group">
+                    <label class="setting-label">SCENE NAME</label>
+                    <input type="text" id="control-grid-scene-name" placeholder="DJ Decks" style="width: 100%;">
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">DEVICE BINDING</label>
+                    <select id="control-grid-scene-device" style="width: 100%;">
+                        <option value="">Default MIDI Output</option>
+                    </select>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        Controls in this scene will send MIDI to the selected device
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">GRID SIZE</label>
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label style="display: block; margin-bottom: 3px; color: #888; font-size: 0.85em;">Rows:</label>
+                            <input type="number" id="control-grid-scene-rows" min="1" max="10" value="5" style="width: 100%;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="display: block; margin-bottom: 3px; color: #888; font-size: 0.85em;">Columns:</label>
+                            <input type="number" id="control-grid-scene-cols" min="1" max="16" value="12" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="padding: 10px; background: #0a0a0a; border-radius: 4px; border-left: 3px solid #4a9eff; margin-bottom: 15px;">
+                    <div style="color: #4a9eff; font-size: 0.85em; font-weight: bold; margin-bottom: 5px;">💡 TIP</div>
+                    <div style="color: #888; font-size: 0.75em;">
+                        Right-click individual cells in the grid to edit pads, faders, and knobs
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="save-control-grid-scene">💾 SAVE SCENE</button>
+                    <button id="delete-control-grid-scene">🗑️ DELETE SCENE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Device Instance Editor -->
+    <div class="settings-overlay" id="device-editor-overlay">
+        <div class="settings-panel">
+            <div class="settings-panel-header">
+                <div class="settings-header" id="device-editor-title">ADD DEVICE INSTANCE</div>
+                <button class="close-settings" id="close-device-editor">✕ CLOSE</button>
+            </div>
+
+            <div class="settings-panel-content">
+                <div class="setting-group">
+                    <label class="setting-label">DEVICE NAME</label>
+                    <input type="text" id="device-name" placeholder="My Device" style="width: 100%;">
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">MIDI CHANNEL</label>
+                    <select id="device-midi-channel" style="width: 100%;">
+                        <option value="omni">Omni (All Channels)</option>
+                        <option value="0">Channel 1</option>
+                        <option value="1">Channel 2</option>
+                        <option value="2">Channel 3</option>
+                        <option value="3">Channel 4</option>
+                        <option value="4">Channel 5</option>
+                        <option value="5">Channel 6</option>
+                        <option value="6">Channel 7</option>
+                        <option value="7">Channel 8</option>
+                        <option value="8">Channel 9</option>
+                        <option value="9">Channel 10</option>
+                        <option value="10">Channel 11</option>
+                        <option value="11">Channel 12</option>
+                        <option value="12">Channel 13</option>
+                        <option value="13">Channel 14</option>
+                        <option value="14">Channel 15</option>
+                        <option value="15">Channel 16</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">SYSEX DEVICE ID (0-15)</label>
+                    <select id="device-sysex-id" style="width: 100%;">
+                        <option value="0">Device ID 0</option>
+                        <option value="1">Device ID 1</option>
+                        <option value="2">Device ID 2</option>
+                        <option value="3">Device ID 3</option>
+                        <option value="4">Device ID 4</option>
+                        <option value="5">Device ID 5</option>
+                        <option value="6">Device ID 6</option>
+                        <option value="7">Device ID 7</option>
+                        <option value="8">Device ID 8</option>
+                        <option value="9">Device ID 9</option>
+                        <option value="10">Device ID 10</option>
+                        <option value="11">Device ID 11</option>
+                        <option value="12">Device ID 12</option>
+                        <option value="13">Device ID 13</option>
+                        <option value="14">Device ID 14</option>
+                        <option value="15">Device ID 15</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">MIDI OUTPUT</label>
+                    <select id="device-midi-output" style="width: 100%;">
+                        <option value="">Use Default Output</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">MIDI INPUT (optional)</label>
+                    <select id="device-midi-input" style="width: 100%;">
+                        <option value="">Same as Output</option>
+                    </select>
+                    <div style="color: #666; font-size: 0.75em; margin-top: 5px;">
+                        Optional separate MIDI input port (useful for virtual MIDI routers)
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">DEVICE TYPE</label>
+                    <select id="device-type" style="width: 100%;">
+                        <option value="generic">Generic MIDI (no state polling)</option>
+                        <option value="regroove">Regroove (uses PLAYER_STATE 0x60)</option>
+                        <option value="samplecrate">SampleCrate (uses PROGRAM_STATE 0x64)</option>
+                        <option value="akai-fire">Akai Fire (step sequencer/controller)</option>
+                        <option value="novation-launchpad-mini">Novation Launchpad Mini (pad grid)</option>
+                        <option value="mixxx">Mixxx (DJ software)</option>
+                    </select>
+                    <div style="color: #666; font-size: 0.75em; margin-top: 5px;">
+                        Device type determines which state queries are sent
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">COLOR</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="color" id="device-color" value="#CF1A37" style="width: 60px; height: 40px; border: 1px solid #333; background: #0a0a0a; cursor: pointer;">
+                        <span id="device-color-value" style="color: #888; font-size: 0.9em;">#CF1A37</span>
+                    </div>
+                    <div style="color: #666; font-size: 0.75em; margin-top: 5px;">
+                        Color used for routing indicators and device identification
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="save-device">💾 SAVE DEVICE</button>
+                    <button id="delete-device" style="background: #4a2a2a; color: #CF1A37; display: none;">🗑️ DELETE DEVICE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-overlay" id="pad-scene-editor-overlay">
+        <div class="settings-panel">
+            <div class="settings-panel-header">
+                <div class="settings-header" id="pad-scene-editor-title">NEW PAD SCENE</div>
+                <button class="close-settings" id="close-pad-scene-editor">✕ CLOSE</button>
+            </div>
+
+            <div class="settings-panel-content">
+                <div class="setting-group">
+                    <label class="setting-label">SCENE NAME</label>
+                    <input type="text" id="pad-scene-name" placeholder="My Pads" style="width: 100%;">
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">GRID LAYOUT</label>
+                    <select id="pad-scene-layout">
+                        <option value="2x2">2×2 Grid (4 pads)</option>
+                        <option value="4x2">4×2 Grid (8 pads)</option>
+                        <option value="4x4">4×4 Grid (16 pads)</option>
+                        <option value="8x2">8×2 Grid (16 pads)</option>
+                        <option value="8x4">8×4 Grid (32 pads)</option>
+                        <option value="10x5">10×5 Grid (50 pads)</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">POLLING INTERVAL</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="range" id="pad-scene-polling-interval" min="50" max="1000" step="50" value="250"
+                            style="flex: 1; accent-color: #4a9eff;">
+                        <span id="pad-scene-polling-interval-value" style="color: #888; min-width: 60px; text-align: right;">250ms</span>
+                    </div>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        How often to poll devices when this scene is active. Lower = more responsive, higher = less MIDI traffic.
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">PAD CONFIGURATION</label>
+                    <div style="color: #666; font-size: 0.8em; margin-bottom: 10px;">
+                        After saving, you can edit individual pads by right-clicking them
+                    </div>
+                    <div style="background: #0a0a0a; padding: 15px; border-radius: 4px; text-align: center; color: #666;">
+                        Scene will be created with empty pads.<br>
+                        Configure pads after creation by switching to the scene and right-clicking pads.
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="save-pad-scene">💾 SAVE SCENE</button>
+                    <button id="delete-pad-scene">🗑️ DELETE SCENE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SPLIT SCENE EDITOR OVERLAY -->
+    <div class="settings-overlay" id="split-scene-editor-overlay">
+        <div class="settings-panel">
+            <div class="settings-panel-header">
+                <div class="settings-header" id="split-scene-editor-title">NEW SPLIT SCENE</div>
+                <button class="close-settings" id="close-split-scene-editor">✕ CLOSE</button>
+            </div>
+
+            <div class="settings-panel-content">
+                <div class="setting-group">
+                    <label class="setting-label">SCENE NAME</label>
+                    <input type="text" id="split-scene-name" placeholder="Split Scene" style="width: 100%;">
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">PAD LAYOUT</label>
+                    <select id="split-scene-pad-layout" style="width: 100%;">
+                        <option value="2x3">2×3 (6 pads)</option>
+                        <option value="3x2">3×2 (6 pads)</option>
+                        <option value="3x3">3×3 (9 pads)</option>
+                        <option value="3x4">3×4 (12 pads)</option>
+                        <option value="4x3">4×3 (12 pads)</option>
+                        <option value="4x4" selected>4×4 (16 pads)</option>
+                    </select>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        Grid size for pads (columns × rows)
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">PAD POSITION</label>
+                    <select id="split-scene-pad-side" style="width: 100%;">
+                        <option value="left" selected>Left Side (landscape)</option>
+                        <option value="right">Right Side (landscape)</option>
+                    </select>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        In portrait mode, pads always appear at top
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">POLLING INTERVAL</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="range" id="split-scene-polling-interval" min="100" max="2000" step="50" value="250" style="flex: 1;">
+                        <span id="split-scene-polling-interval-value" style="min-width: 60px; text-align: right; color: #aaa;">250ms</span>
+                    </div>
+                    <div style="color: #555; font-size: 0.75em; margin-top: 5px;">
+                        How often to poll devices when this scene is active. Lower = more responsive, higher = less MIDI traffic.
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">FADER SLOTS</label>
+                    <div style="color: #888; font-size: 0.75em; margin-bottom: 8px;">
+                        Click slots to configure faders
+                    </div>
+                    <div id="split-fader-grid" style="
+                        display: flex;
+                        gap: 8px;
+                        flex-wrap: wrap;
+                    "></div>
+                </div>
+
+                <div class="button-group">
+                    <button id="save-split-scene">💾 SAVE SCENE</button>
+                    <button id="delete-split-scene">🗑️ DELETE SCENE</button>
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: #2a2a2a; border-radius: 4px; border-left: 3px solid #CF1A37;">
+                    <div style="color: #ccc; font-size: 0.85em; margin-bottom: 8px; font-weight: bold;">💡 How to Configure</div>
+                    <div style="color: #888; font-size: 0.75em; line-height: 1.4;">
+                        After saving the scene, switch to it and right-click pads to configure MIDI messages
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TEMPO SLIDER OVERLAY -->
+    <div class="settings-overlay" id="tempo-slider-overlay">
+        <div class="settings-panel" style="max-width: 500px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="settings-panel-header" style="flex-shrink: 0;">
+                <div class="settings-header">GLOBAL TEMPO</div>
+                <button class="close-settings" id="close-tempo-slider">✕ CLOSE</button>
+            </div>
+
+            <div class="settings-panel-content" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+                <div style="text-align: center; flex-shrink: 0;">
+                    <div style="font-size: 3em; font-weight: bold; color: #4a9eff; margin-bottom: 5px;" id="tempo-display-value">120</div>
+                    <div style="color: #666; font-size: 1em;">BPM</div>
+                </div>
+
+                <div style="flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; min-height: 0;">
+                    <tempo-fader id="global-tempo-fader" bpm="120"></tempo-fader>
+                </div>
+
+                <div style="text-align: center; color: #666; font-size: 0.9em; flex-shrink: 0;">
+                    Touch-friendly slider • Changes apply immediately
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import './meister-controller.js';
+        import { integrateActionSystem } from './meister-actions-integration.js';
+        import { SettingsUI } from './settings-ui.js';
+        import { SceneManager } from './scene-manager.js';
+        import { SceneEditor } from './scene-editor.js';
+        import { DeviceManager } from './device-manager.js';
+        import { InputRouter } from './input-router.js';
+        import { SequencerScene } from './sequencer-scene.js';
+        import { FireSequencerScene } from './fire-sequencer-scene.js';
+        import { WebRTCMIDIUI } from './webrtc-midi-ui.js';
+
+        // Expose scene classes globally for scene manager
+        window.SequencerScene = SequencerScene;
+        window.FireSequencerScene = FireSequencerScene;
+
+        // Fire display integration is now built into fire-sequencer-scene.js (no separate file needed)
+
+        // Wait for controller to be initialized
+        function waitForController() {
+            if (window.meisterController) {
+                // Integrate action system
+                integrateActionSystem(window.meisterController);
+                console.log('[Meister] Action system integrated successfully');
+
+                // Initialize device manager
+                window.meisterController.deviceManager = new DeviceManager(window.meisterController);
+                window.deviceManager = window.meisterController.deviceManager;  // Make globally accessible
+                console.log('[Meister] Device manager initialized');
+
+                // Initialize Display Message Manager (now that DeviceManager is ready)
+                if (window.DisplayMessageManager) {
+                    window.displayManager = new window.DisplayMessageManager(window.deviceManager);
+                    console.log('[Meister] Display Message Manager initialized');
+
+                    // Auto-register displays for devices if init function exists
+                    if (window.initializeDisplaySystem) {
+                        window.initializeDisplaySystem();
+                    }
+                }
+
+                // Initialize input router
+                window.meisterController.inputRouter = new InputRouter(window.meisterController);
+                console.log('[Meister] Input router initialized');
+
+                // Initialize WebRTC-MIDI UI
+                window.meisterController.webrtcMidiUI = new WebRTCMIDIUI(window.meisterController);
+                window.webrtcMidiUI = window.meisterController.webrtcMidiUI; // Make globally accessible
+                console.log('[Meister] WebRTC-MIDI UI initialized');
+
+                // State polling is now handled by scene manager, not globally
+
+                // Re-render pads now that device manager is available (to show device labels)
+                window.meisterController.createPads();
+                console.log('[Meister] Pads re-rendered with device labels');
+
+                // Initialize settings UI
+                window.meisterController.settingsUI = new SettingsUI(window.meisterController);
+                console.log('[Meister] Settings UI initialized');
+
+                // Initialize scene manager
+                window.meisterController.sceneManager = new SceneManager(window.meisterController);
+                console.log('[Meister] Scene manager initialized');
+
+                // Initialize scene editor
+                window.meisterController.sceneEditor = new SceneEditor(window.meisterController.sceneManager);
+                window.meisterController.sceneEditor.loadScenesFromStorage();
+                console.log('[Meister] Scene editor initialized');
+
+                // Initialize persistent Fire scenes AFTER scenes are loaded from storage
+                window.meisterController.sceneManager.initializePersistentFireScenes();
+                // Also initialize sequencer instances (in case new ones were loaded from storage)
+                window.meisterController.sceneManager.initializeSequencerInstances();
+
+                // Switch to default scene (loads from localStorage or defaults to 'pads')
+                window.meisterController.sceneManager.switchScene(window.meisterController.sceneManager.defaultScene);
+
+                // Setup scene selector and populate it
+                const sceneSelector = document.getElementById('scene-selector');
+                if (sceneSelector) {
+                    // Initialize selector with current scene name
+                    window.meisterController.sceneManager.updateSceneSelector();
+
+                    // Click to open quick selector
+                    sceneSelector.addEventListener('click', (e) => {
+                        window.meisterController.sceneManager.toggleQuickSelector();
+                    });
+                }
+
+                // Make quick selector header clickable to close
+                const quickSelectorHeader = document.querySelector('.scene-quick-header');
+                if (quickSelectorHeader) {
+                    quickSelectorHeader.addEventListener('click', () => {
+                        window.meisterController.sceneManager.toggleQuickSelector();
+                    });
+                }
+
+                // Hook into player state updates to update mixer
+                const originalUpdatePadColors = window.meisterController.updatePadColors;
+                window.meisterController.updatePadColors = function() {
+                    originalUpdatePadColors.call(this);
+                    // Update mixer if active
+                    if (this.sceneManager) {
+                        this.sceneManager.updateMixerFromState();
+                    }
+                };
+            } else {
+                // Retry after a short delay
+                setTimeout(waitForController, 50);
+            }
+        }
+
+        // Fix mobile viewport height (for browser mode vs PWA mode)
+        function setViewportHeight() {
+            // Get actual viewport height (excludes browser UI)
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+
+        // Set on load
+        setViewportHeight();
+
+        // Update on resize (e.g., when address bar shows/hides)
+        window.addEventListener('resize', setViewportHeight);
+        window.addEventListener('orientationchange', setViewportHeight);
+
+        // Start waiting for controller
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', waitForController);
+        } else {
+            waitForController();
+        }
+    </script>
+
+    <script>
+        // Register Service Worker for PWA functionality (skip in Electron)
+        const isElectron = typeof process !== 'undefined' && process.versions && process.versions.electron;
+
+        if (isElectron) {
+            console.log(`[Meister] Running in Electron v${process.versions.electron}`);
+        }
+
+        if ('serviceWorker' in navigator && !isElectron) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then((registration) => {
+                        console.log('Service Worker registered:', registration.scope);
+
+                        // Check for updates every time the page loads
+                        registration.update();
+
+                        // Auto-reload when new service worker takes over
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+                                    console.log('New service worker activated - reloading page');
+                                    window.location.reload();
+                                }
+                            });
+                        });
+
+                        // Display cache version in About section
+                        if ('caches' in window) {
+                            caches.keys().then(cacheNames => {
+                                const meisterCache = cacheNames.find(name => name.startsWith('meister-'));
+                                const versionSpan = document.getElementById('cache-version');
+                                if (versionSpan) {
+                                    if (meisterCache) {
+                                        versionSpan.textContent = meisterCache;
+                                        versionSpan.style.color = '#4a4';
+                                    } else {
+                                        versionSpan.textContent = 'Not cached';
+                                        versionSpan.style.color = '#a44';
+                                    }
+                                }
+                            });
+                        }
+                    })
+                    .catch((error) => {
+                        console.log('Service Worker registration failed:', error);
+                        const versionSpan = document.getElementById('cache-version');
+                        if (versionSpan) {
+                            versionSpan.textContent = 'Not available (SW failed)';
+                            versionSpan.style.color = '#a44';
+                        }
+                    });
+
+                // Listen for service worker updates
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    console.log('Service worker updated');
+                });
+            });
+        }
+    </script>
+</body>
+</html>

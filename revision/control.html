@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revision Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #888;
+        }
+
+        .section {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            font-size: 14px;
+            color: #0066FF;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        button {
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #3a3a3a;
+            padding: 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #3a3a3a;
+            border-color: #4a4a4a;
+        }
+
+        button:active {
+            background: #0066FF;
+        }
+
+        .status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #444;
+            margin-right: 8px;
+        }
+
+        .status.connected {
+            background: #00ff00;
+            box-shadow: 0 0 8px #00ff00;
+        }
+
+        .status.spp {
+            background: #ffcc00;
+            box-shadow: 0 0 8px #ffcc00;
+            animation: pulse-spp 0.3s ease-out;
+        }
+
+        @keyframes pulse-spp {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .status.beat {
+            background: #00ff00;
+            box-shadow: 0 0 8px #00ff00;
+            animation: pulse-beat 0.15s ease-out;
+        }
+
+        @keyframes pulse-beat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+
+        .eq-container {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+            align-items: flex-end;
+            height: 120px;
+            background: #0a0a0a;
+            border: 1px solid #2a2a2a;
+            border-radius: 4px;
+            padding: 10px;
+        }
+
+        .eq-bar {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            height: 100%;
+        }
+
+        .eq-bar-container {
+            width: 100%;
+            flex: 1;
+            background: #1a1a1a;
+            border-radius: 3px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        /* Dark containers */
+        .eq-bar-container {
+            background: #0a0a0a;
+        }
+
+        /* Bar fills with gradients that stay fixed to container height */
+        .eq-bar-fill {
+            width: 100%;
+            border-radius: 3px;
+            position: absolute;
+            bottom: 0;
+            height: 0%;
+            transition: height 0.05s ease-out;
+            background-size: 100% 100px;
+            background-position: bottom;
+            background-repeat: no-repeat;
+        }
+
+        /* Bass - red/orange/yellow gradient */
+        .eq-bar:nth-child(1) .eq-bar-fill {
+            background-image: linear-gradient(to top, #660000, #FF2200, #FF6600, #FFAA00);
+            box-shadow: 0 0 15px rgba(255, 102, 0, 0.8);
+        }
+
+        /* Mid - green/lime/yellow gradient */
+        .eq-bar:nth-child(2) .eq-bar-fill {
+            background-image: linear-gradient(to top, #003300, #00CC00, #66FF00, #CCFF00);
+            box-shadow: 0 0 15px rgba(102, 255, 0, 0.8);
+        }
+
+        /* High - blue/cyan gradient */
+        .eq-bar:nth-child(3) .eq-bar-fill {
+            background-image: linear-gradient(to top, #002266, #0066FF, #00AAFF, #00FFFF);
+            box-shadow: 0 0 15px rgba(0, 170, 255, 0.8);
+        }
+
+        .eq-label {
+            font-size: 9px;
+            color: #666;
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        select {
+            width: 100%;
+            background: #0a0a0a;
+            color: #fff;
+            border: 1px solid #2a2a2a;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .preset-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .preset-item {
+            padding: 12px 15px;
+            background: #0a0a0a;
+            border: 1px solid #2a2a2a;
+            margin-bottom: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+            user-select: none; /* Prevent text selection interfering with clicks */
+            -webkit-user-select: none;
+            transition: background 0.1s ease;
+        }
+
+        .preset-item:hover {
+            background: #2a2a2a;
+        }
+
+        .preset-item.active {
+            background: #0066FF;
+            border-color: #0088FF;
+        }
+    </style>
+</head>
+<body>
+    <h1>REVISION CONTROL</h1>
+
+    <div class="section">
+        <h2>Connection <span class="status" id="connection-status" title="Connection Status"></span> <span class="status" id="spp-indicator" title="SPP Activity"></span></h2>
+        <div class="info" id="connection-info-text">Connected to program (WebSocket or BroadcastChannel)</div>
+        <div class="info" id="meister-target-info" style="display: none; margin-top: 5px; color: #00ff00; font-weight: bold;">
+            Target: <span id="meister-target-name">-</span>
+        </div>
+        <div class="info" style="margin-top: 5px;">BPM: <span id="current-bpm" style="color: #0066FF;">-</span> | Position: <span id="current-position" style="color: #0066FF;">-</span></div>
+        <div class="info" style="margin-top: 5px;">Audio Source: <span id="current-audio-device" style="color: #0066FF;">-</span></div>
+        <div class="info" style="margin-top: 5px;">Reactive Input: <span id="current-reactive-input" style="color: #0066FF;">-</span></div>
+        <div class="info" id="media-stats-compact" style="display: none; margin-top: 5px;">
+            Program mode: <span id="compact-mode" style="color: #0066FF;">-</span> |
+            <span id="compact-quality" style="color: #0066FF;">-</span> |
+            <span id="compact-bitrate" style="color: #0066FF;">-</span> |
+            Buffer: <span id="compact-buffer" style="color: #0066FF;">-</span> |
+            Dropped: <span id="compact-dropped" style="color: #0066FF;">-</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Reactive Information <span class="status" id="beat-indicator" title="Beat Detection"></span></h2>
+        <div class="eq-container">
+            <div class="eq-bar">
+                <div class="eq-bar-container">
+                    <div class="eq-bar-fill" id="bass-bar" style="height: 0%;"></div>
+                </div>
+                <div class="eq-label">Bass</div>
+            </div>
+            <div class="eq-bar">
+                <div class="eq-bar-container">
+                    <div class="eq-bar-fill" id="mid-bar" style="height: 0%;"></div>
+                </div>
+                <div class="eq-label">Mid</div>
+            </div>
+            <div class="eq-bar">
+                <div class="eq-bar-container">
+                    <div class="eq-bar-fill" id="high-bar" style="height: 0%;"></div>
+                </div>
+                <div class="eq-label">High</div>
+            </div>
+        </div>
+        <div class="info">Real-time frequency analysis and beat detection from active audio source</div>
+    </div>
+
+    <div class="section">
+        <h2>PREVIEW / Program</h2>
+
+        <!-- Mode Selector Tabs -->
+        <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+            <button onclick="switchPreviewMode('black')" id="preview-tab-black" style="flex: 1; padding: 10px; background: #0066FF; border: 1px solid #0088FF; border-radius: 4px; color: white; font-weight: bold; cursor: pointer;">Black</button>
+            <button onclick="switchPreviewMode('builtin')" id="preview-tab-builtin" style="flex: 1; padding: 10px; background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; color: #888; font-weight: bold; cursor: pointer;">Built-in</button>
+            <button onclick="switchPreviewMode('threejs')" id="preview-tab-threejs" style="flex: 1; padding: 10px; background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; color: #888; font-weight: bold; cursor: pointer;">Three.js</button>
+            <button onclick="switchPreviewMode('milkdrop')" id="preview-tab-milkdrop" style="flex: 1; padding: 10px; background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; color: #888; font-weight: bold; cursor: pointer;">Milkdrop</button>
+            <button onclick="switchPreviewMode('video')" id="preview-tab-video" style="flex: 1; padding: 10px; background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; color: #888; font-weight: bold; cursor: pointer;">Camera</button>
+            <button onclick="switchPreviewMode('media')" id="preview-tab-media" style="flex: 1; padding: 10px; background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; color: #888; font-weight: bold; cursor: pointer;">Media</button>
+            <button onclick="switchPreviewMode('stream')" id="preview-tab-stream" style="flex: 1; padding: 10px; background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; color: #888; font-weight: bold; cursor: pointer;">Stream</button>
+            <button onclick="switchPreviewMode('webpage')" id="preview-tab-webpage" style="flex: 1; padding: 10px; background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; color: #888; font-weight: bold; cursor: pointer;">Webpage</button>
+        </div>
+
+        <!-- Single Unified Preview Canvas -->
+        <div id="unified-preview-container" style="margin-bottom: 15px;">
+            <div id="preview-aspect-wrapper" style="display: block; position: relative; background: #000; border: 2px solid #0066FF; border-radius: 4px; overflow: hidden; max-width: 640px; max-height: 480px; margin: 0 auto; width: 640px; height: 360px;">
+                <canvas id="unified-preview-canvas" width="640" height="360" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block;"></canvas>
+                <div style="position: absolute; top: 5px; left: 5px; background: rgba(0,102,255,0.8); color: white; padding: 3px 8px; border-radius: 3px; font-size: 10px; font-weight: bold; z-index: 10;">PREVIEW</div>
+                <div id="preview-mode-label" style="position: absolute; top: 5px; right: 5px; background: rgba(0,102,255,0.8); color: white; padding: 3px 8px; border-radius: 3px; font-size: 10px; font-weight: bold; z-index: 10;">BLACK</div>
+            </div>
+        </div>
+
+        <div class="info" id="staged-info" style="margin-bottom: 10px;">Staged: <span id="staged-name" style="color: #0066FF; font-weight: bold;">Black Screen</span></div>
+
+        <!-- Single GO TO PROGRAM Button -->
+        <button onclick="goToProgram()" style="width: 100%; padding: 15px; background: #00aa00; border: 2px solid #00cc00; border-radius: 4px; color: white; font-weight: bold; font-size: 14px; cursor: pointer;">▶ GO TO PROGRAM</button>
+    </div>
+
+    <!-- Built-in Scene Controls -->
+    <div class="section" id="builtin-controls" style="display: block;">
+        <h2>Built-in Scenes</h2>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Renderer Mode</label>
+        <select id="renderer-select" style="width: 100%; margin-bottom: 15px;">
+            <option value="webgl">WebGL (Recommended)</option>
+            <option value="canvas2d">Canvas 2D</option>
+        </select>
+
+        <div class="button-grid">
+            <button onclick="previewBuiltinScene(0)" id="scene-0">Scene 1<br><small>Tunnel</small></button>
+            <button onclick="previewBuiltinScene(1)" id="scene-1">Scene 2<br><small>Particles</small></button>
+            <button onclick="previewBuiltinScene(2)" id="scene-2">Scene 3<br><small>Kaleidoscope</small></button>
+            <button onclick="previewBuiltinScene(3)" id="scene-3">Scene 4<br><small>Waveform</small></button>
+        </div>
+    </div>
+
+    <!-- Milkdrop Preset Controls -->
+    <div class="section" id="milkdrop-controls" style="display: none;">
+        <h2>Milkdrop Presets</h2>
+
+        <div class="button-grid">
+            <button onclick="stageMilkdropNav('prev')">◀ Previous</button>
+            <button onclick="stageMilkdropNav('next')">Next ▶</button>
+        </div>
+
+        <div class="preset-list" id="preset-list">
+            <!-- Populated dynamically -->
+        </div>
+    </div>
+
+    <!-- Three.js Preset Controls -->
+    <div class="section" id="threejs-controls" style="display: none;">
+        <h2>Three.js Presets</h2>
+
+        <div class="button-grid">
+            <button onclick="stageThreeJSNav('prev')">◀ Previous</button>
+            <button onclick="stageThreeJSNav('next')">Next ▶</button>
+        </div>
+
+        <div class="button-grid" id="threejs-preset-grid" style="margin-top: 15px;">
+            <button onclick="previewThreeJSPreset(0)" id="threejs-preset-0">Geometric<br><small>Shapes</small></button>
+            <button onclick="previewThreeJSPreset(1)" id="threejs-preset-1">Particles<br><small>Field</small></button>
+            <button onclick="previewThreeJSPreset(2)" id="threejs-preset-2">Spectrumscope<br><small>Frequency analysis</small></button>
+            <button onclick="previewThreeJSPreset(3)" id="threejs-preset-3">Oscilloscope<br><small>Time Domain</small></button>
+            <button onclick="previewThreeJSPreset(4)" id="threejs-preset-4">XY Scope<br><small>Oscilloscope Music</small></button>
+            <button onclick="previewThreeJSPreset(5)" id="threejs-preset-5">GB Logo<br><small>Gerard Braad</small></button>
+        </div>
+
+        <div id="preset-drop-zone" style="margin-top: 15px; padding: 20px; background: #0a0a0a; color: #666; border: 2px dashed #2a2a2a; border-radius: 4px; text-align: center; cursor: pointer; transition: all 0.2s;">
+            <div style="font-size: 12px; margin-bottom: 5px;">📦 Drop preset .js file to reload</div>
+            <div style="font-size: 10px;">No page reload needed</div>
+        </div>
+    </div>
+
+    <!-- Video Camera Controls -->
+    <div class="section" id="video-controls" style="display: none;">
+        <h2>Camera Feed <span id="video-perm-warning" style="color: #ff6600; font-size: 11px; display: none;">⚠️ Permission required - click PERMISSIONS in main window</span></h2>
+
+        <select id="video-device-select">
+            <option value="">No camera selected</option>
+        </select>
+        <div class="info" style="margin-top: 5px;">Select camera for preview</div>
+
+        <select id="video-resolution-select" style="margin-top: 10px;">
+            <option value="4k">4K (3840x2160)</option>
+            <option value="1080p" selected>1080p (1920x1080)</option>
+            <option value="720p">720p (1280x720)</option>
+            <option value="480p">480p (640x480)</option>
+        </select>
+        <div class="info" style="margin-top: 5px;">Video resolution (higher = better quality, more bandwidth)</div>
+
+        <select id="video-framerate-select" style="margin-top: 10px;">
+            <option value="60">60 FPS (smooth, high bandwidth)</option>
+            <option value="50">50 FPS (PAL, Europe)</option>
+            <option value="30" selected>30 FPS (balanced)</option>
+            <option value="25">25 FPS (PAL standard)</option>
+            <option value="24">24 FPS (cinematic)</option>
+            <option value="15">15 FPS (low bandwidth)</option>
+        </select>
+        <div class="info" style="margin-top: 5px;">Frame rate (60fps recommended for NDI)</div>
+
+        <label style="display: block; margin-top: 15px; font-size: 12px;">
+            <input type="checkbox" id="video-audio-reactive" style="width: auto; margin-right: 5px;">
+            Audio-reactive color effects (hue, saturation, brightness)
+        </label>
+
+        <label style="display: block; margin-top: 10px; font-size: 12px;">
+            <input type="checkbox" id="video-beat-reactive" style="width: auto; margin-right: 5px;">
+            Beat-reactive zoom pulse (4-on-the-floor)
+        </label>
+
+        <div style="margin-top: 15px;">
+            <button onclick="sendCommand('videoRelease')" style="width: 100%; padding: 10px;">Release Program Camera</button>
+            <div class="info" style="margin-top: 5px;">Release camera on main display</div>
+        </div>
+    </div>
+
+    <!-- Media File Controls (Images & Videos) -->
+    <div class="section" id="media-controls" style="display: none;">
+        <h2>Media Files (Images & Videos)</h2>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Select or Drop Media File</label>
+        <div id="media-drop-zone" style="width: 100%; padding: 30px; background: #0a0a0a; color: #666; border: 2px dashed #2a2a2a; border-radius: 4px; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 10px;">
+            <div style="font-size: 14px; margin-bottom: 5px;">📁 Drop media file here</div>
+            <div style="font-size: 11px;">or click to browse</div>
+        </div>
+        <input type="file" id="media-file-input" accept="image/*,video/*" style="display: none;">
+        <div class="info">Supports images (JPG, PNG, GIF) and videos (MP4, WebM)</div>
+
+        <div id="media-file-info" style="margin-top: 15px; padding: 10px; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 4px; display: none;">
+            <div style="font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 5px;">Selected File</div>
+            <div id="media-file-name" style="color: #0066FF; font-weight: bold; margin-bottom: 5px;">-</div>
+            <div id="media-file-type" style="font-size: 11px; color: #888;">-</div>
+            <div id="media-file-size" style="font-size: 11px; color: #888; margin-top: 3px;">-</div>
+        </div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">Fit Mode</label>
+        <select id="media-fit-mode" style="width: 100%; background: #0a0a0a; color: #fff; border: 1px solid #2a2a2a; padding: 10px; border-radius: 4px; margin-bottom: 5px;">
+            <option value="cover">Cover (Fill, may crop)</option>
+            <option value="contain">Contain (Fit all, may letterbox)</option>
+            <option value="fill">Stretch (Fill, may distort)</option>
+        </select>
+        <div class="info" style="margin-bottom: 10px;">How media should fit in the canvas</div>
+
+        <label style="display: block; margin-top: 10px; font-size: 12px;">
+            <input type="checkbox" id="media-loop" style="width: auto; margin-right: 5px;" checked>
+            Loop video playback
+        </label>
+
+        <label style="display: block; margin-top: 10px; font-size: 12px;">
+            <input type="checkbox" id="media-audio-reactive" style="width: auto; margin-right: 5px;">
+            Audio-reactive effects
+        </label>
+
+        <label style="display: block; margin-top: 10px; font-size: 12px;">
+            <input type="checkbox" id="media-beat-reactive" style="width: auto; margin-right: 5px;">
+            Beat-reactive zoom
+        </label>
+
+        <div style="margin-top: 15px;">
+            <button onclick="clearMediaFile()" style="width: 100%; padding: 10px;">Clear Media</button>
+            <div class="info" style="margin-top: 5px;">Clear loaded media file</div>
+        </div>
+    </div>
+
+    <!-- Stream Controls (HLS, WebRTC, RTMP) -->
+    <div class="section" id="stream-controls" style="display: none;">
+        <h2>Stream Sources (HLS, WebRTC, RTMP)</h2>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Stream URL</label>
+        <input type="text" id="stream-url" placeholder="https://example.com/stream.m3u8" style="width: 100%; background: #0a0a0a; color: #fff; border: 1px solid #2a2a2a; padding: 10px; border-radius: 4px; margin-bottom: 10px;" />
+        <div class="info">HLS (.m3u8), WebRTC, or direct stream URL</div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">Stream Type</label>
+        <select id="stream-type" style="width: 100%; background: #0a0a0a; color: #fff; border: 1px solid #2a2a2a; padding: 10px; border-radius: 4px; margin-bottom: 5px;">
+            <option value="auto">Auto-detect</option>
+            <option value="hls">HLS (HTTP Live Streaming)</option>
+            <option value="webrtc">WebRTC (Real-time)</option>
+            <option value="direct">Direct Video Stream</option>
+        </select>
+        <div class="info" style="margin-bottom: 10px;">Stream protocol to use</div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">Fit Mode</label>
+        <select id="stream-fit-mode" style="width: 100%; background: #0a0a0a; color: #fff; border: 1px solid #2a2a2a; padding: 10px; border-radius: 4px; margin-bottom: 5px;">
+            <option value="cover">Cover (Fill, may crop)</option>
+            <option value="contain">Contain (Fit all, may letterbox)</option>
+            <option value="fill">Stretch (Fill, may distort)</option>
+        </select>
+        <div class="info" style="margin-bottom: 10px;">How stream should fit in the canvas</div>
+
+        <label style="display: block; margin-top: 15px; font-size: 12px;">
+            <input type="checkbox" id="stream-audio-reactive" style="width: auto; margin-right: 5px;">
+            Audio-reactive effects
+        </label>
+
+        <label style="display: block; margin-top: 10px; font-size: 12px;">
+            <input type="checkbox" id="stream-beat-reactive" style="width: auto; margin-right: 5px;">
+            Beat-reactive zoom
+        </label>
+
+        <div style="margin-top: 15px;">
+            <button onclick="loadStreamPreview()" style="width: 100%; padding: 10px; background: #0066FF; border: 1px solid #0088FF;">Load Stream to Preview</button>
+            <div class="info" style="margin-top: 5px;">Load stream in preview before sending to program</div>
+        </div>
+
+        <div style="margin-top: 10px;">
+            <button onclick="releaseStream()" style="width: 100%; padding: 10px;">Release Stream</button>
+            <div class="info" style="margin-top: 5px;">Stop stream and free resources</div>
+        </div>
+
+        <!-- Stream Statistics -->
+        <div id="stream-stats" style="display: none; margin-top: 20px; padding: 15px; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 4px;">
+            <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 10px;">Stream Statistics</label>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
+                <div><span style="color: #666;">Quality:</span> <span id="stat-quality" style="color: #00ff00;">-</span></div>
+                <div><span style="color: #666;">Resolution:</span> <span id="stat-resolution" style="color: #00ff00;">-</span></div>
+
+                <div><span style="color: #666;">Bitrate:</span> <span id="stat-bitrate" style="color: #00ff00;">-</span></div>
+                <div><span style="color: #666;">Bandwidth:</span> <span id="stat-bandwidth" style="color: #00ff00;">-</span></div>
+
+                <div><span style="color: #666;">FPS:</span> <span id="stat-fps" style="color: #00ff00;">-</span></div>
+                <div><span style="color: #666;">Buffer:</span> <span id="stat-buffer" style="color: #00ff00;">-</span></div>
+
+                <div><span style="color: #666;">Dropped:</span> <span id="stat-dropped" style="color: #00ff00;">-</span></div>
+                <div><span style="color: #666;">Errors:</span> <span id="stat-errors" style="color: #00ff00;">-</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Webpage Controls -->
+    <div class="section" id="webpage-controls" style="display: none;">
+        <h2>Webpage Display (iframe)</h2>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Preset Webpages</label>
+        <div class="button-grid" style="margin-bottom: 15px;">
+            <button onclick="loadWebpagePreset('https://apps.gbraad.nl/analogue-clock/')" style="padding: 8px;">🕐 Analogue Clock</button>
+            <button onclick="loadWebpagePreset('https://phoboslab.org/wipeout/')" style="padding: 8px;">🏎️ Wipeout</button>
+            <button onclick="loadWebpagePreset('http://mrdoob.com/projects/chromeexperiments/ball/')" style="padding: 8px;">⚽ Ball Pool</button>
+            <button onclick="loadWebpagePreset('https://stars.chromeexperiments.com/')" style="padding: 8px;">⭐ 100,000 Stars</button>
+        </div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Custom Webpage URL</label>
+        <input type="text" id="webpage-url" placeholder="https://example.com" style="width: 100%; background: #0a0a0a; color: #fff; border: 1px solid #2a2a2a; padding: 10px; border-radius: 4px; margin-bottom: 10px;" />
+        <div class="info">Any webpage URL to display in iframe</div>
+
+        <label style="display: block; margin-top: 15px; font-size: 12px;">
+            <input type="checkbox" id="webpage-audio-reactive" style="width: auto; margin-right: 5px;">
+            Audio-reactive effects
+        </label>
+
+        <label style="display: block; margin-top: 10px; font-size: 12px;">
+            <input type="checkbox" id="webpage-beat-reactive" style="width: auto; margin-right: 5px;">
+            Beat-reactive zoom
+        </label>
+
+        <div style="margin-top: 15px; padding: 10px; background: rgba(255,165,0,0.1); border: 1px solid rgba(255,165,0,0.3); border-radius: 4px;">
+            <div style="font-size: 11px; color: #ffaa00; font-weight: bold; margin-bottom: 5px;">⚠️ CORS Limitations</div>
+            <div style="font-size: 10px; color: #888;">Some websites may block iframe embedding (X-Frame-Options). Websites on the same origin work best.</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>PROGRAM Settings</h2>
+        <div class="info" id="program-builtin-display" style="display: none;">Scene: <span id="program-builtin-name" style="color: #00ff00; font-weight: bold;">-</span></div>
+        <div class="info" id="program-preset-display" style="margin-top: 5px; display: none;">Preset: <span id="program-preset-name" style="color: #00ff00; font-weight: bold;">-</span></div>
+        <div class="info" id="program-renderer-display" style="margin-top: 5px; display: none;">Renderer: <span id="program-renderer-name" style="color: #00ff00; font-weight: bold;">-</span></div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px; border-top: 1px solid #2a2a2a; padding-top: 10px;">Output Resolution</label>
+        <select id="program-resolution" style="width: 100%; background: #0a0a0a; color: #fff; border: 1px solid #2a2a2a; padding: 10px; border-radius: 4px; margin-bottom: 5px;">
+            <option value="auto" selected>Auto (Match Window)</option>
+            <option value="100%">100% (Fill Container)</option>
+            <option value="1080p">1080p (1920x1080) - 16:9</option>
+            <option value="720p">720p (1280x720) - 16:9</option>
+            <option value="4k">4K (3840x2160) - 16:9</option>
+            <option value="square">Square (1080x1080) - 1:1 Social</option>
+            <option value="vertical">Vertical (1080x1920) - 9:16 Portrait</option>
+            <option value="custom">Custom (specify below)</option>
+        </select>
+        <div class="info" style="margin-bottom: 10px;">Program output size (affects performance, updates preview)</div>
+
+        <div id="custom-resolution-inputs" style="display: none; margin-bottom: 10px;">
+            <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Custom Width</label>
+            <input type="number" id="custom-width" placeholder="1920" min="320" max="7680" style="width: 100%; background: #0a0a0a; color: #fff; border: 1px solid #2a2a2a; padding: 10px; border-radius: 4px; margin-bottom: 10px;" value="1920" />
+
+            <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Custom Height</label>
+            <input type="number" id="custom-height" placeholder="1080" min="240" max="4320" style="width: 100%; background: #0a0a0a; color: #fff; border: 1px solid #2a2a2a; padding: 10px; border-radius: 4px; margin-bottom: 10px;" value="1080" />
+
+            <button onclick="applyCustomResolution()" style="width: 100%; padding: 10px; background: #0066FF; border: 1px solid #0088FF; border-radius: 4px; color: white; font-weight: bold; cursor: pointer;">Apply Custom Resolution</button>
+        </div>
+
+        <label style="display: block; margin-top: 10px; font-size: 12px; border-top: 1px solid #2a2a2a; padding-top: 10px;">
+            <input type="checkbox" id="global-audio-output" style="width: auto; margin-right: 5px;">
+            Enable audio output (unmute video/stream/camera)
+        </label>
+
+        <label style="display: block; margin-top: 10px; font-size: 12px;">
+            <input type="checkbox" id="global-audio-beat-reactive" style="width: auto; margin-right: 5px;">
+            Audio input monitoring (make microphone audible)
+        </label>
+
+        <label style="display: block; margin-top: 10px; font-size: 12px;">
+            <input type="checkbox" id="midi-synth-audible" style="width: auto; margin-right: 5px;">
+            MIDI synth audio output (hear notes and kick drum)
+        </label>
+    </div>
+
+    <div class="section">
+        <h2>Display Settings</h2>
+
+        <label style="display: block; margin-bottom: 10px; font-size: 12px;">
+            <input type="checkbox" id="show-status-bar" style="width: auto; margin-right: 5px;" checked>
+            Show Status Bar (Top)
+        </label>
+
+        <label style="display: block; margin-bottom: 10px; font-size: 12px;">
+            <input type="checkbox" id="show-control-panel" style="width: auto; margin-right: 5px;">
+            Show Control Panel (Bottom)
+        </label>
+
+        <label style="display: block; margin-bottom: 10px; font-size: 12px;">
+            <input type="checkbox" id="use-fullscreen" style="width: auto; margin-right: 5px;" disabled>
+            Fullscreen Active (use F11 to toggle)
+        </label>
+
+        <div class="info">Press F11 on main display to enter/exit fullscreen mode</div>
+    </div>
+
+    <div class="section">
+        <h2>Audio Input <span id="audio-perm-warning" style="color: #ff6600; font-size: 11px; display: none;">⚠️ Permission required - click PERMISSIONS in main window</span></h2>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">M1 Trim & EQ</label>
+        <div style="display: flex; gap: 15px; margin-bottom: 10px; justify-content: space-around;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <pad-knob id="input-gain" label="TRIM" sublabel="NEUTRAL" min="0" max="100" value="70" style="width: 130px; height: 170px;"></pad-knob>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                    <div id="trim-drive-led" style="width: 18px; height: 18px; border-radius: 50%; background-color: #300; border: 2px solid #666; box-shadow: inset 0 1px 2px rgba(0,0,0,0.5); transition: background-color 0.05s, box-shadow 0.05s;"></div>
+                    <div style="font-size: 11px; color: #aaa; font-weight: bold; margin-top: 2px;">DRIVE</div>
+                </div>
+            </div>
+            <pad-knob id="eq-low" label="LOW" sublabel="<250Hz\n0dB" min="0" max="100" value="50" style="width: 130px; height: 170px;"></pad-knob>
+            <pad-knob id="eq-mid" label="MID" sublabel="~1kHz\n0dB" min="0" max="100" value="50" style="width: 130px; height: 170px;"></pad-knob>
+            <pad-knob id="eq-high" label="HIGH" sublabel=">4kHz\n0dB" min="0" max="100" value="50" style="width: 130px; height: 170px;"></pad-knob>
+        </div>
+        <div class="info" style="margin-bottom: 15px;">TRIM: 70 = Neutral (0.7x), <70 = Reduce, >70 = Drive | EQ: 0 = Kill (-40dB), 50 = Neutral (0dB), 100 = Boost (+12dB)</div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px; margin-top: 15px; border-top: 1px solid #2a2a2a; padding-top: 15px;">Audio Source</label>
+        <select id="audio-input-source">
+            <option value="microphone" selected>Microphone</option>
+            <option value="media-feed">Media Feed (dedicated audio file/stream)</option>
+            <option value="program-media">Program Media (follows what's on screen)</option>
+        </select>
+        <div class="info" style="margin-top: 5px;">What audio to capture for analysis and MIDI output</div>
+
+        <!-- Microphone Configuration (shown when microphone is selected) -->
+        <div id="microphone-config" style="display: block;">
+            <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">Microphone Device</label>
+            <select id="audio-device-select">
+                <option value="none">No Audio Input</option>
+            </select>
+            <div class="info">Select microphone or audio input device</div>
+
+            <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">Sample Rate</label>
+            <select id="audio-samplerate-select">
+                <option value="48000" selected>48 kHz (studio quality)</option>
+                <option value="44100">44.1 kHz (CD quality)</option>
+                <option value="22050">22 kHz (voice quality)</option>
+                <option value="16000">16 kHz (low bandwidth)</option>
+            </select>
+            <div class="info" style="margin-top: 5px;">Preferred sample rate (browser may use system default instead)</div>
+        </div>
+
+        <!-- Media Feed Configuration (shown when media-feed is selected) -->
+        <div id="media-feed-config" style="display: none; margin-top: 15px; padding: 15px; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 4px;">
+            <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Media URL</label>
+            <input type="text" id="media-feed-url" placeholder="https://example.com/audio.mp3 or video.mp4" style="width: 100%; background: #1a1a1a; color: #fff; border: 1px solid #2a2a2a; padding: 10px; border-radius: 4px; margin-bottom: 10px;" />
+            <div class="info" style="margin-bottom: 10px;">Audio or video file URL to analyze (auto-detects file type)</div>
+
+            <div id="media-feed-status" style="display: none; margin-bottom: 10px; padding: 10px; border-radius: 4px; font-size: 12px;"></div>
+
+            <button onclick="loadMediaFeed()" style="width: 100%; padding: 10px; background: #0066FF; border: 1px solid #0088FF; border-radius: 4px; color: white; font-weight: bold; cursor: pointer; margin-bottom: 10px;">Load Media Feed</button>
+
+            <button onclick="releaseMediaFeed()" style="width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; color: white; cursor: pointer;">Release Media Feed</button>
+            <div class="info" style="margin-top: 5px;">Stop media feed and free resources</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Audio Analysis</h2>
+        <div class="info">Configure beat detection parameters</div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">Beat Detection Sensitivity</label>
+        <div style="margin-bottom: 10px;">
+            <cc-fader id="beat-threshold" label="Threshold" cc="1" value="16" min="10" max="30" horizontal="true" style="width: 100%; height: 50px;"></cc-fader>
+        </div>
+        <div class="info" style="margin-top: 5px;">
+            Lower = more sensitive (detects subtle beats), Higher = less sensitive (only strong transients)
+        </div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">Minimum Time Between Beats</label>
+        <div style="margin-bottom: 10px;">
+            <cc-fader id="beat-min-time" label="Cooldown" cc="2" value="400" min="50" max="500" horizontal="true" style="width: 100%; height: 50px;"></cc-fader>
+        </div>
+        <div class="info" style="margin-top: 5px;">
+            <span id="beat-min-time-value">400</span>ms cooldown (max <span id="beat-max-bpm">150</span> BPM)
+            <br>Lower = allows faster beats (high BPM), Higher = slower beats only
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Reactive Input</h2>
+        <select id="reactive-input-source">
+            <option value="audio" selected>Audio (uses Audio Input source)</option>
+            <option value="midi">MIDI Synthesizer</option>
+        </select>
+        <div class="info" style="margin-top: 5px;">What drives the visualization frequency data</div>
+    </div>
+
+    <div class="section">
+        <h2>Reactive Output</h2>
+        <div class="info">Generate reactive MIDI notes and send to MIDI output device</div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">Generate MIDI notes from:</label>
+
+        <label style="display: block; margin-bottom: 8px; font-size: 12px;">
+            <input type="checkbox" id="reactive-output-frequency" style="width: auto; margin-right: 5px;">
+            Audio-frequency analysis (FFT → MIDI)
+        </label>
+
+        <label style="display: block; margin-bottom: 10px; font-size: 12px;">
+            <input type="checkbox" id="reactive-output-beat-kick" style="width: auto; margin-right: 5px;">
+            Beat events (kick drum on C1)
+        </label>
+
+        <div class="info" style="margin-top: 5px; margin-bottom: 10px;">
+            Frequency bands → Notes: Sub(C1) Bass(C2) LowMid(C3) Mid(C4) HighMid(C5) High(C6)
+        </div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">MIDI Output Device</label>
+        <select id="midi-output-select">
+            <option value="">No MIDI outputs found</option>
+        </select>
+        <div class="info">MIDI device to send generated notes to</div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">Output Channel</label>
+        <select id="midi-output-channel">
+            <option value="all">Omni (All Channels)</option>
+            <option value="0">MIDI Channel 1</option>
+            <option value="1">MIDI Channel 2</option>
+            <option value="2">MIDI Channel 3</option>
+            <option value="3">MIDI Channel 4</option>
+            <option value="4">MIDI Channel 5</option>
+            <option value="5">MIDI Channel 6</option>
+            <option value="6">MIDI Channel 7</option>
+            <option value="7">MIDI Channel 8</option>
+            <option value="8">MIDI Channel 9</option>
+            <option value="9">MIDI Channel 10 (Drums)</option>
+            <option value="10">MIDI Channel 11</option>
+            <option value="11">MIDI Channel 12</option>
+            <option value="12">MIDI Channel 13</option>
+            <option value="13">MIDI Channel 14</option>
+            <option value="14">MIDI Channel 15</option>
+            <option value="15">MIDI Channel 16</option>
+        </select>
+        <div class="info">MIDI channel for generated notes</div>
+    </div>
+
+    <div class="section">
+        <h2>MIDI Synthesizer</h2>
+        <div class="info">Synthesizes audio from MIDI notes for visualization and audio output</div>
+
+        <label style="display: block; margin-top: 10px; font-size: 13px; font-weight: bold;">
+            <input type="checkbox" id="midi-synth-enable" style="width: auto; margin-right: 5px;">
+            Enable MIDI Synthesizer
+        </label>
+        <div class="info" style="margin-top: 5px;">Creates audio synthesizer from MIDI input. Required for MIDI reactive visualization.</div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">Synth Engine</label>
+        <select id="midi-synth-engine">
+            <option value="simple">Simple (Web Audio Oscillators)</option>
+            <option value="rgresonate1">RGResonate1 (WASM Polyphonic)</option>
+        </select>
+        <div class="info" style="margin-top: 5px;">
+            Select synthesizer engine. Simple uses basic oscillators. RGResonate1 uses WASM-based polyphonic synthesis with filters and envelopes.
+        </div>
+
+        <label style="display: block; margin-top: 10px; font-size: 12px;">
+            <input type="checkbox" id="midi-synth-beat-kick" style="width: auto; margin-right: 5px;">
+            Generate kick drum from beat events
+        </label>
+        <div class="info" style="margin-top: 5px;">
+            Triggers a kick drum on each beat (from MIDI clock OR audio beat detection). Enable "MIDI synth audio output" in PROGRAM Output to hear it.
+        </div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">Drum Engine</label>
+        <select id="beat-kick-processor">
+            <option value="oscillator">Simple (Web Audio Oscillators)</option>
+            <option value="rg909">RG909 (WASM Drum Synth)</option>
+        </select>
+        <div class="info" style="margin-top: 5px;">
+            Choose which sound engine generates the beat kick. RG909 provides authentic TR-909 bass drum sound.
+        </div>
+
+        <label style="display: block; margin-top: 10px; font-size: 12px;">
+            <input type="checkbox" id="midi-synth-auto-feed" style="width: auto; margin-right: 5px;">
+            Auto-feed notes from Reactive Output to MIDI synth
+        </label>
+        <div class="info" style="margin-top: 5px;">
+            Feed notes generated by Reactive Output section back to MIDI synth (frequency notes + beat kicks)
+        </div>
+
+        <label style="display: block; margin-top: 10px; font-size: 12px;">
+            <input type="checkbox" id="midi-synth-feed-input" style="width: auto; margin-right: 5px;">
+            Feed MIDI input notes to synth
+        </label>
+        <div class="info" style="margin-top: 5px;">
+            Routes notes from MIDI input device(s) to the synthesizer
+        </div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">Note Duration</label>
+        <div style="margin-bottom: 10px;">
+            <cc-fader id="audio-note-duration" label="Duration" cc="3" value="60" min="30" max="500" horizontal="true" style="width: 100%; height: 50px;"></cc-fader>
+        </div>
+        <div class="info" style="margin-top: 5px;">
+            <span id="audio-note-duration-value">60</span>ms duration
+            <br>Shorter = staccato (clean, no overlap), Longer = legato (blend, may stack)
+        </div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">MIDI Input for Synth Notes</label>
+        <select id="midi-synth-input-select">
+            <option value="">No MIDI devices found</option>
+        </select>
+        <div class="info" style="margin-top: 5px;">
+            Separate from clock/SPP input. Can loop audio-reactive output back via virtual MIDI cable.
+        </div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">MIDI Channel Filter</label>
+        <select id="midi-synth-channel">
+            <option value="all">Omni (All Channels)</option>
+            <option value="0">MIDI Channel 1</option>
+            <option value="1">MIDI Channel 2</option>
+            <option value="2">MIDI Channel 3</option>
+            <option value="3">MIDI Channel 4</option>
+            <option value="4">MIDI Channel 5</option>
+            <option value="5">MIDI Channel 6</option>
+            <option value="6">MIDI Channel 7</option>
+            <option value="7">MIDI Channel 8</option>
+            <option value="8">MIDI Channel 9</option>
+            <option value="9">MIDI Channel 10 (Drums)</option>
+            <option value="10">MIDI Channel 11</option>
+            <option value="11">MIDI Channel 12</option>
+            <option value="12">MIDI Channel 13</option>
+            <option value="13">MIDI Channel 14</option>
+            <option value="14">MIDI Channel 15</option>
+            <option value="15">MIDI Channel 16</option>
+        </select>
+    </div>
+
+    <div class="section">
+        <h2>MIDI Control Device <span id="midi-perm-warning" style="color: #ff6600; font-size: 11px; display: none;">⚠️ Permission required - click PERMISSIONS in main window</span></h2>
+        <select id="midi-input-select">
+            <option value="">No MIDI devices found</option>
+        </select>
+        <div class="info">MIDI input for clock/SPP timing and scene control</div>
+
+        <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">Enable SysEx</label>
+        <select id="sysex-enable">
+            <option value="true">Yes (requires permission)</option>
+            <option value="false">No</option>
+        </select>
+        <div class="info" style="margin-top: 5px;">Allow MIDI SysEx messages (requires page reload)</div>
+    </div>
+
+    <div class="section">
+        <h2>Control/MIDI over WebRTC (Network)</h2>
+        <div class="info" style="margin-bottom: 15px;">
+            Receive MIDI and/or Control over network.
+            <br><br>
+            <a href="midi-bridge.html" target="_blank" style="display: inline-block; padding: 8px 16px; background: #0066FF; color: white; text-decoration: none; border-radius: 4px; font-weight: 600; margin-bottom: 10px;">
+                🌉 Open MIDI Bridge (Configure Roles)
+            </a>
+        </div>
+
+        <div id="webrtc-status" style="padding: 10px; border-radius: 4px; margin-bottom: 15px; background: #0a0a0a; border: 1px solid #2a2a2a; color: #666; font-size: 12px;">
+            ⚪ Not configured
+        </div>
+
+        <label style="display: block; margin-bottom: 10px; font-size: 12px;">
+            <input type="checkbox" id="webrtc-midi-enable" style="width: auto; margin-right: 5px;">
+            Enable MIDI over WebRTC
+        </label>
+
+        <div id="webrtc-config" style="display: none;">
+            <div id="webrtc-setup" style="display: block;">
+                <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-top: 15px; margin-bottom: 5px;">Step 1: Paste Offer from Bridge</label>
+            <textarea id="webrtc-offer-input" placeholder="Paste the offer from midi-bridge.html here..." style="width: 100%; height: 150px; background: #0a0a0a; color: #fff; border: 1px solid #2a2a2a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; margin-bottom: 10px;"></textarea>
+
+            <button onclick="generateWebRTCAnswer()" style="width: 100%; padding: 10px; background: #0066FF; border: 1px solid #0088FF; border-radius: 4px; color: white; font-weight: bold; cursor: pointer; margin-bottom: 15px;">Generate Answer</button>
+
+            <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Step 2: Copy Answer and Paste in Bridge</label>
+            <textarea id="webrtc-answer-output" readonly placeholder="Answer will appear here..." style="width: 100%; height: 150px; background: #0a0a0a; color: #0f0; border: 1px solid #2a2a2a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; margin-bottom: 10px;"></textarea>
+
+            <button onclick="navigator.clipboard.writeText(document.getElementById('webrtc-answer-output').value)" style="width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; color: white; cursor: pointer; margin-bottom: 15px;">Copy Answer to Clipboard</button>
+            </div>
+
+            <button onclick="disconnectWebRTCMIDI()" style="width: 100%; padding: 10px; background: #cc0000; border: 1px solid #ff0000; border-radius: 4px; color: white; cursor: pointer; margin-top: 15px;">Disconnect</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>OSC Server (Optional)</h2>
+        <input type="text" id="osc-server" placeholder="ws://localhost:8080" style="width: 100%; background: #0a0a0a; color: #fff; border: 1px solid #2a2a2a; padding: 10px; border-radius: 4px;" />
+        <div class="info">WebSocket OSC server for external control</div>
+    </div>
+
+    <div class="section">
+        <h2>About</h2>
+        <div style="color: #666; font-size: 0.85em; line-height: 1.6;">
+            Revision v1.0<br>
+            MIDI VJ<br>
+            Cache: <span id="cache-version" style="color: #888;">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Butterchurn for Milkdrop preview (local files) -->
+    <script src="external/butterchurn.min.js"></script>
+    <script src="external/butterchurnPresets.min.js"></script>
+
+    <!-- Three.js for 3D preview (global build) -->
+    <script src="external/three.min.js"></script>
+
+    <!-- HLS.js for live streaming (local file) -->
+    <script src="external/hls.min.js"></script>
+
+    <!-- Renderers for preview -->
+    <script src="renderers/video-renderer.js"></script>
+    <script src="visuals/renderer.js"></script>
+    <script src="scenes/scene-manager.js"></script>
+    <script src="renderers/threejs-renderer.js"></script>
+    <script src="presets/threejs/BasePreset.js"></script>
+
+    <!-- Remote Channel for WebSocket communication -->
+    <script src="utils/remote-channel.js"></script>
+
+    <!-- Pad Knob component for EQ controls -->
+    <script type="module" src="utils/pad-knob.js"></script>
+
+    <!-- Fader components for sliders -->
+    <script type="module" src="utils/svg-slider.js"></script>
+    <script type="module" src="utils/fader-components.js"></script>
+
+    <!-- WASM Effects -->
+    <script src="effects/effect-eq.js"></script>
+
+    <script src="control.js"></script>
+</body>
+</html>
+

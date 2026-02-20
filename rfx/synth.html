@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regrooved Synthesizer Tester</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="top-banner">
+        <a href="index.html" class="back-button">◄</a>
+        <div class="banner-title">Synth Tester</div>
+    </div>
+    <div class="container">
+        <!-- Audio Analysis and Playback sections side by side -->
+        <div style="display: grid; grid-template-columns: 1fr auto; gap: 15px; margin-bottom: 20px;">
+            <!-- Audio Analysis Section -->
+            <div class="section" style="margin-bottom: 0;">
+                <div class="section-title">Audio Analysis</div>
+                <div class="viz-container">
+                    <div class="visualizer-container">
+                        <canvas id="freq-viz"></canvas>
+                    </div>
+                    <div class="visualizer-container">
+                        <canvas id="waveform"></canvas>
+                    </div>
+                    <div class="visualizer-container">
+                        <canvas id="spectrum"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playback Section -->
+            <div class="section" style="margin-bottom: 0;">
+                <div class="section-title">Playback</div>
+
+                <div style="display: flex; gap: 12px; justify-content: center; padding-top: 10px;">
+                    <!-- Tempo Fader (Disabled for now) -->
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; opacity: 0.4; pointer-events: none;">
+                        <div style="text-align: center; color: #666; font-size: 0.65em; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">BPM</div>
+                        <svg-slider id="synthTempoFader" value="64" min="0" max="127" width="45" color="#666" style="height: 280px;"></svg-slider>
+                        <div id="synthTempoValue" style="text-align: center; color: #666; font-size: 0.75em; font-weight: bold; min-height: 1.2em;">120</div>
+                    </div>
+
+                    <!-- Volume Fader -->
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                        <div style="text-align: center; color: #aaaaaa; font-size: 0.65em; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Vol</div>
+                        <svg-slider id="synthGainFader" value="127" min="0" max="127" width="45" color="#CF1A37" style="height: 280px;"></svg-slider>
+                        <div id="synthGainValue" style="text-align: center; color: #ffffff; font-size: 0.75em; font-weight: bold; min-height: 1.2em;">100%</div>
+                    </div>
+                </div>
+
+                <!-- Output Device Selector -->
+                <div style="margin-top: 15px; padding: 0 10px;">
+                    <select id="synthOutputDeviceList" style="width: 120px; font-size: 0.6em; padding: 4px 6px; background: #2a2a2a; color: #fff; border: 1px solid #3a3a3a;">
+                        <option value="">Default Output</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- On-screen Keyboard -->
+        <div class="section">
+            <div class="section-title">On-Screen Keyboard</div>
+            <button class="keyboard-toggle" id="keyboardToggle">
+                ⌨️ Show Keyboard
+            </button>
+            <div class="keyboard-container" id="keyboardContainer">
+                <div class="keyboard-controls">
+                    <label>MIDI Channel:</label>
+                    <select id="keyboardChannel">
+                        <option value="0" selected>Channel 1 (Synth)</option>
+                        <option value="1">Channel 2</option>
+                        <option value="2">Channel 3</option>
+                        <option value="3">Channel 4</option>
+                        <option value="4">Channel 5</option>
+                        <option value="5">Channel 6</option>
+                        <option value="6">Channel 7</option>
+                        <option value="7">Channel 8</option>
+                        <option value="8">Channel 9</option>
+                        <option value="9">Channel 10 (Drums)</option>
+                        <option value="10">Channel 11</option>
+                        <option value="11">Channel 12</option>
+                        <option value="12">Channel 13</option>
+                        <option value="13">Channel 14</option>
+                        <option value="14">Channel 15</option>
+                        <option value="15">Channel 16</option>
+                    </select>
+                    <div class="octave-controls">
+                        <button class="octave-btn" id="octaveDown">-</button>
+                        <span id="octaveDisplay" style="color: #0066FF; min-width: 40px; text-align: center; font-weight: bold;">C3</span>
+                        <button class="octave-btn" id="octaveUp">+</button>
+                    </div>
+                    <button id="btnKeyboardFullscreen" style="margin-left: auto;">⛶ Fullscreen</button>
+                </div>
+                <div class="piano-keyboard" id="pianoKeyboard"></div>
+                <div class="keyboard-info">
+                    <span>Click keys to play. Use mouse or touch.</span>
+                    <span id="lastNote" style="color: #0066FF;">-</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MIDI Input Section -->
+        <div class="section">
+            <div class="section-title">MIDI Input Source</div>
+            <div class="midi-source">
+                <select id="midiInput">
+                    <option value="">Select MIDI Input...</option>
+                </select>
+                <button id="webrtcBtn">WebRTC MIDI</button>
+            </div>
+            <div class="status">
+                <div class="status-item" id="midiStatus">
+                    MIDI: <span>Not Connected</span>
+                </div>
+                <div class="status-item" id="synthStatus">
+                    Synth: <span>Not Initialized</span>
+                </div>
+            </div>
+
+            <!-- WebRTC MIDI Configuration (collapsible) -->
+            <div id="webrtc-config" style="display: none; margin-top: 15px; padding: 15px; background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 4px;">
+                <div style="padding: 10px; border-radius: 4px; margin-bottom: 15px; background: #0a0a0a; border: 1px solid #2a2a2a; font-size: 12px;" id="webrtc-status">
+                    ⚪ Not Connected
+                </div>
+
+                <div id="webrtc-setup">
+                    <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Step 1: Paste Offer from MIDI Bridge</label>
+                    <textarea id="webrtc-offer-input" placeholder="Paste the offer from midi-bridge here..." style="width: 100%; height: 120px; background: #0a0a0a; color: #fff; border: 1px solid #2a2a2a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; margin-bottom: 10px; resize: vertical;"></textarea>
+
+                    <button id="btnGenerateAnswer" style="width: 100%; padding: 10px; background: #0066FF; border: 1px solid #0088FF; border-radius: 4px; color: white; font-weight: bold; cursor: pointer; margin-bottom: 15px;">Generate Answer</button>
+
+                    <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Step 2: Copy Answer and Paste in MIDI Bridge</label>
+                    <textarea id="webrtc-answer-output" readonly placeholder="Answer will appear here..." style="width: 100%; height: 120px; background: #0a0a0a; color: #0f0; border: 1px solid #2a2a2a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; margin-bottom: 10px; resize: vertical;"></textarea>
+
+                    <button id="btnCopyAnswer" style="width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; color: white; cursor: pointer; margin-bottom: 15px;">Copy Answer to Clipboard</button>
+                </div>
+
+                <button id="btnDisconnectWebRTC" style="width: 100%; padding: 10px; background: #cc0000; border: 1px solid #ff0000; border-radius: 4px; color: white; cursor: pointer;">Disconnect</button>
+            </div>
+        </div>
+
+        <!-- Synth Engine -->
+        <div class="section">
+            <div class="section-title">Synth Engine</div>
+            <div class="synth-engines" style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                <button id="btnInitSimple">Simple Synth</button>
+                <button id="btnInitRGResonate1">RGResonate1</button>
+                <button id="btnInitRGAHX">RGAHX</button>
+                <button id="btnInitRGSID">RGSID</button>
+                <button id="btnInitRG1Piano">RG1Piano</button>
+                <button id="btnInitRGSFZ">RGSFZ Sampler</button>
+                <button id="btnInitRGSlicer">RGSlicer</button>
+            </div>
+            <div class="info">
+                Simple: Basic Web Audio oscillators<br>
+                RGResonate1: WASM polyphonic synthesizer with resonant filters<br>
+                RGAHX: WASM Amiga AHX/HivelyTracker synthesizer (authentic algorithms)<br>
+                RGSID: WASM Commodore 64 SID chip synthesizer (3-voice, filter, ring mod)<br>
+                RG1Piano: WASM M1 Piano with modal synthesis<br>
+                RGSFZ: SFZ sampler with WAV sample playback<br>
+                RGSlicer: Slicing sampler with WAV+CUE support (maps slices to MIDI notes 36-99)
+            </div>
+
+            <!-- RGAHX Synth Controls (AUTO-GENERATED from parameter metadata) -->
+            <synth-ui id="rgahxControls" synth="rgahx" style="display: none;"></synth-ui>
+
+            <!-- RGAHX PList Editor -->
+            <div id="plistEditor" style="display: none; margin-top: 15px; padding: 15px; background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div style="color: #0066FF; font-size: 12px; letter-spacing: 1px;">PERFORMANCE LIST (PLIST) EDITOR</div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="btnImportAHXP">Import .ahxp</button>
+                        <button id="btnImportText">Import .txt</button>
+                        <button id="btnTogglePList" style="padding: 5px 10px;">Show PList ▼</button>
+                    </div>
+                </div>
+                <input type="file" id="ahxpFileInput" accept=".ahxp" style="display: none;">
+                <input type="file" id="presetFileInput" accept=".txt" style="display: none;">
+
+                <div id="plistContent" style="display: none;">
+                    <!-- PList Controls -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; align-items: center;">
+                        <label style="font-size: 12px;">
+                            PList Speed:
+                            <input type="number" id="plistSpeed" min="1" max="255" value="6" style="width: 60px; margin-left: 5px;">
+                        </label>
+                        <span id="plistLength" style="font-size: 12px; color: #666;">Length: 0</span>
+                        <button id="btnAddPListEntry">Add Entry</button>
+                        <button id="btnRemovePListEntry">Remove Last</button>
+                        <button id="btnClearPList">Clear All</button>
+                    </div>
+
+                    <!-- PList Table -->
+                    <div style="overflow-x: auto; overflow-y: auto; max-height: 400px; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 4px; margin-bottom: 15px;">
+                        <table id="plistTable" style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                            <thead style="position: sticky; top: 0; background: #1a1a1a; border-bottom: 1px solid #2a2a2a;">
+                                <tr>
+                                    <th style="padding: 8px; text-align: left; color: #0066FF;">#</th>
+                                    <th style="padding: 8px; text-align: left; color: #0066FF;">Note</th>
+                                    <th style="padding: 8px; text-align: center; color: #0066FF;">Fixed</th>
+                                    <th style="padding: 8px; text-align: left; color: #0066FF;">Wave</th>
+                                    <th style="padding: 8px; text-align: left; color: #0066FF;">FX1</th>
+                                    <th style="padding: 8px; text-align: left; color: #0066FF;">FX1 Param</th>
+                                    <th style="padding: 8px; text-align: left; color: #0066FF;">FX2</th>
+                                    <th style="padding: 8px; text-align: left; color: #0066FF;">FX2 Param</th>
+                                </tr>
+                            </thead>
+                            <tbody id="plistTableBody">
+                                <!-- Entries will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Preset Operations -->
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding-top: 10px; border-top: 1px solid #2a2a2a;">
+                        <label style="font-size: 12px;">
+                            Preset Name:
+                            <input type="text" id="presetName" value="My Preset" maxlength="63" style="width: 200px; margin-left: 5px;">
+                        </label>
+                        <button id="btnExportAHXP">Export .ahxp</button>
+                        <button id="btnExportText">Export .txt</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RGSID Synth Controls (AUTO-GENERATED from parameter metadata) -->
+            <synth-ui id="rgsidControls" synth="rgsid" style="display: none;"></synth-ui>
+
+
+            <!-- RGSFZ Sampler Controls (shown after initialization) -->
+            <div id="rgsfzControls" style="display: none; margin-top: 15px; padding: 15px; background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 4px;">
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <input type="file" id="sfzFileInput" accept=".sfz" style="display: none;">
+                    <button id="btnLoadSFZ">Load SFZ File</button>
+                    <span id="sfzFileName" style="color: #666; font-size: 12px;"></span>
+                </div>
+                <div id="sfzRegions" style="font-size: 11px; font-family: monospace; color: #888; max-height: 150px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; display: none; margin-bottom: 10px;">
+                    <!-- Regions will be listed here -->
+                </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                    <input type="file" id="wavFilesInput" accept=".wav" multiple style="display: none;">
+                    <button id="btnLoadWAVs" disabled>Load WAV Samples</button>
+                    <span id="wavLoadStatus" style="color: #666; font-size: 12px;"></span>
+                </div>
+                <div class="info" style="font-size: 11px;">
+                    1. Load SFZ file to define regions<br>
+                    2. Load WAV files (select all samples referenced in SFZ)<br>
+                    3. Play via MIDI or on-screen keyboard
+                </div>
+            </div>
+
+            <!-- RGSlicer Controls (shown after initialization) -->
+            <synth-ui id="rgslicerControls" synth="rgslicer" style="display: none;"></synth-ui>
+
+            <div id="rgslicerWavControls" style="display: none; margin-top: 15px; padding: 15px; background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 4px;">
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <input type="file" id="slicerWavInput" accept=".wav" style="display: none;">
+                    <button id="btnLoadSlicerWav">Load WAV File</button>
+                    <span id="slicerWavFileName" style="color: #666; font-size: 12px;"></span>
+                </div>
+                <div id="slicerInfo" style="font-size: 11px; font-family: monospace; color: #888; background: #0a0a0a; padding: 10px; border-radius: 4px; display: none; margin-bottom: 10px;">
+                    <!-- Slice info will be shown here -->
+                </div>
+                <div class="info" style="font-size: 11px;">
+                    1. Load WAV file (optionally with embedded CUE points)<br>
+                    2. Slices map to <strong>WHITE KEYS</strong> only (C2, D2, E2, F2, ...)<br>
+                    3. <strong>Note 37 (C#2/Db2)</strong> plays entire sample<br>
+                    4. Black keys reserved for functions (future use)<br>
+                    5. Adjust slice mode and parameters to re-slice
+                </div>
+            </div>
+        </div>
+
+        <!-- RG909 Drum Machine -->
+        <div class="section">
+            <div class="section-title">Drum Engine</div>
+            <div class="synth-engines" style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button id="btnInitDrum">RG909 Drum</button>
+                <button id="btnInitAHXDrum">RGAHX Drum</button>
+                <button id="btnRenderDrums" disabled>Render All Drums to WAV</button>
+            </div>
+            <div id="renderStatus" style="font-size: 12px; color: #666; margin-bottom: 15px;"></div>
+            <button id="btnDrumFullscreen" style="margin-bottom: 10px;">⛶ Fullscreen Drum Pads</button>
+            <div class="drum-pads">
+                <div class="drum-pad" data-note="36">
+                    <div class="drum-pad-name">Bass Drum</div>
+                    <div class="drum-pad-note">C1 (36)</div>
+                </div>
+                <div class="drum-pad" data-note="38">
+                    <div class="drum-pad-name">Snare</div>
+                    <div class="drum-pad-note">D1 (38)</div>
+                </div>
+                <div class="drum-pad" data-note="37">
+                    <div class="drum-pad-name">Rimshot</div>
+                    <div class="drum-pad-note">C#1 (37)</div>
+                </div>
+                <div class="drum-pad" data-note="39">
+                    <div class="drum-pad-name">Hand Clap</div>
+                    <div class="drum-pad-note">D#1 (39)</div>
+                </div>
+                <div class="drum-pad" data-note="41">
+                    <div class="drum-pad-name">Tom Low</div>
+                    <div class="drum-pad-note">F1 (41)</div>
+                </div>
+                <div class="drum-pad" data-note="47">
+                    <div class="drum-pad-name">Tom Mid</div>
+                    <div class="drum-pad-note">B1 (47)</div>
+                </div>
+                <div class="drum-pad" data-note="50">
+                    <div class="drum-pad-name">Tom High</div>
+                    <div class="drum-pad-note">D2 (50)</div>
+                </div>
+                <div class="drum-pad" data-note="36">
+                    <div class="drum-pad-name">-</div>
+                    <div class="drum-pad-note">-</div>
+                </div>
+            </div>
+            <div class="info">
+                Click pads to trigger drums. MIDI notes C1-C#2 (36-49) trigger different drum sounds.
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Custom UI components -->
+    <script type="module" src="components/svg-slider.js"></script>
+    <script type="module" src="components/pad-knob.js"></script>
+
+    <!-- Synth auto-discovery system -->
+    <script src="synth-registry.js"></script>
+    <script type="module" src="synth-ui.js"></script>
+
+    <!-- Piano keyboard component -->
+    <script src="components/piano-keyboard.js"></script>
+
+    <!-- Load MIDI stack (ES6 modules not needed for standalone scripts) -->
+    <script src="external/midi-manager.js"></script>
+    <script src="external/frequency-analyzer.js"></script>
+    <script src="external/midi-audio-synth.js"></script>
+    <script src="external/rgresonate1-synth.js"></script>
+    <script src="external/rgahxsynth-synth.js"></script>
+    <script src="external/rgsid-synth.js"></script>
+    <script src="external/rg1piano-synth.js"></script>
+    <script src="external/rg909-drum.js"></script>
+    <script src="external/rgahxdrum.js"></script>
+    <script src="external/rgslicer-synth.js"></script>
+    <script src="external/rgsfz-synth.js"></script>
+
+    <!-- Load WASM modules -->
+    <script src="synths/rg909-drum.js"></script>
+    <script src="synths/rgahxdrum.js"></script>
+
+    <!-- WebRTC MIDI (loaded as module) -->
+    <script type="module" src="external/midi-rtc-bridge.js"></script>
+    <script type="module">
+        // Import and expose BrowserMIDIRTC globally for non-module scripts
+        import { BrowserMIDIRTC } from './external/midi-rtc-bridge.js';
+        window.BrowserMIDIRTC = BrowserMIDIRTC;
+    </script>
+
+    <!-- Visualization components -->
+    <script src="components/freq-bars-analyzer.js"></script>
+
+    <script src="synth.js" type="module"></script>
+
+    <!-- Fullscreen Scope Functionality -->
+    <script>
+        // Track popup windows for each visualizer
+        const popupWindows = new Map();
+        window.popupWindows = popupWindows; // Expose globally for synth.js
+
+        // Pop-out visualizer to separate window
+        function popOutVisualizer(container) {
+            const canvas = container.querySelector('canvas');
+            if (!canvas) {
+                console.error('[PopOut] No canvas found in container');
+                return;
+            }
+
+            const canvasId = canvas.id;
+            console.log(`[PopOut] Attempting to pop out: ${canvasId}`);
+
+            // Don't open duplicate popups
+            if (popupWindows.has(canvasId)) {
+                const existing = popupWindows.get(canvasId);
+                if (existing.window && !existing.window.closed) {
+                    existing.window.focus();
+                    console.log(`[PopOut] ${canvasId} popup already open, focusing`);
+                    return;
+                } else {
+                    // Clean up stale reference
+                    popupWindows.delete(canvasId);
+                }
+            }
+
+            const popup = window.open('', `scope_${canvasId}`, 'width=800,height=600,resizable=yes,scrollbars=no,location=no,menubar=no,status=no,toolbar=no');
+            if (!popup) {
+                alert('Pop-up blocked! Please allow pop-ups for this site.');
+                console.error('[PopOut] Popup was blocked');
+                return;
+            }
+
+            popup.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>${canvasId.toUpperCase()} - Regroove Scope</title>
+                    <style>
+                        body {
+                            margin: 0;
+                            background: #0a0a0a;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            overflow: hidden;
+                        }
+                        canvas {
+                            width: 100%;
+                            height: 100vh;
+                            display: block;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <canvas id="${canvasId}_popup"></canvas>
+                </body>
+                </html>
+            `);
+            popup.document.close();
+
+            const popupCanvas = popup.document.getElementById(`${canvasId}_popup`);
+            popupCanvas.width = 800;
+            popupCanvas.height = 600;
+
+            // Store reference to popup and its canvas
+            popupWindows.set(canvasId, { window: popup, canvas: popupCanvas });
+            console.log(`[PopOut] Opened ${canvasId} in new window`);
+
+            // Handle popup close
+            popup.addEventListener('beforeunload', () => {
+                popupWindows.delete(canvasId);
+                console.log(`[PopOut] Closed ${canvasId} popup`);
+            });
+
+            // Resize popup canvas when window resizes
+            popup.addEventListener('resize', () => {
+                popupCanvas.width = popup.innerWidth;
+                popupCanvas.height = popup.innerHeight;
+                console.log(`[PopOut] Resized ${canvasId} popup canvas to ${popupCanvas.width}x${popupCanvas.height}`);
+            });
+        }
+
+        // Enable fullscreen and pop-out for all visualizer containers
+        function setupFullscreen() {
+            const containers = document.querySelectorAll('.visualizer-container');
+            console.log('[Fullscreen] Setting up for', containers.length, 'visualizer containers');
+
+            containers.forEach((container, idx) => {
+                // Check if buttons already exist
+                if (container.querySelector('.viz-popout-btn')) {
+                    console.log(`[Fullscreen] Container ${idx} already has buttons, skipping`);
+                    return;
+                }
+
+                // Add pop-out button
+                const popoutBtn = document.createElement('button');
+                popoutBtn.className = 'viz-popout-btn';
+                popoutBtn.textContent = '⧉';
+                popoutBtn.title = 'Pop out to window';
+                popoutBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    popOutVisualizer(container);
+                });
+                container.appendChild(popoutBtn);
+
+                // Add fullscreen button
+                const fullscreenBtn = document.createElement('button');
+                fullscreenBtn.className = 'viz-fullscreen-btn';
+                fullscreenBtn.textContent = '⛶';
+                fullscreenBtn.title = 'Fullscreen';
+                fullscreenBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (document.fullscreenElement === container) {
+                        document.exitFullscreen();
+                    } else {
+                        if (container.requestFullscreen) {
+                            container.requestFullscreen();
+                        } else if (container.webkitRequestFullscreen) {
+                            container.webkitRequestFullscreen();
+                        } else if (container.msRequestFullscreen) {
+                            container.msRequestFullscreen();
+                        }
+                    }
+                });
+                container.appendChild(fullscreenBtn);
+
+                // Allow clicking canvas for fullscreen (legacy behavior)
+                container.addEventListener('click', (e) => {
+                    if (e.target === container || e.target.tagName === 'CANVAS') {
+                        if (document.fullscreenElement === container) {
+                            document.exitFullscreen();
+                        } else {
+                            if (container.requestFullscreen) {
+                                container.requestFullscreen();
+                            }
+                        }
+                    }
+                });
+
+                console.log('[Fullscreen] Fully configured container', idx);
+            });
+
+            console.log('[Fullscreen] All containers configured');
+
+            // Handle resize when entering/exiting fullscreen
+            let previousFullscreenElement = null;
+
+            document.addEventListener('fullscreenchange', () => {
+                // Resize canvas when ENTERING fullscreen
+                if (document.fullscreenElement) {
+                    previousFullscreenElement = document.fullscreenElement;
+                    const canvas = document.fullscreenElement.querySelector('canvas');
+                    if (canvas) {
+                        setTimeout(() => {
+                            canvas.width = canvas.offsetWidth;
+                            canvas.height = canvas.offsetHeight;
+                            console.log('[Fullscreen] Resized canvas to', canvas.width, 'x', canvas.height);
+                        }, 100);
+                    }
+                }
+                // Resize canvas when EXITING fullscreen
+                else if (previousFullscreenElement) {
+                    const canvas = previousFullscreenElement.querySelector('canvas');
+                    if (canvas) {
+                        setTimeout(() => {
+                            canvas.width = canvas.offsetWidth;
+                            canvas.height = canvas.offsetHeight;
+                            console.log('[Fullscreen] Restored canvas to', canvas.width, 'x', canvas.height);
+                        }, 100);
+                    }
+                    previousFullscreenElement = null;
+                }
+            });
+
+            // Webkit-specific fullscreen change
+            document.addEventListener('webkitfullscreenchange', () => {
+                if (document.webkitFullscreenElement) {
+                    previousFullscreenElement = document.webkitFullscreenElement;
+                    const canvas = document.webkitFullscreenElement.querySelector('canvas');
+                    if (canvas) {
+                        setTimeout(() => {
+                            canvas.width = canvas.offsetWidth;
+                            canvas.height = canvas.offsetHeight;
+                        }, 100);
+                    }
+                } else if (previousFullscreenElement) {
+                    const canvas = previousFullscreenElement.querySelector('canvas');
+                    if (canvas) {
+                        setTimeout(() => {
+                            canvas.width = canvas.offsetWidth;
+                            canvas.height = canvas.offsetHeight;
+                        }, 100);
+                    }
+                    previousFullscreenElement = null;
+                }
+            });
+        }
+
+        // Run after DOM loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupFullscreen);
+        } else {
+            setupFullscreen();
+        }
+
+        // Also try after a delay to ensure canvases are created
+        setTimeout(setupFullscreen, 1000);
+    </script>
+</body>
+</html>

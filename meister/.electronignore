@@ -1,0 +1,37 @@
+# Files to exclude from Electron build
+
+# Development files
+meister-electron-start.sh
+meister-electron-start.bat
+meister-electron-build.sh
+meister-electron-build.bat
+.gitignore
+
+# Build artifacts
+dist/
+out/
+build/
+
+# Capacitor/Android
+android/
+ios/
+.capacitor/
+capacitor.config.ts
+meister-android-setup.sh
+meister-android-setup.bat
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Development dependencies (included in node_modules)
+package-lock.json

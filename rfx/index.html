@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Regroove Audio Tools - Effects Processor and Synthesizer Tester">
+    <meta name="theme-color" content="#CF1A37">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Regroove">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+    <link rel="icon" type="image/png" sizes="96x96" href="./favicon-96x96.png">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <title>Regroove Audio Tools</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="index-page">
+    <div class="top-banner">
+        <div class="banner-title">Regroove Audio Tools</div>
+    </div>
+    <div class="content-wrapper">
+        <div class="container">
+            <div class="launcher-grid">
+                <a href="player.html" class="launcher-card" style="text-decoration: none;">
+                    <div class="launcher-card-content">
+                        <span class="launcher-icon">🎵</span>
+                        <div class="launcher-title">Effects Tester</div>
+                        <div class="launcher-description">
+                            Audio effects processor with WASM<br>
+                            MOD/MED/AHX/SID playback support<br>
+                            Real-time visualization
+                        </div>
+                    </div>
+                </a>
+
+                <a href="synth.html" class="launcher-card" style="text-decoration: none;">
+                    <div class="launcher-card-content">
+                        <span class="launcher-icon">🎹</span>
+                        <div class="launcher-title">Synth Tester</div>
+                        <div class="launcher-description">
+                            Web-based synthesizer builds<br>
+                            WebMIDI support<br>
+                            Multi-synth testing
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => {
+                        console.log('Service Worker registered');
+                    })
+                    .catch(err => console.warn('Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>

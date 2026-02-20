@@ -1,4 +1,4 @@
-const CACHE_NAME = 'junglizer-v1';
+const CACHE_NAME = 'junglizer-v2';
 const urlsToCache = [
   './index.html',
   './junglizer.js',

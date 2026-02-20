@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Favicon Knob (512x512)</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #222; color: #fff; text-align: center; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #0066FF; color: white; border: none; border-radius: 4px; margin: 20px; }
+        button:hover { background: #0088FF; }
+        #status { margin-top: 20px; font-size: 14px; }
+        canvas { display: block; margin: 20px auto; border: 2px solid #444; }
+        .preview { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Favicon Knob Generator (512x512)</h1>
+    <button onclick="downloadKnob()">Download PNG</button>
+    <div id="status"></div>
+    <canvas id="canvas" width="512" height="512"></canvas>
+
+    <script>
+        function generateKnob() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const status = document.getElementById('status');
+
+            // Load and render SVG
+            const img = new Image();
+            img.onload = function() {
+                // Clear canvas
+                ctx.clearRect(0, 0, 512, 512);
+
+                // Draw SVG scaled to 512x512
+                ctx.drawImage(img, 0, 0, 512, 512);
+
+                status.innerHTML = '<strong style="color: #00ff00;">✓ Icon generated at 512x512 from favicon.svg!</strong>';
+            };
+
+            img.onerror = function() {
+                status.innerHTML = '<strong style="color: #ff0000;">✗ Failed to load favicon.svg</strong>';
+            };
+
+            // Load the SVG
+            img.src = 'favicon.svg';
+        }
+
+        function downloadKnob() {
+            const canvas = document.getElementById('canvas');
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'icon-512x512.png';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        // Generate on load
+        window.addEventListener('load', generateKnob);
+    </script>
+</body>
+</html>

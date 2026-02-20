@@ -1,0 +1,23 @@
+{
+  "name": "Regroove",
+  "short_name": "Regroove",
+  "description": "Tracker module player and live performance tool",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#CF1A37",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["music", "entertainment", "multimedia", "utilities"]
+}
