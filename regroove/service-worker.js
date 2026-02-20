@@ -1,4 +1,4 @@
-const CACHE_NAME = 'regroove-v4';
+const CACHE_NAME = 'regroove-v5';
 const urlsToCache = [
   './index.html',
   './regroove.js',
