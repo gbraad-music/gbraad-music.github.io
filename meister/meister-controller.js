@@ -393,9 +393,25 @@ class MeisterController {
     }
 
     setupUI() {
-        // Menu button
-        document.getElementById('menu-button').addEventListener('click', () => {
+        // Hamburger menu button (in top banner)
+        document.getElementById('hamburger-btn').addEventListener('click', () => {
             this.openSettings();
+        });
+
+        // F12 to toggle banner visibility
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F12') {
+                e.preventDefault();
+                const banner = document.querySelector('.top-banner');
+                const container = document.querySelector('.container');
+                if (banner.style.display === 'none') {
+                    banner.style.display = 'flex';
+                    container.style.paddingTop = '48px';
+                } else {
+                    banner.style.display = 'none';
+                    container.style.paddingTop = '0';
+                }
+            }
         });
 
         // Close settings
@@ -674,17 +690,7 @@ class MeisterController {
         });
 
         // Global polling interval control removed - polling is now per-scene
-
-        // Show status bar on mouse movement
-        let statusTimeout;
-        document.addEventListener('mousemove', () => {
-            const statusBar = document.getElementById('status-bar');
-            statusBar.classList.add('visible');
-            clearTimeout(statusTimeout);
-            statusTimeout = setTimeout(() => {
-                statusBar.classList.remove('visible');
-            }, 2000);
-        });
+        // Banner is always visible - no need for mousemove handler
     }
 
     openSettings() {
@@ -1824,12 +1830,8 @@ class MeisterController {
     }
 
     updateConnectionStatus(connected) {
-        const indicator = document.getElementById('midi-indicator');
-        if (connected) {
-            indicator.classList.add('connected');
-        } else {
-            indicator.classList.remove('connected');
-        }
+        // MIDI indicator removed from UI (banner is always visible)
+        // Connection status is visible in Settings panel
     }
 
     applyGridLayout() {
