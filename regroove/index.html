@@ -362,6 +362,29 @@
             setStatus: function(text) {},
             monitorRunDependencies: function(left) {}
         };
+
+        // Handle WebGL context loss and restoration
+        var canvas = document.getElementById('canvas');
+        canvas.addEventListener('webglcontextlost', function(e) {
+            console.error('WebGL context lost! Preventing default and attempting restore...');
+            e.preventDefault();
+        }, false);
+
+        canvas.addEventListener('webglcontextrestored', function() {
+            console.log('WebGL context restored! Calling C++ to reinitialize...');
+            // Call the C++ function to properly reinitialize ImGui and GL
+            if (Module._wasm_restore_gl_context) {
+                try {
+                    Module._wasm_restore_gl_context();
+                    console.log('GL context reinitialized successfully');
+                } catch(e) {
+                    console.error('Error during GL context restoration:', e);
+                }
+            } else {
+                console.error('wasm_restore_gl_context function not found');
+            }
+        }, false);
+
         if (navigator.requestMIDIAccess) {
             navigator.requestMIDIAccess({ sysex: true }).then(
                 function(access) { console.log('MIDI OK'); },
