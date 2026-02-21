@@ -475,16 +475,7 @@
         // Audio device enumeration and selection
         async function enumerateAudioDevices() {
             try {
-                // Request microphone permission first to get device labels
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    stream.getTracks().forEach(track => track.stop());
-                } catch (permError) {
-                    console.warn('Microphone permission denied, device labels will be generic');
-                }
-
                 const devices = await navigator.mediaDevices.enumerateDevices();
-                const audioInputs = devices.filter(d => d.kind === 'audioinput');
                 const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
 
                 // Populate output device selector
@@ -497,7 +488,7 @@
                     outputSelector.appendChild(option);
                 });
 
-                console.log('Audio devices enumerated:', audioInputs.length, 'inputs,', audioOutputs.length, 'outputs');
+                console.log('Audio output devices enumerated:', audioOutputs.length);
             } catch (error) {
                 console.warn('Could not enumerate audio devices:', error);
             }
