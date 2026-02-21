@@ -501,9 +501,15 @@ body.index-page {
 }
 
 .launcher-icon {
-    font-size: 3em;
-    margin-bottom: 20px;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
     display: block;
+    background-image: url('./favicon.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    font-size: 0;
 }
 
 .launcher-title {
