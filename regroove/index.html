@@ -269,7 +269,18 @@
         <button class="menu-close" id="menuClose">×</button>
         <div class="menu-items">
             <button class="menu-item" id="loadModuleBtn">📁 Load module</button>
-            <button class="menu-item" id="creditsBtn">About / Credits</button>
+
+            <!-- Audio Device Selectors -->
+            <div style="padding: 15px 0; border-top: 1px solid var(--border); margin-top: 10px;">
+                <label style="display: block; color: var(--text-secondary); font-size: 0.8em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Audio Output</label>
+                <select id="outputDeviceList" class="menu-item" style="padding: 10px 15px; margin-bottom: 0;">
+                    <option value="">Default Output</option>
+                </select>
+            </div>
+
+            <div style="border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px;">
+                <button class="menu-item" id="creditsBtn">About / Credits</button>
+            </div>
         </div>
     </div>
 
@@ -283,11 +294,11 @@
         <div class="modal-body">
             <h3>Regroove</h3>
             <p>Tracker module player and live performance tool</p>
+            <p>
+		Uses: libopenmpt, SDL3, ImGui, RtMidi, RegrooveFX, webassembly, ...
+            </p>
             <p style="margin-top: 20px; font-size: 0.9em; color: #999;">
                 Created by Gerard Braad &lt;me@gbraad.nl&gt;
-            </p>
-            <p>
-                Uses: libopenmpt, SDL3, ImGui, RtMidi, RegrooveFX, webassembly, ...
             </p>
         </div>
     </div>
@@ -360,10 +371,35 @@
             menuApp.closeCredits();
         });
 
+        // Intercept AudioContext creation to capture it
+        var originalAudioContext = window.AudioContext || window.webkitAudioContext;
+        window.regrooveAudioContext = null;
+
+        window.AudioContext = function() {
+            var ctx = new originalAudioContext();
+            window.regrooveAudioContext = ctx;
+            console.log('Captured AudioContext:', ctx);
+            return ctx;
+        };
+        window.AudioContext.prototype = originalAudioContext.prototype;
+
+        if (window.webkitAudioContext) {
+            window.webkitAudioContext = window.AudioContext;
+        }
+
+
+
         var Module = {
             canvas: document.getElementById('canvas'),
             setStatus: function(text) {},
-            monitorRunDependencies: function(left) {}
+            monitorRunDependencies: function(left) {},
+            onRuntimeInitialized: function() {
+                console.log('WASM runtime initialized, enumerating audio devices...');
+                // Wait for SDL audio to initialize
+                setTimeout(function() {
+                    enumerateAudioDevices();
+                }, 1000);
+            }
         };
 
         // Handle WebGL context loss and restoration
@@ -435,6 +471,63 @@
         window.openFileDialog = function() {
             document.getElementById('fileInput').click();
         };
+
+        // Audio device enumeration and selection
+        async function enumerateAudioDevices() {
+            try {
+                // Request microphone permission first to get device labels
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    stream.getTracks().forEach(track => track.stop());
+                } catch (permError) {
+                    console.warn('Microphone permission denied, device labels will be generic');
+                }
+
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const audioInputs = devices.filter(d => d.kind === 'audioinput');
+                const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
+
+                // Populate output device selector
+                const outputSelector = document.getElementById('outputDeviceList');
+                outputSelector.innerHTML = '<option value="">Default Output</option>';
+                audioOutputs.forEach(device => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.textContent = device.label || `Output ${outputSelector.options.length}`;
+                    outputSelector.appendChild(option);
+                });
+
+                console.log('Audio devices enumerated:', audioInputs.length, 'inputs,', audioOutputs.length, 'outputs');
+            } catch (error) {
+                console.warn('Could not enumerate audio devices:', error);
+            }
+        }
+
+        // Handle output device selection
+        document.getElementById('outputDeviceList').addEventListener('change', async function(e) {
+            const deviceId = e.target.value || '';
+            try {
+                // Use the captured AudioContext
+                var audioCtx = window.regrooveAudioContext;
+
+                if (!audioCtx) {
+                    console.warn('AudioContext not found - audio may not be initialized yet');
+                    return;
+                }
+
+                if (typeof audioCtx.setSinkId === 'function') {
+                    await audioCtx.setSinkId(deviceId);
+                    console.log('Output device changed to:', e.target.options[e.target.selectedIndex].text);
+                } else {
+                    console.warn('setSinkId not supported in this browser');
+                }
+            } catch (error) {
+                console.error('Failed to set output device:', error);
+            }
+        });
+
+
+        // Device enumeration will be called from Module.onRuntimeInitialized
 
         // Register service worker for PWA support
         if ('serviceWorker' in navigator) {
