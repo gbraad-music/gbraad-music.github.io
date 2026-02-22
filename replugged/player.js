@@ -144,8 +144,9 @@ class AudioEffectsProcessor {
     console.log("📡 Loading Deck Player WASM (MOD/MED/AHX/SID)...");
 
     try {
+      const deckPlayerPath = window.location.origin + '/player/deck-player.js';
       const createDeckPlayerModule =
-        await import((window.location.pathname.includes('/player/') ? '' : 'player/') + "deck-player.js").then((m) => m.default);
+        await import(deckPlayerPath).then((m) => m.default);
       this.modMedModule = await createDeckPlayerModule();
 
       console.log(
