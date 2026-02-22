@@ -40,11 +40,8 @@ body {
     align-items: center;
     gap: 15px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 998;
+    position: relative;
+    z-index: 100;
     flex-shrink: 0;
 }
 
@@ -62,6 +59,12 @@ body {
 
 .hamburger-button:hover {
     opacity: 0.8;
+}
+
+.hamburger-button:active,
+.hamburger-button:focus {
+    background: none !important;
+    outline: none;
 }
 
 .banner-title {
@@ -162,7 +165,7 @@ button:hover, select:hover {
     background: #3a3a3a;
 }
 
-button:active {
+button:active:not(.hamburger-button) {
     background: #0066FF;
     color: var(--text-primary);
 }
