@@ -3,14 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Web-based synthesizer tester with WebMIDI support">
+    <meta name="theme-color" content="#CF1A37">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Synth Tester">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/svg+xml" href="../replugged/favicon.svg">
+    <link rel="icon" type="image/png" sizes="96x96" href="../replugged/favicon-96x96.png">
+    <link rel="apple-touch-icon" href="../replugged/apple-touch-icon.png">
     <title>Regrooved Synthesizer Tester</title>
     <link rel="stylesheet" href="../replugged/styles.css">
 </head>
 <body>
     <div class="top-banner">
-        <a href="../index.html" class="back-button">◄</a>
+        <button class="hamburger-button" id="hamburgerBtn">☰</button>
         <div class="banner-title">Synth Tester</div>
     </div>
+
+    <!-- Hamburger Menu -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+    <div class="menu-panel" id="menuPanel">
+        <button class="menu-close" id="menuClose">×</button>
+        <div class="menu-items">
+            <button class="menu-item" id="showCreditsBtn">About / Credits</button>
+        </div>
+    </div>
+
+    <!-- Credits Modal -->
+    <div class="modal-overlay" id="creditsOverlay"></div>
+    <div class="modal" id="creditsModal">
+        <div class="modal-header">
+            <h2>About Synth Tester</h2>
+            <button class="modal-close" id="creditsClose">×</button>
+        </div>
+        <div class="modal-body">
+            <h3>Regroove Synth Tester</h3>
+            <p>Web-based synthesizer tester</p>
+            <p>WebMIDI support</p>
+            <p>Multi-synth testing</p>
+            <p>
+                Synths: RG1Piano, RGResonate1, RGAHXSynth, RGSID, RG909 Drum, RGAHXDrum, RGSFZ, RGSlicer
+            </p>
+            <p>
+                Uses: WebAssembly, Web Audio API, WebMIDI, WebRTC
+            </p>
+            <p style="margin-top: 20px; font-size: 0.9em; color: #999;">
+                Created by Gerard Braad &lt;me@gbraad.nl&gt;
+            </p>
+        </div>
+    </div>
+
     <div class="container">
         <!-- Audio Analysis and Playback sections side by side -->
         <div style="display: grid; grid-template-columns: 1fr auto; gap: 15px; margin-bottom: 20px;">
@@ -578,6 +621,61 @@
 
         // Also try after a delay to ensure canvases are created
         setTimeout(setupFullscreen, 1000);
+    </script>
+
+    <!-- Hamburger Menu Handler -->
+    <script>
+        (function() {
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const menuOverlay = document.getElementById('menuOverlay');
+            const menuPanel = document.getElementById('menuPanel');
+            const menuClose = document.getElementById('menuClose');
+            const showCreditsBtn = document.getElementById('showCreditsBtn');
+            const creditsOverlay = document.getElementById('creditsOverlay');
+            const creditsModal = document.getElementById('creditsModal');
+            const creditsClose = document.getElementById('creditsClose');
+
+            function toggleMenu() {
+                menuOverlay.classList.toggle('active');
+                menuPanel.classList.toggle('active');
+            }
+
+            function closeMenu() {
+                menuOverlay.classList.remove('active');
+                menuPanel.classList.remove('active');
+            }
+
+            function showCredits() {
+                creditsOverlay.classList.add('active');
+                creditsModal.classList.add('active');
+                closeMenu();
+            }
+
+            function closeCredits() {
+                creditsOverlay.classList.remove('active');
+                creditsModal.classList.remove('active');
+            }
+
+            if (hamburgerBtn) hamburgerBtn.addEventListener('click', toggleMenu);
+            if (menuClose) menuClose.addEventListener('click', closeMenu);
+            if (menuOverlay) menuOverlay.addEventListener('click', closeMenu);
+            if (showCreditsBtn) showCreditsBtn.addEventListener('click', showCredits);
+            if (creditsClose) creditsClose.addEventListener('click', closeCredits);
+            if (creditsOverlay) creditsOverlay.addEventListener('click', closeCredits);
+        })();
+    </script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => {
+                        console.log('Service Worker registered');
+                    })
+                    .catch(err => console.warn('Service Worker registration failed:', err));
+            });
+        }
     </script>
 </body>
 </html>

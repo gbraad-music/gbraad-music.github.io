@@ -1,0 +1,29 @@
+{
+  "name": "Regroove Effects Tester",
+  "short_name": "Effects",
+  "description": "Web-based audio effects processor with WASM MOD/MED/AHX/SID playback",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#CF1A37",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "../replugged/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "../replugged/favicon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "../replugged/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["music", "entertainment", "multimedia", "utilities"]
+}

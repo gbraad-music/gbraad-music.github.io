@@ -145,7 +145,7 @@ class AudioEffectsProcessor {
 
     try {
       const createDeckPlayerModule =
-        await import("./players/deck-player.js").then((m) => m.default);
+        await import((window.location.pathname.includes('/player/') ? './' : '../player/') + "deck-player.js").then((m) => m.default);
       this.modMedModule = await createDeckPlayerModule();
 
       console.log(
