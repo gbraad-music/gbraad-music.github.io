@@ -1,6 +1,6 @@
 {
-  "name": "Regroove Synths",
-  "short_name": "Synths",
+  "name": "RegrooveFX Synths",
+  "short_name": "RFX Synths",
   "description": "Web-based synthesizers with WebMIDI support",
   "start_url": "./index.html",
   "scope": "./",
