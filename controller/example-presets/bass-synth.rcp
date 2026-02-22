@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "name": "bass-synth",
+  "displayName": "🎸 Bass Synth",
+  "buttons": {
+    "0": { "note": 36, "name": "C1" },
+    "1": { "note": 38, "name": "D1" },
+    "2": { "note": 40, "name": "E1" },
+    "3": { "note": 41, "name": "F1" },
+    "4": { "note": 43, "name": "G1" },
+    "5": { "note": 45, "name": "A1" },
+    "6": { "note": 47, "name": "B1" },
+    "7": { "note": 48, "name": "C2" },
+    "8": { "note": 50, "name": "D2" },
+    "9": { "note": 52, "name": "E2" },
+    "10": { "note": 53, "name": "F2" },
+    "11": { "note": 55, "name": "G2" },
+    "12": { "note": 33, "name": "A0" },
+    "13": { "note": 35, "name": "B0" },
+    "14": { "note": 31, "name": "G0" },
+    "15": { "note": 29, "name": "F0" }
+  },
+  "axes": {
+    "0": { "cc": 74, "name": "Filter Cutoff" },
+    "1": { "cc": 71, "name": "Resonance" },
+    "2": { "cc": 1, "name": "Modulation" },
+    "3": { "cc": 7, "name": "Volume" }
+  },
+  "exportedAt": "2026-02-04T05:14:00.000Z"
+}

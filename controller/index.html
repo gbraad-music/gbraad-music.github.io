@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regrooved MIDI Controller</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+    <link rel="icon" type="image/png" sizes="96x96" href="./favicon-96x96.png">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <meta name="theme-color" content="#CF1A37">
+    <meta name="description" content="Web-based MIDI controller with gamepad and touch support">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="components/trigger-pads.css">
+</head>
+<body>
+    <div class="top-banner">
+        <button class="hamburger-button" id="menu-btn">☰</button>
+        <div class="banner-title">🎹 MIDI Controller</div>
+        <div id="scene-indicator" style="font-size: 0.75em; color: #CF1A37; font-weight: bold; text-transform: uppercase;">TRIGGER PADS</div>
+    </div>
+
+    <!-- Navigation Menu (slide in from left) -->
+    <div id="nav-menu" class="nav-menu">
+        <div class="nav-header">
+            <span>Navigation</span>
+            <button id="close-menu" style="background: transparent; border: none; color: white; font-size: 1.5em; cursor: pointer;">×</button>
+        </div>
+        <div class="nav-item active" data-scene="trigger-pads">🎹 Trigger Pads</div>
+        <div class="nav-item" data-scene="setup">⚙️ Setup</div>
+        <div class="nav-item" data-scene="presets">🎨 Presets</div>
+    </div>
+    <div id="nav-overlay" class="nav-overlay"></div>
+
+    <!-- Scene: Trigger Pads -->
+    <div id="scene-trigger-pads" class="scene active">
+        <div class="container">
+            <!-- Trigger Pads -->
+            <div class="section">
+                <div class="section-title">Trigger Pads</div>
+                
+                <div class="controller-visual">
+                    <div class="button-grid" id="buttonGrid"></div>
+                    <div class="axis-display" id="axisDisplay"></div>
+                    
+                    <!-- Trigger Pads Configuration -->
+                    <div class="trigger-config-panel" id="triggerConfigPanel">
+                    <div class="trigger-config-row">
+                        <div class="trigger-config-item">
+                            <label>MIDI Device</label>
+                            <select id="triggerMidiDevice">
+                                <option value="">Select Output...</option>
+                            </select>
+                        </div>
+                        <div class="trigger-config-item">
+                            <label>Preset</label>
+                            <select id="triggerPreset">
+                                <option value="default" selected>🎮 Default Layout</option>
+                                <option value="drums">🥁 Drum Kit</option>
+                            </select>
+                        </div>
+                        <div class="trigger-config-item">
+                            <label>Channel</label>
+                            <select id="triggerChannel">
+                                <option value="0" selected>Ch 1</option>
+                                <option value="1">Ch 2</option>
+                                <option value="2">Ch 3</option>
+                                <option value="3">Ch 4</option>
+                                <option value="4">Ch 5</option>
+                                <option value="5">Ch 6</option>
+                                <option value="6">Ch 7</option>
+                                <option value="7">Ch 8</option>
+                                <option value="8">Ch 9</option>
+                                <option value="9">Ch 10 (Drums)</option>
+                                <option value="10">Ch 11</option>
+                                <option value="11">Ch 12</option>
+                                <option value="12">Ch 13</option>
+                                <option value="13">Ch 14</option>
+                                <option value="14">Ch 15</option>
+                                <option value="15">Ch 16</option>
+                                <option value="-1">Omni (All)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- Scene: Setup -->
+    <div id="scene-setup" class="scene">
+        <div class="container">
+            <!-- Section Row -->
+            <div class="section-row">
+                <!-- Controller -->
+                <div class="section">
+                    <div class="section-title">Controller</div>
+                    <button id="connectBtn">Connect Gamepad</button>
+                    <div class="status">
+                        <div class="status-item" id="controllerStatus">
+                            Controller: <span>Not Connected</span>
+                        </div>
+                    </div>
+                    <div class="info">
+                        Connect gamepads, then configure them in Controller Manager below. Each controller gets its own pop-out window.
+                    </div>
+                </div>
+
+                <!-- MIDI Status & WebRTC -->
+                <div class="section">
+                    <div class="section-title">MIDI & WebRTC</div>
+                    <div class="status">
+                        <div class="status-item" id="midiStatus">
+                            MIDI: <span>Initializing...</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <button id="webrtcBtn" style="width: 100%;">WebRTC MIDI</button>
+                    </div>
+                    
+                    <!-- WebRTC MIDI Configuration (collapsible) -->
+                    <div id="webrtc-config" style="display: none; margin-top: 15px; padding: 15px; background: #0f0f0f; border: 1px solid var(--bg-tertiary); border-radius: 4px;">
+                        <div style="padding: 10px; border-radius: 4px; margin-bottom: 15px; background: var(--bg-primary); border: 1px solid var(--bg-tertiary); font-size: 12px;" id="webrtc-status">
+                            ⚪ Not Connected
+                        </div>
+
+                        <div id="webrtc-setup">
+                            <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Step 1: Paste Offer from MIDI Bridge</label>
+                            <textarea id="webrtc-offer-input" placeholder="Paste the offer from midi-bridge here..." style="width: 100%; height: 120px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--bg-tertiary); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; margin-bottom: 10px; resize: vertical;"></textarea>
+
+                            <button id="btnGenerateAnswer" style="width: 100%; padding: 10px; background: #0066FF; border: 1px solid #0088FF; border-radius: 4px; color: white; font-weight: bold; cursor: pointer; margin-bottom: 15px;">Generate Answer</button>
+
+                            <label style="font-size: 11px; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Step 2: Copy Answer and Paste in MIDI Bridge</label>
+                            <textarea id="webrtc-answer-output" readonly placeholder="Answer will appear here..." style="width: 100%; height: 120px; background: var(--bg-primary); color: #0f0; border: 1px solid var(--bg-tertiary); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; margin-bottom: 10px; resize: vertical;"></textarea>
+
+                            <button id="btnCopyAnswer" style="width: 100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid #3a3a3a; border-radius: 4px; color: white; cursor: pointer; margin-bottom: 15px;">Copy Answer to Clipboard</button>
+                        </div>
+
+                        <button id="btnDisconnectWebRTC" style="width: 100%; padding: 10px; background: #cc0000; border: 1px solid #ff0000; border-radius: 4px; color: white; cursor: pointer;">Disconnect</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controller Manager -->
+            <div class="section">
+                <div class="section-title">Controller Manager</div>
+                <div class="info">
+                    Configure multiple gamepads to send to different MIDI devices with individual preset and channel assignments. Each controller can act as a different instrument!
+                </div>
+                <div id="controllerManager" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scene: Presets -->
+    <div id="scene-presets" class="scene">
+        <div class="container">
+            <!-- Preset Management -->
+            <div class="section">
+                <div class="section-title">Preset Management</div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                    <button onclick="presetManager.exportPreset(currentPreset)" style="width: 100%;">📤 Export Current Preset</button>
+                    <button onclick="presetManager.exportAllPresets()" style="width: 100%;">📦 Export All Presets</button>
+                    <button onclick="document.getElementById('import-preset').click()" style="width: 100%;">📥 Import Preset(s)</button>
+                    <button onclick="showNewPresetDialog()" style="width: 100%;">➕ Create New Preset</button>
+                </div>
+                
+                <input type="file" id="import-preset" accept=".rcp" style="display: none;" onchange="handlePresetImport(this.files[0])">
+                
+                <div class="info">
+                    Presets are saved as .rcp (Regroove Controller Preset) files. Share your custom mappings with others!
+                </div>
+            </div>
+
+            <!-- Current Preset Display -->
+            <div class="section">
+                <div class="section-title">Select Preset to Edit</div>
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 11px; color: #0066FF; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 5px;">Active Preset</label>
+                    <select id="preset-selector" style="width: 100%; padding: 10px; font-size: 14px;">
+                        <option value="default">🎮 Default Layout</option>
+                        <option value="drums">🥁 Drum Kit</option>
+                    </select>
+                </div>
+                <div class="info">
+                    Select a preset above to edit its mappings. Changes are live - export to save permanently!
+                </div>
+            </div>
+            
+            <!-- Button Mappings -->
+            <div class="section">
+                <div class="section-title">Button Mappings</div>
+                <div id="buttonMappings"></div>
+                <div class="info">
+                    Buttons send MIDI Note On/Off messages. Adjust the MIDI note numbers for each button.
+                </div>
+            </div>
+
+            <!-- Axis Mappings -->
+            <div class="section">
+                <div class="section-title">Axis Mappings</div>
+                <div id="axisMappings"></div>
+                <div class="info">
+                    Analog axes send MIDI CC (Control Change) messages. Adjust the CC numbers for each axis.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WebRTC MIDI (loaded as module) -->
+    <script type="module" src="./external/midi-rtc-bridge.js"></script>
+    <script type="module">
+        // Import and expose BrowserMIDIRTC globally for non-module scripts
+        import { BrowserMIDIRTC } from './external/midi-rtc-bridge.js';
+        window.BrowserMIDIRTC = BrowserMIDIRTC;
+    </script>
+
+    <script src="non-blocking-dialog.js"></script>
+    <script src="components/trigger-pads.js"></script>
+    <script src="controller.js"></script>
+</body>
+</html>

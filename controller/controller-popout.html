@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MIDI Controller</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="components/trigger-pads.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: #0f0f0f;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+        .trigger-pads-grid {
+            max-width: min(calc(100vh - 20px), calc(100vw - 20px));
+            max-height: min(calc(100vh - 20px), calc(100vw - 20px));
+        }
+    </style>
+</head>
+<body>
+    <div class="trigger-pads-grid" id="trigger-pads"></div>
+    
+    <script src="components/trigger-pads.js"></script>
+    <script>
+        // Parse URL parameters
+        const params = new URLSearchParams(window.location.search);
+        const controllerId = params.get('controllerId');
+        const targetMidiDeviceId = params.get('midiDeviceId');
+        const presetName = params.get('preset') || 'default';
+        const currentChannel = parseInt(params.get('channel')) || 9;
+        
+        // Extract gamepad index from unique ID (format: "Name__idxN")
+        const indexMatch = controllerId.match(/__idx(\d+)$/);
+        const gamepadIndex = indexMatch ? parseInt(indexMatch[1]) : null;
+        const gamepadName = controllerId.replace(/__idx\d+$/, '');
+        
+        let pollInterval = null;
+        let midiAccess = null;
+        let midiOutput = null;
+        let triggerPads = null;
+        let buttonStates = {};
+        let preset = null;
+        
+        // Get presets from opener if available
+        if (window.opener && window.opener.presets) {
+            const presets = window.opener.presets;
+            preset = presets[presetName] || presets['default'];
+            console.log('[PopOut] ✓ Using preset from main page:', presetName);
+        } else {
+            console.warn('[PopOut] ⚠ Cannot access main page presets! Using fallback.');
+            // Fallback presets with labels
+            const presets = {
+                default: {
+                    name: 'Default Layout',
+                    buttons: {
+                        0: { note: 60, label: 'A' }, 1: { note: 62, label: 'B' }, 2: { note: 64, label: 'X' }, 3: { note: 65, label: 'Y' },
+                        4: { note: 67, label: 'LB' }, 5: { note: 69, label: 'RB' }, 6: { note: 71, label: 'LT' }, 7: { note: 72, label: 'RT' },
+                        8: { note: 74, label: 'Back' }, 9: { note: 76, label: 'Start' }, 10: { note: 77, label: 'L3' }, 11: { note: 79, label: 'R3' },
+                        12: { note: 48, label: '↑' }, 13: { note: 50, label: '↓' }, 14: { note: 52, label: '←' }, 15: { note: 53, label: '→' }
+                    }
+                },
+                drums: {
+                    name: 'Drum Kit',
+                    buttons: {
+                        0: { note: 38, label: 'SNARE' }, 1: { note: 42, label: 'HH CLO' }, 2: { note: 46, label: 'HH OPN' }, 3: { note: 39, label: 'CLAP' },
+                        4: { note: 49, label: 'CRASH L' }, 5: { note: 57, label: 'CRASH R' }, 6: { note: 51, label: 'RIDE 1' }, 7: { note: 59, label: 'RIDE 2' },
+                        8: { note: 37, label: 'SIDE' }, 9: { note: 54, label: 'TAMB' }, 10: { note: 44, label: 'PEDAL' }, 11: { note: 52, label: 'CHINA' },
+                        12: { note: 36, label: 'KICK' }, 13: { note: 45, label: 'TOM L' }, 14: { note: 47, label: 'TOM M' }, 15: { note: 48, label: 'TOM H' }
+                    }
+                }
+            };
+            preset = presets[presetName] || presets['default'];
+        }
+        
+        // Update document title
+        document.title = `🎮 ${gamepadName.substring(0, 20)}${gamepadIndex !== null ? ` #${gamepadIndex + 1}` : ''} | Ch ${currentChannel + 1}`;
+        
+        // Initialize MIDI
+        async function initMIDI() {
+            try {
+                midiAccess = await navigator.requestMIDIAccess();
+                console.log('[PopOut] Web MIDI API connected');
+                
+                // Find target MIDI output
+                for (let output of midiAccess.outputs.values()) {
+                    if (output.id === targetMidiDeviceId) {
+                        midiOutput = output;
+                        console.log('[PopOut] Connected to:', output.name);
+                        break;
+                    }
+                }
+                
+                if (!midiOutput) {
+                    console.error('[PopOut] Target MIDI device not found:', targetMidiDeviceId);
+                }
+            } catch (error) {
+                console.error('[PopOut] MIDI Error:', error);
+            }
+        }
+        
+        // Poll gamepad
+        function poll() {
+            const gamepads = navigator.getGamepads();
+            
+            // Match by index if available, otherwise by name
+            let targetGamepad = null;
+            if (gamepadIndex !== null && gamepads[gamepadIndex]) {
+                targetGamepad = gamepads[gamepadIndex];
+            } else {
+                for (let gp of gamepads) {
+                    if (gp && gp.id === gamepadName) {
+                        targetGamepad = gp;
+                        break;
+                    }
+                }
+            }
+            
+            if (targetGamepad) {
+                    // Process all 16 buttons
+                    for (let i = 0; i < 16 && i < targetGamepad.buttons.length; i++) {
+                        const pressed = targetGamepad.buttons[i].pressed;
+                        
+                        if (pressed && !buttonStates[i]) {
+                            buttonStates[i] = true;
+                            if (triggerPads) {
+                                triggerPads.triggerButton(i, true);
+                            }
+                        } else if (!pressed && buttonStates[i]) {
+                            buttonStates[i] = false;
+                            if (triggerPads) {
+                                triggerPads.triggerButton(i, false);
+                            }
+                        }
+                    }
+                }
+        }
+        
+        // Notify opener that we're taking over
+        if (window.opener) {
+            window.opener.postMessage({ 
+                type: 'controllerPopoutOpened', 
+                controllerId: controllerId 
+            }, '*');
+        }
+        
+        // Start
+        initMIDI().then(() => {
+            console.log('[PopOut] MIDI initialized');
+            console.log('[PopOut] Using preset:', preset.name);
+            console.log('[PopOut] Channel:', currentChannel);
+            
+            // Create TriggerPads component
+            triggerPads = new TriggerPads('trigger-pads', {
+                midiOutput: midiOutput,
+                preset: preset,
+                channel: currentChannel,
+                interactive: true,
+                onNoteOn: (note, velocity, channel) => {
+                    console.log(`[PopOut] Note On: ${note} vel: ${velocity} ch: ${channel + 1}`);
+                },
+                onNoteOff: (note, channel) => {
+                    console.log(`[PopOut] Note Off: ${note} ch: ${channel + 1}`);
+                }
+            });
+            
+            console.log('[PopOut] Starting polling...');
+            pollInterval = setInterval(poll, 16);
+        });
+        
+        // Cleanup
+        window.addEventListener('beforeunload', () => {
+            if (pollInterval) clearInterval(pollInterval);
+            
+            if (triggerPads) {
+                triggerPads.destroy();
+            }
+            
+            // Notify opener to resume polling
+            if (window.opener) {
+                window.opener.postMessage({ 
+                    type: 'controllerPopoutClosed', 
+                    controllerId: controllerId 
+                }, '*');
+            }
+        });
+    </script>
+</body>
+</html>
