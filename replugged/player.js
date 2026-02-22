@@ -145,7 +145,7 @@ class AudioEffectsProcessor {
 
     try {
       const createDeckPlayerModule =
-        await import((window.location.pathname.includes('/player/') ? './' : '../player/') + "deck-player.js").then((m) => m.default);
+        await import((window.location.pathname.includes('/player/') ? '' : 'player/') + "deck-player.js").then((m) => m.default);
       this.modMedModule = await createDeckPlayerModule();
 
       console.log(
@@ -1339,8 +1339,8 @@ class AudioEffectsProcessor {
 
       // Send WASM to offline worklet
       const [jsResponse, wasmResponse] = await Promise.all([
-        fetch((window.location.pathname.includes('/player/') ? '' : 'player/') + "players/regroove-effects.js"),
-        fetch((window.location.pathname.includes('/player/') ? '' : 'player/') + "players/regroove-effects.wasm"),
+        fetch((window.location.pathname.includes('/player/') ? '' : 'player/') + "regroove-effects.js"),
+        fetch((window.location.pathname.includes('/player/') ? '' : 'player/') + "regroove-effects.wasm"),
       ]);
       const jsCode = await jsResponse.text();
       const wasmBytes = await wasmResponse.arrayBuffer();
