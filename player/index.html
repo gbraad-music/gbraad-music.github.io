@@ -8,16 +8,16 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RFX Tester">
-    <link rel="manifest" href="./manifest.json">
-    <link rel="icon" type="image/svg+xml" href="./favicon.svg">
-    <link rel="icon" type="image/png" sizes="96x96" href="./favicon-96x96.png">
-    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <link rel="manifest" href="../replugged/manifest.json">
+    <link rel="icon" type="image/svg+xml" href="../replugged/favicon.svg">
+    <link rel="icon" type="image/png" sizes="96x96" href="../replugged/favicon-96x96.png">
+    <link rel="apple-touch-icon" href="../replugged/apple-touch-icon.png">
     <title>Regroove Player</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../replugged/styles.css">
 </head>
 <body>
     <div class="top-banner">
-        <a href="index.html" class="back-button">◄</a>
+        <a href="../index.html" class="back-button">◄</a>
         <div class="banner-title">Effects Tester</div>
     </div>
     <div class="container">
@@ -201,23 +201,23 @@
     </div>
 
     <!-- Custom UI components from Revision -->
-    <script type="module" src="components/svg-slider.js"></script>
-    <script type="module" src="components/pad-knob.js"></script>
-    <script type="module" src="components/fader-components.js"></script>
+    <script type="module" src="../replugged/components/svg-slider.js"></script>
+    <script type="module" src="../replugged/components/pad-knob.js"></script>
+    <script type="module" src="../replugged/components/fader-components.js"></script>
 
     <!-- Extracted visualization components -->
-    <script src="components/vu-meter.js"></script>
-    <script src="components/waveform-display.js"></script>
-    <script src="components/spectrum-analyzer.js"></script>
-    <script src="components/freq-bars-analyzer.js"></script>
+    <script src="../replugged/components/vu-meter.js"></script>
+    <script src="../replugged/components/waveform-display.js"></script>
+    <script src="../replugged/components/spectrum-analyzer.js"></script>
+    <script src="../replugged/components/freq-bars-analyzer.js"></script>
 
-    <script src="player.js" type="module"></script>
+    <script src="../replugged/player.js" type="module"></script>
 
     <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./service-worker.js')
+                navigator.serviceWorker.register('../replugged/service-worker.js')
                     .then(reg => {
                         console.log('Service Worker registered');
 

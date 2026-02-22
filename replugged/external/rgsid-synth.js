@@ -172,7 +172,7 @@ class RGSIDSynth {
             console.log('[RGSIDSynth] Audio graph connected: worklet → masterGain → speakerGain → destination');
 
             // Load and register AudioWorklet processor (with cache-busting)
-            await this.audioContext.audioWorklet.addModule('worklets/synth-worklet-processor.js?v=300');
+            await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/synths/') ? '../replugged/worklets/synth-worklet-processor.js?v=300' : 'replugged/worklets/synth-worklet-processor.js?v=300');
 
             // Create worklet node
             this.workletNode = new AudioWorkletNode(this.audioContext, 'synth-worklet-processor');
@@ -227,8 +227,8 @@ class RGSIDSynth {
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch('synths/rgsidsynth.js'),
-                fetch('synths/rgsidsynth.wasm')
+                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rgsidsynth.js`),
+                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rgsidsynth.wasm`)
             ]);
 
             const jsCode = await jsResponse.text();

@@ -38,7 +38,7 @@ class RGAHXDrum {
             console.log('[RGAHXDrum] Audio graph connected: worklet → masterGain → speakerGain → destination');
 
             // Load and register AudioWorklet processor (reuse drum worklet)
-            await this.audioContext.audioWorklet.addModule('synths/drum-worklet-processor.js');
+            await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/synths/') ? '../replugged/worklets/drum-worklet-processor.js' : 'replugged/worklets/drum-worklet-processor.js');
 
             // Create worklet node with custom name
             this.workletNode = new AudioWorkletNode(this.audioContext, 'drum-worklet-processor');
@@ -75,8 +75,8 @@ class RGAHXDrum {
             // Fetch both JS glue code and WASM binary (cache-busting with timestamp)
             const timestamp = Date.now();
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`synths/rgahxdrum.js?t=${timestamp}`),
-                fetch(`synths/rgahxdrum.wasm?t=${timestamp}`)
+                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rgahxdrum.js?t=${timestamp}`),
+                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rgahxdrum.wasm?t=${timestamp}`)
             ]);
 
             const jsCode = await jsResponse.text();

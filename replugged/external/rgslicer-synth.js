@@ -39,7 +39,7 @@ class RGSlicerSynth {
             console.log('[RGSlicer] Audio graph connected: worklet → masterGain → speakerGain → destination');
 
             // Load and register AudioWorklet processor (reuse synth-worklet, with cache-busting)
-            await this.audioContext.audioWorklet.addModule('worklets/synth-worklet-processor.js?v=176');
+            await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/synths/') ? '../replugged/worklets/synth-worklet-processor.js?v=176' : 'replugged/worklets/synth-worklet-processor.js?v=176');
 
             // Create worklet node
             this.workletNode = new AudioWorkletNode(this.audioContext, 'synth-worklet-processor');
@@ -88,8 +88,8 @@ class RGSlicerSynth {
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch('synths/rgslicer.js'),
-                fetch('synths/rgslicer.wasm')
+                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rgslicer.js`),
+                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rgslicer.wasm`)
             ]);
 
             const jsCode = await jsResponse.text();

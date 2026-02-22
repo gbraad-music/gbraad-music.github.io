@@ -73,8 +73,8 @@ class AudioEffectsProcessor {
 
     // Load both the JS and WASM files from main thread
     const [jsResponse, wasmResponse] = await Promise.all([
-      fetch("players/regroove-effects.js"),
-      fetch("players/regroove-effects.wasm"),
+      fetch((window.location.pathname.includes('/player/') ? '' : 'player/') + "regroove-effects.js"),
+      fetch((window.location.pathname.includes('/player/') ? '' : 'player/') + "regroove-effects.wasm"),
     ]);
 
     if (!jsResponse.ok || !wasmResponse.ok) {
@@ -87,7 +87,7 @@ class AudioEffectsProcessor {
 
     console.log("🎛️ Registering AudioWorklet...");
     await this.audioContext.audioWorklet.addModule(
-      "worklets/audio-worklet-processor.js",
+      (window.location.pathname.includes('/player/') ? '../replugged/' : '') + "worklets/audio-worklet-processor.js",
     );
 
     console.log("🔧 Creating worklet...");
@@ -1339,8 +1339,8 @@ class AudioEffectsProcessor {
 
       // Send WASM to offline worklet
       const [jsResponse, wasmResponse] = await Promise.all([
-        fetch("players/regroove-effects.js"),
-        fetch("players/regroove-effects.wasm"),
+        fetch((window.location.pathname.includes('/player/') ? '' : 'player/') + "players/regroove-effects.js"),
+        fetch((window.location.pathname.includes('/player/') ? '' : 'player/') + "players/regroove-effects.wasm"),
       ]);
       const jsCode = await jsResponse.text();
       const wasmBytes = await wasmResponse.arrayBuffer();

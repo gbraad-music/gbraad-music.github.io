@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rfx-effects-v202';
+const CACHE_NAME = 'rfx-effects-v204';
 const ASSETS = [
     './',
     './index.html',
@@ -23,6 +23,7 @@ const ASSETS = [
     './components/vu-meter.js',
     './components/waveform-display.js',
     './components/spectrum-analyzer.js',
+    './components/freq-bars-analyzer.js',
     './components/piano-keyboard.js',
     // AudioWorklet processors
     './worklets/audio-worklet-processor.js',
@@ -36,11 +37,14 @@ const ASSETS = [
     // Synth test page dependencies
     './external/midi-rtc/midi-codec.js',
     './external/midi-rtc/midi-utils.js',
+    './external/midi-rtc/protocol.js',
     './external/remote-channel.js',
     './external/midi-rtc-bridge.js',
     './external/webrtc-midi-source.js',
     './external/midi-manager.js',
     './external/frequency-analyzer.js',
+    './external/audio-viz.js',
+    './external/wakelock.js',
     './external/midi-audio-synth.js',
     './external/rgresonate1-synth.js',
     './external/rgahxsynth-synth.js',
@@ -61,12 +65,12 @@ const ASSETS = [
     './synths/rg1piano.wasm',
     './synths/rg909-drum.js',
     './synths/rg909-drum.wasm',
-    './synths/rgsfz-player.js',
-    './synths/rgsfz-player.wasm',
+    './synths/rgahxdrum.js',
+    './synths/rgahxdrum.wasm',
     './synths/rgslicer.js',
     './synths/rgslicer.wasm',
     // Preset data files
-    './data/sid_presets.h'
+    './data/sid_user_presets.txt'
 ];
 
 // Install event - cache assets

@@ -39,7 +39,7 @@ class RG1PianoSynth {
             console.log('[RG1Piano] Audio graph connected: worklet → masterGain → speakerGain → destination');
 
             // Load and register AudioWorklet processor (reuse synth-worklet, with cache-busting)
-            await this.audioContext.audioWorklet.addModule('worklets/synth-worklet-processor.js?v=184');
+            await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/synths/') ? '../replugged/worklets/synth-worklet-processor.js?v=184' : 'replugged/worklets/synth-worklet-processor.js?v=184');
 
             // Create worklet node
             this.workletNode = new AudioWorkletNode(this.audioContext, 'synth-worklet-processor');
@@ -85,8 +85,8 @@ class RG1PianoSynth {
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch('synths/rg1piano.js'),
-                fetch('synths/rg1piano.wasm')
+                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rg1piano.js`),
+                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rg1piano.wasm`)
             ]);
 
             const jsCode = await jsResponse.text();

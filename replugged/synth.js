@@ -577,12 +577,12 @@ function disconnectWebRTCMIDI() {
 function setupMIDIHandlers() {
   // Handle note on from regular MIDI
   midiManager.on("noteon", (data) => {
-    console.log("[MIDI] Note ON:", data, "Channel:", data.channel);
+    // console.log("[MIDI] Note ON:", data, "Channel:", data.channel);
 
     // Route to SFZ player if loaded (takes priority)
     if (sfzPlayer && sfzPlayer.regions.length > 0) {
       sfzPlayer.handleNoteOn(data.note, data.velocity);
-      console.log("[MIDI] Routed to SFZ");
+      // console.log("[MIDI] Routed to SFZ");
     }
     // MIDI Channel 10 (index 9) routes to drums (GM standard)
     else if (data.channel === 9 && (drumSynth || ahxDrumSynth)) {
@@ -615,7 +615,7 @@ function setupMIDIHandlers() {
 
   // Handle note off from regular MIDI
   midiManager.on("noteoff", (data) => {
-    console.log("[MIDI] Note OFF:", data, "Channel:", data.channel);
+    // console.log("[MIDI] Note OFF:", data, "Channel:", data.channel);
 
     // Send note off to SFZ player if loaded
     if (sfzPlayer && sfzPlayer.regions.length > 0) {

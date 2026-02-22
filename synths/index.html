@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Regrooved Synthesizer Tester</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../replugged/styles.css">
 </head>
 <body>
     <div class="top-banner">
-        <a href="index.html" class="back-button">◄</a>
+        <a href="../index.html" class="back-button">◄</a>
         <div class="banner-title">Synth Tester</div>
     </div>
     <div class="container">
@@ -326,45 +326,45 @@
     </div>
 
     <!-- Custom UI components -->
-    <script type="module" src="components/svg-slider.js"></script>
-    <script type="module" src="components/pad-knob.js"></script>
+    <script type="module" src="../replugged/components/svg-slider.js"></script>
+    <script type="module" src="../replugged/components/pad-knob.js"></script>
 
     <!-- Synth auto-discovery system -->
-    <script src="synth-registry.js"></script>
-    <script type="module" src="synth-ui.js"></script>
+    <script src="../replugged/synth-registry.js"></script>
+    <script type="module" src="../replugged/synth-ui.js"></script>
 
     <!-- Piano keyboard component -->
-    <script src="components/piano-keyboard.js"></script>
+    <script src="../replugged/components/piano-keyboard.js"></script>
 
     <!-- Load MIDI stack (ES6 modules not needed for standalone scripts) -->
-    <script src="external/midi-manager.js"></script>
-    <script src="external/frequency-analyzer.js"></script>
-    <script src="external/midi-audio-synth.js"></script>
-    <script src="external/rgresonate1-synth.js"></script>
-    <script src="external/rgahxsynth-synth.js"></script>
-    <script src="external/rgsid-synth.js"></script>
-    <script src="external/rg1piano-synth.js"></script>
-    <script src="external/rg909-drum.js"></script>
-    <script src="external/rgahxdrum.js"></script>
-    <script src="external/rgslicer-synth.js"></script>
-    <script src="external/rgsfz-synth.js"></script>
+    <script src="../replugged/external/midi-manager.js"></script>
+    <script src="../replugged/external/frequency-analyzer.js"></script>
+    <script src="../replugged/external/midi-audio-synth.js"></script>
+    <script src="../replugged/external/rgresonate1-synth.js"></script>
+    <script src="../replugged/external/rgahxsynth-synth.js"></script>
+    <script src="../replugged/external/rgsid-synth.js"></script>
+    <script src="../replugged/external/rg1piano-synth.js"></script>
+    <script src="../replugged/external/rg909-drum.js"></script>
+    <script src="../replugged/external/rgahxdrum.js"></script>
+    <script src="../replugged/external/rgslicer-synth.js"></script>
+    <script src="../replugged/external/rgsfz-synth.js"></script>
 
     <!-- Load WASM modules -->
-    <script src="synths/rg909-drum.js"></script>
-    <script src="synths/rgahxdrum.js"></script>
+    <script src="rg909-drum.js"></script>
+    <script src="rgahxdrum.js"></script>
 
     <!-- WebRTC MIDI (loaded as module) -->
-    <script type="module" src="external/midi-rtc-bridge.js"></script>
+    <script type="module" src="../replugged/external/midi-rtc-bridge.js"></script>
     <script type="module">
         // Import and expose BrowserMIDIRTC globally for non-module scripts
-        import { BrowserMIDIRTC } from './external/midi-rtc-bridge.js';
+        import { BrowserMIDIRTC } from '../replugged/external/midi-rtc-bridge.js';
         window.BrowserMIDIRTC = BrowserMIDIRTC;
     </script>
 
     <!-- Visualization components -->
-    <script src="components/freq-bars-analyzer.js"></script>
+    <script src="../replugged/components/freq-bars-analyzer.js"></script>
 
-    <script src="synth.js" type="module"></script>
+    <script src="../replugged/synth.js" type="module"></script>
 
     <!-- Fullscreen Scope Functionality -->
     <script>
