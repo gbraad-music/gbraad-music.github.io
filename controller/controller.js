@@ -889,9 +889,31 @@ function setupFullscreen() {
 
     controllerVisual.title = 'Click background for fullscreen';
     console.log('[Fullscreen] Trigger Pads fullscreen enabled - click X to exit');
-    
+
     // Initial info update
     updateFullscreenInfo();
+}
+
+// Update fullscreen info display
+function updateFullscreenInfo() {
+    const deviceSelect = document.getElementById('triggerMidiDevice');
+    const presetSelect = document.getElementById('triggerPreset');
+    const channelSelect = document.getElementById('triggerChannel');
+
+    const fsInfoDevice = document.getElementById('fsInfoDevice');
+    const fsInfoPreset = document.getElementById('fsInfoPreset');
+    const fsInfoChannel = document.getElementById('fsInfoChannel');
+
+    if (fsInfoDevice && deviceSelect) {
+        fsInfoDevice.textContent = deviceSelect.options[deviceSelect.selectedIndex]?.text || '-';
+    }
+    if (fsInfoPreset && presetSelect) {
+        fsInfoPreset.textContent = presetSelect.options[presetSelect.selectedIndex]?.text || '-';
+    }
+    if (fsInfoChannel && channelSelect) {
+        const channelText = channelSelect.options[channelSelect.selectedIndex]?.text || '-';
+        fsInfoChannel.textContent = channelText;
+    }
 }
 
 // Controller Manager UI
@@ -1060,7 +1082,7 @@ function setupTriggerPadControls() {
                 const device = getMIDIDevice(e.target.value);
                 triggerPadsInstance.setMidiOutput(device);
             }
-            
+
             updateFullscreenInfo();
             console.log('[Trigger Pads] MIDI Device:', e.target.value);
         });
@@ -1079,7 +1101,7 @@ function setupTriggerPadControls() {
                 const preset = presets[e.target.value] || presets.default;
                 triggerPadsInstance.setPreset(preset);
             }
-            
+
             updateFullscreenInfo();
             console.log('[Trigger Pads] Preset:', e.target.value);
         });
@@ -1096,7 +1118,7 @@ function setupTriggerPadControls() {
             if (triggerPadsInstance) {
                 triggerPadsInstance.setChannel(parseInt(e.target.value));
             }
-            
+
             updateFullscreenInfo();
             console.log('[Trigger Pads] Channel:', e.target.value);
         });
@@ -1193,7 +1215,21 @@ const sceneManager = {
         document.getElementById('nav-overlay')?.addEventListener('click', () => {
             this.closeMenu();
         });
-        
+
+        // Credits button
+        document.getElementById('showCreditsBtn')?.addEventListener('click', () => {
+            this.showCredits();
+        });
+
+        // Credits modal close
+        document.getElementById('creditsClose')?.addEventListener('click', () => {
+            this.closeCredits();
+        });
+
+        document.getElementById('creditsOverlay')?.addEventListener('click', () => {
+            this.closeCredits();
+        });
+
         // Nav items
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', (e) => {
@@ -1211,6 +1247,17 @@ const sceneManager = {
     closeMenu() {
         document.getElementById('nav-menu')?.classList.remove('open');
         document.getElementById('nav-overlay')?.classList.remove('active');
+    },
+
+    showCredits() {
+        document.getElementById('creditsOverlay')?.classList.add('active');
+        document.getElementById('creditsModal')?.classList.add('active');
+        this.closeMenu();
+    },
+
+    closeCredits() {
+        document.getElementById('creditsOverlay')?.classList.remove('active');
+        document.getElementById('creditsModal')?.classList.remove('active');
     },
     
     switchScene(sceneName) {

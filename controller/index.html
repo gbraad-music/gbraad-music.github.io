@@ -75,8 +75,8 @@
                         <div class="trigger-config-item">
                             <label>Preset</label>
                             <select id="triggerPreset">
-                                <option value="default" selected>🎮 Default Layout</option>
-                                <option value="drums">🥁 Drum Kit</option>
+                                <option value="default" selected>Default Layout</option>
+                                <option value="drums">Drum Kit</option>
                             </select>
                         </div>
                         <div class="trigger-config-item">
@@ -100,6 +100,24 @@
                                 <option value="15">Ch 16</option>
                                 <option value="-1">Omni (All)</option>
                             </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fullscreen Info Display -->
+                <div class="fullscreen-info" id="fullscreenInfo">
+                    <div class="fullscreen-info-row">
+                        <div class="fullscreen-info-item">
+                            <span class="fullscreen-info-label">MIDI:</span>
+                            <span class="fullscreen-info-value" id="fsInfoDevice">-</span>
+                        </div>
+                        <div class="fullscreen-info-item">
+                            <span class="fullscreen-info-label">Preset:</span>
+                            <span class="fullscreen-info-value" id="fsInfoPreset">-</span>
+                        </div>
+                        <div class="fullscreen-info-item">
+                            <span class="fullscreen-info-label">Channel:</span>
+                            <span class="fullscreen-info-value" id="fsInfoChannel">-</span>
                         </div>
                     </div>
                 </div>
