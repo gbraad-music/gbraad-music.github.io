@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Regrooved MIDI Controller</title>
+    <title>Regroove MIDI Controller</title>
     <link rel="manifest" href="./manifest.json">
     <link rel="icon" type="image/svg+xml" href="./favicon.svg">
     <link rel="icon" type="image/png" sizes="96x96" href="./favicon-96x96.png">
@@ -16,20 +16,41 @@
 <body>
     <div class="top-banner">
         <button class="hamburger-button" id="menu-btn">☰</button>
-        <div class="banner-title">🎹 MIDI Controller</div>
+        <div class="banner-title">Regroove MIDI Controller</div>
     </div>
 
     <!-- Navigation Menu (slide in from left) -->
-    <div id="nav-menu" class="nav-menu">
-        <div class="nav-header">
-            <span>Navigation</span>
-            <button id="close-menu" style="background: transparent; border: none; color: white; font-size: 1.5em; cursor: pointer;">×</button>
+    <div class="menu-overlay" id="nav-overlay"></div>
+    <div class="menu-panel" id="nav-menu">
+        <button class="menu-close" id="close-menu">×</button>
+        <div class="menu-items">
+            <div class="nav-item active" data-scene="trigger-pads">Trigger Pads</div>
+            <div class="nav-item" data-scene="setup">Setup</div>
+            <div class="nav-item" data-scene="presets">Presets</div>
+            <button class="menu-item" id="showCreditsBtn">About / Credits</button>
         </div>
-        <div class="nav-item active" data-scene="trigger-pads">🎹 Trigger Pads</div>
-        <div class="nav-item" data-scene="setup">⚙️ Setup</div>
-        <div class="nav-item" data-scene="presets">🎨 Presets</div>
     </div>
-    <div id="nav-overlay" class="nav-overlay"></div>
+
+    <!-- Credits Modal -->
+    <div class="modal-overlay" id="creditsOverlay"></div>
+    <div class="modal" id="creditsModal">
+        <div class="modal-header">
+            <h2>About Regroove MIDI Controller</h2>
+            <button class="modal-close" id="creditsClose">×</button>
+        </div>
+        <div class="modal-body">
+            <h3>Regroove MIDI Controller</h3>
+            <p>Web-based MIDI controller with gamepad and touch support</p>
+            <p>Trigger pads for live performance</p>
+            <p>WebMIDI output</p>
+            <p>
+                Uses: WebMIDI API, Gamepad API, Web Audio API
+            </p>
+            <p style="margin-top: 20px; font-size: 0.9em; color: #999;">
+                Created by Gerard Braad &lt;me@gbraad.nl&gt;
+            </p>
+        </div>
+    </div>
 
     <!-- Scene: Trigger Pads -->
     <div id="scene-trigger-pads" class="scene active">

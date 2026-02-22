@@ -1,6 +1,6 @@
 {
-  "name": "Regroove Effects Tester",
-  "short_name": "Effects",
+  "name": "Regroove Player",
+  "short_name": "Player",
   "description": "Web-based audio effects processor with WASM MOD/MED/AHX/SID playback",
   "start_url": "./index.html",
   "scope": "./",

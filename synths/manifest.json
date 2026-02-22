@@ -1,7 +1,7 @@
 {
-  "name": "Regroove Synth Tester",
+  "name": "Regroove Synths",
   "short_name": "Synths",
-  "description": "Web-based synthesizer tester with WebMIDI support",
+  "description": "Web-based synthesizers with WebMIDI support",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

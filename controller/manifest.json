@@ -1,6 +1,6 @@
 {
-  "name": "Regrooved MIDI Controller",
-  "short_name": "MIDI Ctrl",
+  "name": "Regroove MIDI Controller",
+  "short_name": "MIDI",
   "description": "Web-based MIDI controller with gamepad and touch support",
   "start_url": "./index.html",
   "display": "standalone",
