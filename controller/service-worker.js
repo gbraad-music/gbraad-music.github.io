@@ -2,7 +2,7 @@ const CACHE_NAME = 'midi-controller-v24';
 const ASSETS = [
     './',
     './index.html',
-    './styles.css',
+    './style.css',
     './controller.js',
     './non-blocking-dialog.js',
     './manifest.json',
