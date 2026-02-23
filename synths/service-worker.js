@@ -17,7 +17,7 @@ const ASSETS = [
     './rgahxdrum.wasm',
     './rgslicer.js',
     './rgslicer.wasm',
-    '../replugged/styles.css',
+    '../replugged/style.css',
     '../replugged/favicon.svg',
     '../replugged/favicon-96x96.png',
     '../replugged/apple-touch-icon.png',
