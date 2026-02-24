@@ -186,7 +186,7 @@ class RVBassSynth {
                     }
                 } else if (type === 'error') {
                     console.error('[RV Bass] WASM error:', data);
-                    this.wasmError = `Synth engine error: ${data.message || 'Unknown error'}`;
+                    this.wasmError = `Synth engine error: ${(data && data.message) || 'Unknown error'}`;
 
                     // Reject the promise
                     if (this.wasmReadyReject) {

@@ -367,9 +367,12 @@ class SynthWorkletProcessor extends AudioWorkletProcessor {
 
             console.log(`[SynthWorklet] Buffer: 0x${this.audioBufferPtr.toString(16)}`);
 
-            // Create synth instance (engine ID passed from main thread, sampleRate)
+            // Create synth instance (engine ID passed from main thread)
             if (this.wasmFuncs.create) {
-                this.synthPtr = this.wasmFuncs.create(engineId, this.sampleRate);
+                this.synthPtr = this.wasmFuncs.create(engineId);
+                if (!this.synthPtr) {
+                    throw new Error(`regroove_synth_create(${engineId}) returned null/undefined`);
+                }
                 console.log(`[SynthWorklet] Synth created (engine ${engineId}): 0x${this.synthPtr.toString(16)}`);
             } else {
                 throw new Error('regroove_synth_create not found in WASM exports');
@@ -379,7 +382,7 @@ class SynthWorkletProcessor extends AudioWorkletProcessor {
             console.log('[SynthWorklet] ✅ Ready!');
         } catch (error) {
             console.error('[SynthWorklet] ❌ Failed:', error);
-            this.port.postMessage({ type: 'error', error: error.message });
+            this.port.postMessage({ type: 'error', data: { message: error.message || String(error) } });
         }
     }
 

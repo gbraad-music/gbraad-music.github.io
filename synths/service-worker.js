@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rfx-synths-v19';
+const CACHE_NAME = 'rfx-synths-v20';
 const ASSETS = [
     './',
     './index.html',
