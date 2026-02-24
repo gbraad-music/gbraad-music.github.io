@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rfx-synths-v1';
+const CACHE_NAME = 'rfx-synths-v2';
 const ASSETS = [
     './',
     './index.html',
@@ -17,6 +17,10 @@ const ASSETS = [
     './rgahxdrum.wasm',
     './rgslicer.js',
     './rgslicer.wasm',
+    './rvkeys.js',
+    './rvkeys.wasm',
+    './rvbass.js',
+    './rvbass.wasm',
     '../replugged/style.css',
     '../replugged/favicon.svg',
     '../replugged/favicon-96x96.png',
@@ -31,6 +35,9 @@ const ASSETS = [
     '../replugged/components/waveform-display.js',
     '../replugged/components/spectrum-analyzer.js',
     '../replugged/components/freq-bars-analyzer.js',
+    '../replugged/components/motion-sequencer.js',
+    '../replugged/components/rvkeys-ui.js',
+    '../replugged/components/rvbass-ui.js',
     '../replugged/worklets/synth-worklet-processor.js',
     '../replugged/worklets/drum-worklet-processor.js',
     '../replugged/external/midi-rtc/midi-codec.js',
@@ -52,6 +59,8 @@ const ASSETS = [
     '../replugged/external/rgsfz-synth.js',
     '../replugged/external/rgahxdrum.js',
     '../replugged/external/rgslicer-synth.js',
+    '../replugged/external/rvkeys-synth.js',
+    '../replugged/external/rvbass-synth.js',
     '../data/sid_user_presets.txt'
 ];
 

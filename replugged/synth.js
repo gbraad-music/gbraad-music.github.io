@@ -102,6 +102,12 @@ async function init() {
   document
     .getElementById("btnInitRGSlicer")
     .addEventListener("click", initializeRGSlicer);
+  document
+    .getElementById("btnInitRVKeys")
+    .addEventListener("click", () => initializeSynth("rvkeys"));
+  document
+    .getElementById("btnInitRVBass")
+    .addEventListener("click", () => initializeSynth("rvbass"));
 
   // Initialize drum
   document
@@ -277,11 +283,47 @@ async function initializeSynth(engine) {
   } else if (engine === "rgslicer") {
     currentSynth = new RGSlicerSynth(audioContext);
     slicerSynth = currentSynth; // Keep reference for WAV loading
+  } else if (engine === "rvkeys") {
+    currentSynth = new RVKeysSynth(audioContext);
+  } else if (engine === "rvbass") {
+    currentSynth = new RVBassSynth(audioContext);
   } else {
     currentSynth = new MIDIAudioSynth(audioContext);
   }
 
-  await currentSynth.initialize();
+  const initSuccess = await currentSynth.initialize();
+
+  // Check if initialization failed
+  if (!initSuccess) {
+    let engineName = "Simple";
+    if (engine === "rgresonate1") engineName = "RGResonate1";
+    else if (engine === "rgahx") engineName = "RGAHX";
+    else if (engine === "rgsid") engineName = "RGSID";
+    else if (engine === "rg1piano") engineName = "RG1Piano";
+    else if (engine === "rgslicer") engineName = "RGSlicer";
+    else if (engine === "rvkeys") engineName = "RV Keys";
+    else if (engine === "rvbass") engineName = "RV Bass";
+
+    const errorMsg = currentSynth.wasmError || "Failed to initialize synth engine";
+    synthStatus.innerHTML = `Synth: <span style="color: #ff3333;">${engineName} - ERROR</span><br><span style="color: #ff6666; font-size: 11px;">${errorMsg}</span>`;
+    console.error(`[Synth Test] Failed to initialize ${engineName}:`, errorMsg);
+
+    // Clean up the failed synth
+    if (currentSynth) {
+      currentSynth.destroy();
+      currentSynth = null;
+    }
+    return;
+  }
+
+  // Enable speaker output for RV synths (they start muted)
+  if (engine === "rvkeys" || engine === "rvbass") {
+    currentSynth.setSpeakerOutput(true);
+    console.log(`[Synth Test] ${engine} speaker output enabled`);
+    console.log(`[Synth Test] ${engine} speakerGain:`, currentSynth.speakerGain?.gain.value,
+                'masterGain:', currentSynth.masterGain?.gain.value,
+                'isAudible:', currentSynth.isAudible);
+  }
 
   // Connect auto-generated UI to synth instance
   if (engine === "rgahx") {
@@ -302,11 +344,44 @@ async function initializeSynth(engine) {
       synthUI.setSynthInstance(currentSynth);
       console.log("[RGSlicer] Auto-generated UI connected to synth instance");
     }, 500);
+  } else if (engine === "rvkeys") {
+    const synthUI = document.getElementById("rvkeysUI");
+    const sequencer = document.getElementById("rvkeysSequencer");
+    setTimeout(() => {
+      synthUI.setSynth(currentSynth);
+      sequencer.setSynth({
+        noteOn: (note, velocity) => currentSynth.handleNoteOn(note, velocity),
+        noteOff: (note) => currentSynth.handleNoteOff(note)
+      }, currentSynth.getParameterInfo().map(p => ({name: p.name})));
+      sequencer.setParameterChangeCallback((index, value) => {
+        currentSynth.setParameter(index, value);
+      });
+      console.log("[RV Keys] UI and sequencer connected to synth instance");
+    }, 500);
+  } else if (engine === "rvbass") {
+    const synthUI = document.getElementById("rvbassUI");
+    const sequencer = document.getElementById("rvbassSequencer");
+    setTimeout(() => {
+      synthUI.setSynth(currentSynth);
+      sequencer.setSynth({
+        noteOn: (note, velocity) => currentSynth.handleNoteOn(note, velocity),
+        noteOff: (note) => currentSynth.handleNoteOff(note)
+      }, currentSynth.getParameterInfo().map(p => ({name: p.name})));
+      sequencer.setParameterChangeCallback((index, value) => {
+        currentSynth.setParameter(index, value);
+      });
+      console.log("[RV Bass] UI and sequencer connected to synth instance");
+    }, 500);
   }
 
   // Connect synth to shared analyzer
   currentSynth.masterGain.connect(sharedAnalyzer.inputGain);
   console.log("[Synth Test] Connected synth to shared analyzer");
+
+  // Expose for debugging
+  window.debugSynth = currentSynth;
+  window.debugMasterGain = masterGainNode;
+  window.debugAnalyzer = sharedAnalyzer;
 
   // Connect analyzer to master gain (volume control)
   sharedAnalyzer.connectTo(masterGainNode);
@@ -317,6 +392,8 @@ async function initializeSynth(engine) {
   else if (engine === "rgsid") engineName = "RGSID";
   else if (engine === "rg1piano") engineName = "RG1Piano";
   else if (engine === "rgslicer") engineName = "RGSlicer";
+  else if (engine === "rvkeys") engineName = "RV Keys";
+  else if (engine === "rvbass") engineName = "RV Bass";
 
   synthStatus.innerHTML = `Synth: <span>${engineName}</span>`;
 
@@ -328,6 +405,8 @@ async function initializeSynth(engine) {
   document.getElementById("btnInitRG1Piano").classList.remove("active");
   document.getElementById("btnInitRGSFZ").classList.remove("active");
   document.getElementById("btnInitRGSlicer").classList.remove("active");
+  document.getElementById("btnInitRVKeys").classList.remove("active");
+  document.getElementById("btnInitRVBass").classList.remove("active");
 
   // Add active class to current engine
   if (engine === "simple") {
@@ -344,6 +423,10 @@ async function initializeSynth(engine) {
     document.getElementById("btnInitRGSFZ").classList.add("active");
   } else if (engine === "rgslicer") {
     document.getElementById("btnInitRGSlicer").classList.add("active");
+  } else if (engine === "rvkeys") {
+    document.getElementById("btnInitRVKeys").classList.add("active");
+  } else if (engine === "rvbass") {
+    document.getElementById("btnInitRVBass").classList.add("active");
   }
 
   // Show/hide engine-specific controls
@@ -357,6 +440,10 @@ async function initializeSynth(engine) {
     engine === "rgslicer" ? "block" : "none";
   document.getElementById("rgslicerWavControls").style.display =
     engine === "rgslicer" ? "block" : "none";
+  document.getElementById("rvkeysSection").style.display =
+    engine === "rvkeys" ? "block" : "none";
+  document.getElementById("rvbassSection").style.display =
+    engine === "rvbass" ? "block" : "none";
 
   // Don't call setAudible(true) - already connected through analyzer
   // (Calling setAudible would create dual path: analyzer + speakerGain = 2x volume!)
@@ -379,7 +466,18 @@ async function initializeDrum() {
   }
 
   drumSynth = new RG909Drum(audioContext);
-  await drumSynth.initialize();
+  const initSuccess = await drumSynth.initialize();
+
+  if (!initSuccess) {
+    const errorMsg = drumSynth.wasmError || "Failed to initialize drum engine";
+    synthStatus.innerHTML = `Drum: <span style="color: #ff3333;">RG909 - ERROR</span><br><span style="color: #ff6666; font-size: 11px;">${errorMsg}</span>`;
+    console.error("[Synth Test] Failed to initialize RG909 Drum:", errorMsg);
+    if (drumSynth) {
+      drumSynth.destroy();
+      drumSynth = null;
+    }
+    return;
+  }
 
   // Create shared analyzer if not exists
   if (!sharedAnalyzer) {
@@ -434,7 +532,18 @@ async function initializeAHXDrum() {
   }
 
   ahxDrumSynth = new RGAHXDrum(audioContext);
-  await ahxDrumSynth.initialize();
+  const initSuccess = await ahxDrumSynth.initialize();
+
+  if (!initSuccess) {
+    const errorMsg = ahxDrumSynth.wasmError || "Failed to initialize AHX drum engine";
+    synthStatus.innerHTML = `Drum: <span style="color: #ff3333;">RGAHX - ERROR</span><br><span style="color: #ff6666; font-size: 11px;">${errorMsg}</span>`;
+    console.error("[Synth Test] Failed to initialize RGAHX Drum:", errorMsg);
+    if (ahxDrumSynth) {
+      ahxDrumSynth.destroy();
+      ahxDrumSynth = null;
+    }
+    return;
+  }
 
   // Create shared analyzer if not exists
   if (!sharedAnalyzer) {
@@ -1180,6 +1289,7 @@ function playKeyboardNote(note, velocity, isNoteOff = false) {
   if (isNoteOff) {
     // Note off
     activeKeys.delete(note);
+    console.log("[Keyboard] Note OFF:", note, "channel:", keyboardChannel);
 
     // Send note off to SFZ player if loaded
     if (sfzPlayer && sfzPlayer.regions.length > 0) {
@@ -1187,7 +1297,12 @@ function playKeyboardNote(note, velocity, isNoteOff = false) {
     }
     // Only send note off to synth (not drums)
     else if (keyboardChannel !== 9 && currentSynth) {
-      currentSynth.handleNoteOff(note);
+      console.log("[Keyboard] Sending note OFF to synth, currentSynth:", currentSynth.constructor.name);
+      if (typeof currentSynth.handleNoteOff === 'function') {
+        currentSynth.handleNoteOff(note);
+      } else {
+        console.error("[Keyboard] currentSynth.handleNoteOff is not a function!", currentSynth);
+      }
     }
   } else {
     // Note on
@@ -1470,7 +1585,18 @@ async function initializeRGSFZ() {
 
   try {
     sfzPlayer = new RGSFZSynth(audioContext);
-    await sfzPlayer.initialize();
+    const initSuccess = await sfzPlayer.initialize();
+
+    if (!initSuccess) {
+      const errorMsg = sfzPlayer.wasmError || "Failed to initialize SFZ engine";
+      synthStatus.innerHTML = `Synth: <span style="color: #ff3333;">RGSFZ - ERROR</span><br><span style="color: #ff6666; font-size: 11px;">${errorMsg}</span>`;
+      console.error("[RGSFZ] Failed to initialize:", errorMsg);
+      if (sfzPlayer) {
+        sfzPlayer.destroy();
+        sfzPlayer = null;
+      }
+      return;
+    }
 
     // Connect to shared analyzer
     if (!sharedAnalyzer) {
@@ -1510,7 +1636,7 @@ async function initializeRGSFZ() {
     console.log("[RGSFZ] Initialized successfully");
   } catch (error) {
     console.error("[RGSFZ] Initialization error:", error);
-    alert("Failed to initialize RGSFZ: " + error.message);
+    synthStatus.innerHTML = `Synth: <span style="color: #ff3333;">RGSFZ - ERROR</span><br><span style="color: #ff6666; font-size: 11px;">${error.message}</span>`;
   }
 }
 

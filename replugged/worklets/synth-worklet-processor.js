@@ -5,7 +5,7 @@
 class SynthWorkletProcessor extends AudioWorkletProcessor {
     constructor(options) {
         super();
-        console.log('[SynthWorklet] ✅ LOADED v180 - Added voice-specific UI updates + detailed logging');
+        console.log('[SynthWorklet] ✅ LOADED v203 - FIXED setParameter type mismatch');
         this.wasmModule = null;
         this.synthPtr = null;
         this.audioBufferPtr = null;
@@ -41,7 +41,7 @@ class SynthWorkletProcessor extends AudioWorkletProcessor {
             this.handleNoteOff(data.note);
         } else if (type === 'allNotesOff') {
             this.allNotesOff();
-        } else if (type === 'setParam') {
+        } else if (type === 'setParam' || type === 'setParameter') {
             this.setParameter(data.index, data.value);
         } else if (type === 'reset') {
             this.reset();
@@ -320,7 +320,7 @@ class SynthWorkletProcessor extends AudioWorkletProcessor {
 
             const moduleCode = wasmData.jsCode;
             const wasmBytes = wasmData.wasmBytes;
-            const engineId = wasmData.engine || 0;
+            const engineId = wasmData.engineId || wasmData.engine || 0;
 
             // Create fake CommonJS environment to capture the module export
             // Emscripten modules end with: if(typeof exports==="object"&&typeof module==="object"){module.exports=...}
@@ -418,6 +418,7 @@ class SynthWorkletProcessor extends AudioWorkletProcessor {
 
     setParameter(index, value) {
         if (!this.synthPtr || !this.wasmFuncs.set_parameter_value) return;
+        console.log('[SynthWorklet] setParameter:', index, '=', value);
         this.wasmFuncs.set_parameter_value(this.synthPtr, index, value);
     }
 
