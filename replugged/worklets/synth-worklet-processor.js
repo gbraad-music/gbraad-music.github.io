@@ -418,7 +418,6 @@ class SynthWorkletProcessor extends AudioWorkletProcessor {
 
     setParameter(index, value) {
         if (!this.synthPtr || !this.wasmFuncs.set_parameter_value) return;
-        console.log('[SynthWorklet] setParameter:', index, '=', value);
         this.wasmFuncs.set_parameter_value(this.synthPtr, index, value);
     }
 

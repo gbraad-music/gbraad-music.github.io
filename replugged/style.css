@@ -970,24 +970,22 @@ pad-knob {
     color: #00FF00;
 }
 
-.keyboard-toggle {
-    width: 100%;
-    padding: 10px;
-    background: var(--bg-tertiary);
-    border: 1px solid #3a3a3a;
-    border-radius: 4px;
-    color: var(--text-primary);
+.collapse-toggle {
+    padding: 4px 8px;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    color: #0066FF;
+    font-size: 12px;
     cursor: pointer;
-    margin-bottom: 10px;
+    border-radius: 3px;
+    transition: all 0.2s;
+    margin-left: 10px;
+    float: right;
 }
 
-.keyboard-toggle:hover {
-    border-color: #4a4a4a;
-}
-
-.keyboard-toggle.active {
-    background: #0066FF;
-    border-color: #0088FF;
+.collapse-toggle:hover {
+    border-color: #0066FF;
+    background: #2a2a2a;
 }
 
 .keyboard-container {
@@ -996,9 +994,14 @@ pad-knob {
     padding: 15px;
     border: 1px solid var(--border);
     border-radius: 4px;
-    margin-bottom: 10px;
-    min-height: 500px;
-    position: relative;
+}
+
+.sequencer-wrapper {
+    display: none;
+    background: var(--bg-primary);
+    padding: 15px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
 }
 
 .keyboard-container:hover {
@@ -1006,6 +1009,10 @@ pad-knob {
 }
 
 .keyboard-container.visible {
+    display: block;
+}
+
+.sequencer-wrapper.visible {
     display: block;
 }
 

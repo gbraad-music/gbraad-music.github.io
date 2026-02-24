@@ -104,11 +104,11 @@
 
         <!-- On-screen Keyboard -->
         <div class="section">
-            <div class="section-title">On-Screen Keyboard</div>
-            <button class="keyboard-toggle" id="keyboardToggle">
-                ⌨️ Show Keyboard
-            </button>
-            <div class="keyboard-container" id="keyboardContainer">
+            <div class="section-title">
+                On-Screen Keyboard
+                <button class="collapse-toggle" id="keyboardToggle">▼</button>
+            </div>
+            <div class="keyboard-container visible" id="keyboardContainer">
                 <div class="keyboard-controls">
                     <label>MIDI Channel:</label>
                     <select id="keyboardChannel">
@@ -141,6 +141,17 @@
                     <span>Click keys to play. Use mouse or touch.</span>
                     <span id="lastNote" style="color: #0066FF;">-</span>
                 </div>
+            </div>
+        </div>
+
+        <!-- Motion Sequencer -->
+        <div class="section">
+            <div class="section-title">
+                Motion Sequencer
+                <button class="collapse-toggle" id="sequencerToggle">▼</button>
+            </div>
+            <div class="sequencer-wrapper visible" id="sequencerWrapper">
+                <motion-sequencer id="motionSequencer"></motion-sequencer>
             </div>
         </div>
 
@@ -264,7 +275,6 @@
             <!-- RGSID Synth Controls (AUTO-GENERATED from parameter metadata) -->
             <synth-ui id="rgsidControls" synth="rgsid" style="display: none;"></synth-ui>
 
-
             <!-- RGSFZ Sampler Controls (shown after initialization) -->
             <div id="rgsfzControls" style="display: none; margin-top: 15px; padding: 15px; background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 4px;">
                 <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
@@ -311,13 +321,11 @@
             <!-- RV Keys Controls (shown after initialization) -->
             <div id="rvkeysSection" style="display: none; margin-top: 15px;">
                 <rvkeys-ui id="rvkeysUI"></rvkeys-ui>
-                <motion-sequencer id="rvkeysSequencer" style="margin-top: 20px;"></motion-sequencer>
             </div>
 
             <!-- RV Bass Controls (shown after initialization) -->
             <div id="rvbassSection" style="display: none; margin-top: 15px;">
                 <rvbass-ui id="rvbassUI"></rvbass-ui>
-                <motion-sequencer id="rvbassSequencer" style="margin-top: 20px;"></motion-sequencer>
             </div>
         </div>
 

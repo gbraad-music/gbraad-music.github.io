@@ -125,7 +125,6 @@ class RVBassSynth {
     }
 
     async initialize() {
-        console.log('[RV Bass] 🎸 Initializing Voltakt Bass (Monophonic Synth)...');
         try {
             // Frequency analyzer is managed externally
             this.frequencyAnalyzer = null;
@@ -141,7 +140,6 @@ class RVBassSynth {
 
             // Audio graph: worklet → masterGain → speakerGain → destination
             this.masterGain.connect(this.speakerGain);
-            console.log('[RV Bass] Audio graph connected');
 
             // Load and register AudioWorklet processor (only once per AudioContext)
             if (!this.audioContext._synthWorkletLoaded) {
@@ -170,7 +168,6 @@ class RVBassSynth {
                 if (type === 'needWasm') {
                     this.loadWasm();
                 } else if (type === 'ready') {
-                    console.log('[RV Bass] ✅ Voltakt Bass ready');
                     this.wasmReady = true;
 
                     // Process any pending notes
@@ -200,7 +197,6 @@ class RVBassSynth {
 
             this.isActive = true;
 
-            console.log('[RV Bass] Initialized - waiting for WASM...');
 
             // Wait for WASM to be ready or fail (with 10 second timeout)
             const timeout = new Promise((_, reject) =>
@@ -218,7 +214,6 @@ class RVBassSynth {
 
     async loadWasm() {
         try {
-            console.log('[RV Bass] Loading WASM...');
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
@@ -248,7 +243,6 @@ class RVBassSynth {
                 }
             });
 
-            console.log('[RV Bass] WASM sent to worklet');
         } catch (error) {
             console.error('[RV Bass] Failed to load WASM:', error);
             this.wasmError = `Failed to load synth engine: ${error.message}`;
@@ -334,7 +328,6 @@ class RVBassSynth {
     }
 
     async destroy() {
-        console.log('[RV Bass] Destroying...');
 
         if (this.workletNode) {
             this.workletNode.disconnect();
@@ -355,7 +348,6 @@ class RVBassSynth {
         this.wasmReady = false;
         this.pendingNotes = [];
 
-        console.log('[RV Bass] Destroyed');
     }
 }
 

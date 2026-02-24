@@ -14,12 +14,13 @@ class MotionSequencer extends HTMLElement {
         this.isPlaying = false;
         this.bpm = 120;
         this.intervalId = null;
+        this.editingStep = null;  // Which step is being edited
 
         // Pattern data
         this.pattern = {
-            steps: Array(16).fill(null).map(() => ({
+            steps: Array(16).fill(null).map((_, i) => ({
                 note: 60,        // MIDI note (C4)
-                gate: true,      // Note on/off
+                gate: (i === 0 || i === 4 || i === 8 || i === 12),  // Four-on-the-floor pattern
                 accent: false,   // Accent flag
                 slide: false,    // Portamento/slide
                 motion: {}       // Parameter automation { paramIndex: value }
@@ -32,6 +33,7 @@ class MotionSequencer extends HTMLElement {
         // Synth callback
         this.synthCallback = null;
         this.parameterChangeCallback = null;
+        this.noteRecordingCallback = null;  // For live note recording
 
         // Available parameters for motion sequencing
         this.availableParams = [];
@@ -50,11 +52,47 @@ class MotionSequencer extends HTMLElement {
     setSynth(synthCallback, paramList = []) {
         this.synthCallback = synthCallback;
         this.availableParams = paramList;
-        this.updateParameterSelect();
     }
 
     setParameterChangeCallback(callback) {
         this.parameterChangeCallback = callback;
+    }
+
+    // Auto-discover and connect to a synth instance
+    connectToSynth(synth, synthUI = null) {
+        if (!synth) {
+            this.style.display = 'none';
+            return;
+        }
+
+        // Check if synth has required methods
+        if (!synth.handleNoteOn || !synth.handleNoteOff) {
+            this.style.display = 'none';
+            return;
+        }
+
+        this.style.display = 'block';  // Show the sequencer
+
+        // Get parameter info if available, otherwise use empty array
+        const paramInfo = synth.getParameterInfo ? synth.getParameterInfo().map(p => ({name: p.name})) : [];
+
+        // Connect sequencer to synth
+        this.setSynth({
+            noteOn: (note, velocity) => synth.handleNoteOn(note, velocity),
+            noteOff: (note) => synth.handleNoteOff(note)
+        }, paramInfo);
+
+        // Set parameter callback if synth supports parameters
+        if (synth.setParameter) {
+            this.setParameterChangeCallback((index, value) => {
+                synth.setParameter(index, value);
+            });
+        }
+
+        // Connect UI to sequencer if provided (for motion recording)
+        if (synthUI && synthUI.setSequencer) {
+            synthUI.setSequencer(this);
+        }
     }
 
     render() {
@@ -62,27 +100,15 @@ class MotionSequencer extends HTMLElement {
             <style>
                 :host {
                     display: block;
-                    background: #0f0f0f;
-                    border: 1px solid #2a2a2a;
-                    border-radius: 8px;
-                    padding: 15px;
                     color: #fff;
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 }
 
-                .sequencer-header {
+                .controls-header {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 15px;
-                }
-
-                .sequencer-title {
-                    font-size: 12px;
-                    color: #0066FF;
-                    text-transform: uppercase;
-                    letter-spacing: 1.5px;
-                    font-weight: bold;
+                    margin-bottom: 20px;
                 }
 
                 .transport-controls {
@@ -132,7 +158,7 @@ class MotionSequencer extends HTMLElement {
                 .settings-row {
                     display: flex;
                     gap: 15px;
-                    margin-bottom: 15px;
+                    margin-bottom: 20px;
                     align-items: center;
                 }
 
@@ -160,8 +186,8 @@ class MotionSequencer extends HTMLElement {
                 .steps-grid {
                     display: grid;
                     grid-template-columns: repeat(16, 1fr);
-                    gap: 4px;
-                    margin-bottom: 15px;
+                    gap: 5px;
+                    margin-bottom: 20px;
                 }
 
                 .step {
@@ -219,8 +245,8 @@ class MotionSequencer extends HTMLElement {
                     background: #0a0a0a;
                     border: 1px solid #2a2a2a;
                     border-radius: 4px;
-                    padding: 12px;
-                    margin-top: 10px;
+                    padding: 15px;
+                    margin-top: 15px;
                 }
 
                 .motion-header {
@@ -270,13 +296,14 @@ class MotionSequencer extends HTMLElement {
                 .info {
                     font-size: 10px;
                     color: #666;
-                    margin-top: 10px;
+                    margin-top: 15px;
+                    padding-top: 15px;
+                    border-top: 1px solid #2a2a2a;
                     font-style: italic;
                 }
             </style>
 
-            <div class="sequencer-header">
-                <div class="sequencer-title">🎛️ Motion Sequencer</div>
+            <div class="controls-header">
                 <div class="transport-controls">
                     <button class="transport-btn" id="playBtn">▶ Play</button>
                     <button class="transport-btn" id="stopBtn">⏹ Stop</button>
@@ -289,19 +316,6 @@ class MotionSequencer extends HTMLElement {
                 <div class="setting">
                     <span class="setting-label">BPM:</span>
                     <input type="number" id="bpmInput" value="120" min="40" max="300" step="1" style="width: 60px;">
-                </div>
-                <div class="setting">
-                    <span class="setting-label">Motion:</span>
-                    <select id="motionToggle">
-                        <option value="false">Off</option>
-                        <option value="true">On</option>
-                    </select>
-                </div>
-                <div class="setting">
-                    <span class="setting-label">Parameter:</span>
-                    <select id="paramSelect" style="width: 120px;">
-                        <option value="">Select...</option>
-                    </select>
                 </div>
             </div>
 
@@ -318,7 +332,7 @@ class MotionSequencer extends HTMLElement {
             </div>
 
             <div class="info">
-                💡 Click steps to toggle notes. Enable Motion and select a parameter, then adjust synth controls while playing to record automation.
+                💡 Click steps to toggle. Press REC + PLAY, then play notes - they'll be recorded per step. Adjust synth controls while recording for parameter automation.
             </div>
         `;
 
@@ -369,11 +383,7 @@ class MotionSequencer extends HTMLElement {
             }
         });
 
-        root.getElementById('motionToggle').addEventListener('change', (e) => {
-            this.pattern.motionEnabled = e.target.value === 'true';
-        });
-
-        // Step clicks
+        // Step clicks - left click toggles gate
         root.getElementById('stepsGrid').addEventListener('click', (e) => {
             const stepEl = e.target.closest('.step');
             if (!stepEl) return;
@@ -384,18 +394,6 @@ class MotionSequencer extends HTMLElement {
 
         // Clear motion
         root.getElementById('clearMotionBtn').addEventListener('click', () => this.clearMotion());
-    }
-
-    updateParameterSelect() {
-        const select = this.shadowRoot.getElementById('paramSelect');
-        select.innerHTML = '<option value="">Select...</option>';
-
-        this.availableParams.forEach((param, index) => {
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = param.name || `Parameter ${index}`;
-            select.appendChild(option);
-        });
     }
 
     toggleStep(index) {
@@ -456,10 +454,24 @@ class MotionSequencer extends HTMLElement {
         const recordBtn = this.shadowRoot.getElementById('recordBtn');
         if (this.pattern.recordingMotion) {
             recordBtn.classList.add('active');
-            console.log('[Sequencer] Motion recording enabled');
+
+            // STEP RECORDING MODE: If not playing, highlight step 0 for input
+            if (!this.isPlaying && this.currentStep === -1) {
+                this.currentStep = 0;
+                this.shadowRoot.querySelectorAll('.step').forEach(s => s.classList.remove('current'));
+                const stepEl = this.shadowRoot.querySelector(`.step[data-step="0"]`);
+                if (stepEl) {
+                    stepEl.classList.add('current');
+                }
+            }
         } else {
             recordBtn.classList.remove('active');
-            console.log('[Sequencer] Motion recording disabled');
+
+            // Clear step highlight if not playing
+            if (!this.isPlaying) {
+                this.currentStep = -1;
+                this.shadowRoot.querySelectorAll('.step').forEach(s => s.classList.remove('current'));
+            }
         }
     }
 
@@ -489,7 +501,7 @@ class MotionSequencer extends HTMLElement {
         }
 
         // Apply motion (parameter automation)
-        if (this.pattern.motionEnabled && step.motion) {
+        if (step.motion) {
             Object.entries(step.motion).forEach(([paramIndex, value]) => {
                 if (this.parameterChangeCallback) {
                     this.parameterChangeCallback(parseInt(paramIndex), value);
@@ -505,6 +517,46 @@ class MotionSequencer extends HTMLElement {
         this.pattern.steps[this.currentStep].motion[paramIndex] = value;
         this.renderSteps();
         this.updateMotionList();
+    }
+
+    // Record note played during live recording
+    recordNote(note) {
+        if (!this.pattern.recordingMotion) {
+            return;
+        }
+
+        // STEP RECORDING MODE: REC on, PLAY off (like Volca step input)
+        // Record note and advance to next step
+        if (!this.isPlaying) {
+            // If currentStep is -1 (stopped), start at step 0
+            if (this.currentStep === -1) {
+                this.currentStep = 0;
+            }
+
+            // Record note into current step
+            this.pattern.steps[this.currentStep].note = note;
+            this.pattern.steps[this.currentStep].gate = true;
+            this.renderSteps();
+
+            // Advance to next step
+            this.currentStep = (this.currentStep + 1) % this.pattern.steps.length;
+
+            // Highlight the new current step
+            this.shadowRoot.querySelectorAll('.step').forEach(s => s.classList.remove('current'));
+            const stepEl = this.shadowRoot.querySelector(`.step[data-step="${this.currentStep}"]`);
+            if (stepEl) {
+                stepEl.classList.add('current');
+            }
+            return;
+        }
+
+        // LIVE RECORDING MODE: REC on, PLAY on
+        // Record note into current playing step
+        if (this.currentStep === -1) return;
+
+        this.pattern.steps[this.currentStep].note = note;
+        this.pattern.steps[this.currentStep].gate = true;
+        this.renderSteps();
     }
 
     updateMotionList() {
@@ -539,7 +591,14 @@ class MotionSequencer extends HTMLElement {
         }));
         this.renderSteps();
         this.updateMotionList();
-        console.log('[Sequencer] Pattern cleared');
+
+        // Restore step highlight if recording
+        if (this.pattern.recordingMotion && !this.isPlaying && this.currentStep !== -1) {
+            const stepEl = this.shadowRoot.querySelector(`.step[data-step="${this.currentStep}"]`);
+            if (stepEl) {
+                stepEl.classList.add('current');
+            }
+        }
     }
 
     clearMotion() {
@@ -548,7 +607,6 @@ class MotionSequencer extends HTMLElement {
         });
         this.renderSteps();
         this.updateMotionList();
-        console.log('[Sequencer] Motion data cleared');
     }
 
     // Export/import pattern data
@@ -561,7 +619,6 @@ class MotionSequencer extends HTMLElement {
             this.pattern = JSON.parse(jsonData);
             this.renderSteps();
             this.updateMotionList();
-            console.log('[Sequencer] Pattern imported');
         } catch (e) {
             console.error('[Sequencer] Failed to import pattern:', e);
         }

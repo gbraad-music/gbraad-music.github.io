@@ -5,6 +5,7 @@ class RVKeysUI extends HTMLElement {
     constructor() {
         super();
         this.synth = null;
+        this.sequencer = null;
         this.attachShadow({ mode: 'open' });
     }
 
@@ -15,6 +16,10 @@ class RVKeysUI extends HTMLElement {
 
     setSynth(synth) {
         this.synth = synth;
+    }
+
+    setSequencer(sequencer) {
+        this.sequencer = sequencer;
     }
 
     render() {
@@ -481,9 +486,11 @@ class RVKeysUI extends HTMLElement {
     setParameter(index, value) {
         if (this.synth && this.synth.setParameter) {
             this.synth.setParameter(index, value);
-            console.log(`[RV Keys UI] Set param ${index} = ${value.toFixed(3)}`);
-        } else {
-            console.warn('[RV Keys UI] Synth not set or setParameter not available');
+
+            // Record motion if sequencer is in recording mode
+            if (this.sequencer && this.sequencer.pattern.recordingMotion) {
+                this.sequencer.recordMotion(index, value);
+            }
         }
     }
 }

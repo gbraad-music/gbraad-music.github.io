@@ -1,10 +1,10 @@
-const CACHE_NAME = 'rfx-synths-v2';
+const CACHE_NAME = 'rfx-synths-v19';
 const ASSETS = [
     './',
     './index.html',
     './manifest.json',
-    './rgresonate1-synth.js',
-    './rgresonate1-synth.wasm',
+    './rgresonate1.js',
+    './rgresonate1.wasm',
     './rgahxsynth.js',
     './rgahxsynth.wasm',
     './rgsidsynth.js',

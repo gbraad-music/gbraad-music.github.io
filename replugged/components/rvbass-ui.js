@@ -5,6 +5,7 @@ class RVBassUI extends HTMLElement {
     constructor() {
         super();
         this.synth = null;
+        this.sequencer = null;
         this.attachShadow({ mode: 'open' });
     }
 
@@ -23,6 +24,10 @@ class RVBassUI extends HTMLElement {
             this.setParameter(11, 1.0);  // VCO3 Level ON
             console.log('[RV Bass UI] Initialized VCO levels to ON');
         }
+    }
+
+    setSequencer(sequencer) {
+        this.sequencer = sequencer;
     }
 
     render() {
@@ -462,13 +467,11 @@ class RVBassUI extends HTMLElement {
     setParameter(index, value) {
         if (this.synth && this.synth.setParameter) {
             this.synth.setParameter(index, value);
-            const paramNames = ['VCO1Wave','VCO2Wave','VCO3Wave','VCO1Pitch','VCO2Pitch','VCO3Pitch',
-                'VCO1Det','VCO2Det','VCO3Det','VCO1Lvl','VCO2Lvl','VCO3Lvl','VCO_EG',
-                'Cutoff','Peak','VCF_EG','Attack','Decay','Sustain','LFOWave','LFORate',
-                'LFOPitch','LFOCutoff','LFOSync','Volume','Octave','Porta','DelayEn','DelayTime','DelayFB'];
-            console.log(`[RV Bass UI] Set param ${index} (${paramNames[index] || 'Unknown'}) = ${value.toFixed(3)}`);
-        } else {
-            console.warn('[RV Bass UI] Synth not set or setParameter not available');
+
+            // Record motion if sequencer is in recording mode
+            if (this.sequencer && this.sequencer.pattern.recordingMotion) {
+                this.sequencer.recordMotion(index, value);
+            }
         }
     }
 }

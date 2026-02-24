@@ -4,6 +4,7 @@ let audioContext;
 let midiManager;
 let webrtcMidi = null;
 let currentSynth = null;
+let motionSequencer = null;  // Global motion sequencer instance
 let drumSynth = null;
 let ahxDrumSynth = null;
 let slicerSynth = null;
@@ -191,6 +192,11 @@ async function init() {
   document
     .getElementById("keyboardToggle")
     .addEventListener("click", toggleKeyboard);
+
+  // Motion sequencer
+  document
+    .getElementById("sequencerToggle")
+    .addEventListener("click", toggleSequencer);
   document
     .getElementById("octaveDown")
     .addEventListener("click", () => changeOctave(-1));
@@ -237,6 +243,15 @@ function updateMIDIInputList() {
     option.textContent = input.name;
     midiInput.appendChild(option);
   });
+}
+
+// Helper function to notify motion sequencer of synth change
+function notifySynthChange(synth, synthUI = null) {
+  if (!motionSequencer) return;
+
+  setTimeout(() => {
+    motionSequencer.connectToSynth(synth, synthUI);
+  }, 500);
 }
 
 async function initializeSynth(engine) {
@@ -349,33 +364,22 @@ async function initializeSynth(engine) {
     }, 500);
   } else if (engine === "rvkeys") {
     const synthUI = document.getElementById("rvkeysUI");
-    const sequencer = document.getElementById("rvkeysSequencer");
     setTimeout(() => {
       synthUI.setSynth(currentSynth);
-      sequencer.setSynth({
-        noteOn: (note, velocity) => currentSynth.handleNoteOn(note, velocity),
-        noteOff: (note) => currentSynth.handleNoteOff(note)
-      }, currentSynth.getParameterInfo().map(p => ({name: p.name})));
-      sequencer.setParameterChangeCallback((index, value) => {
-        currentSynth.setParameter(index, value);
-      });
-      console.log("[RV Keys] UI and sequencer connected to synth instance");
+      console.log("[RV Keys] UI connected to synth instance");
     }, 500);
+    notifySynthChange(currentSynth, document.getElementById("rvkeysUI"));
   } else if (engine === "rvbass") {
     const synthUI = document.getElementById("rvbassUI");
-    const sequencer = document.getElementById("rvbassSequencer");
     setTimeout(() => {
       synthUI.setSynth(currentSynth);
-      sequencer.setSynth({
-        noteOn: (note, velocity) => currentSynth.handleNoteOn(note, velocity),
-        noteOff: (note) => currentSynth.handleNoteOff(note)
-      }, currentSynth.getParameterInfo().map(p => ({name: p.name})));
-      sequencer.setParameterChangeCallback((index, value) => {
-        currentSynth.setParameter(index, value);
-      });
-      console.log("[RV Bass] UI and sequencer connected to synth instance");
+      console.log("[RV Bass] UI connected to synth instance");
     }, 500);
+    notifySynthChange(currentSynth, document.getElementById("rvbassUI"));
   }
+
+  // Notify motion sequencer of synth change (for all synths)
+  notifySynthChange(currentSynth);
 
   // Connect synth to shared analyzer
   currentSynth.masterGain.connect(sharedAnalyzer.inputGain);
@@ -694,6 +698,11 @@ function setupMIDIHandlers() {
   // Handle note on from regular MIDI
   midiManager.on("noteon", (data) => {
     // console.log("[MIDI] Note ON:", data, "Channel:", data.channel);
+
+    // Step recording: Record note if sequencer is in record mode (regardless of synth)
+    if (motionSequencer && motionSequencer.pattern.recordingMotion) {
+      motionSequencer.recordNote(data.note);
+    }
 
     // Route to SFZ player if loaded (takes priority)
     if (sfzPlayer && sfzPlayer.regions.length > 0) {
@@ -1230,12 +1239,24 @@ function toggleKeyboard() {
 
   if (container.classList.contains("visible")) {
     container.classList.remove("visible");
-    toggle.textContent = "⌨️ Show Keyboard";
-    toggle.classList.remove("active");
+    toggle.textContent = "▶";
   } else {
     container.classList.add("visible");
-    toggle.textContent = "⌨️ Hide Keyboard";
-    toggle.classList.add("active");
+    toggle.textContent = "▼";
+  }
+}
+
+// Motion sequencer functions
+function toggleSequencer() {
+  const wrapper = document.getElementById("sequencerWrapper");
+  const toggle = document.getElementById("sequencerToggle");
+
+  if (wrapper.classList.contains("visible")) {
+    wrapper.classList.remove("visible");
+    toggle.textContent = "▶";
+  } else {
+    wrapper.classList.add("visible");
+    toggle.textContent = "▼";
   }
 }
 
@@ -1296,7 +1317,6 @@ function playKeyboardNote(note, velocity, isNoteOff = false) {
   if (isNoteOff) {
     // Note off
     activeKeys.delete(note);
-    console.log("[Keyboard] Note OFF:", note, "channel:", keyboardChannel);
 
     // Send note off to SFZ player if loaded
     if (sfzPlayer && sfzPlayer.regions.length > 0) {
@@ -1304,16 +1324,18 @@ function playKeyboardNote(note, velocity, isNoteOff = false) {
     }
     // Only send note off to synth (not drums)
     else if (keyboardChannel !== 9 && currentSynth) {
-      console.log("[Keyboard] Sending note OFF to synth, currentSynth:", currentSynth.constructor.name);
       if (typeof currentSynth.handleNoteOff === 'function') {
         currentSynth.handleNoteOff(note);
-      } else {
-        console.error("[Keyboard] currentSynth.handleNoteOff is not a function!", currentSynth);
       }
     }
   } else {
     // Note on
     activeKeys.add(note);
+
+    // Step recording: Record note if sequencer is in record mode (regardless of synth)
+    if (motionSequencer && motionSequencer.pattern.recordingMotion) {
+      motionSequencer.recordNote(note);
+    }
 
     // Update last note display
     const noteNames = [
@@ -1338,7 +1360,6 @@ function playKeyboardNote(note, velocity, isNoteOff = false) {
     // Route to SFZ player if loaded (takes priority)
     if (sfzPlayer && sfzPlayer.regions.length > 0) {
       sfzPlayer.handleNoteOn(note, velocity);
-      console.log("[Keyboard] SFZ note:", note, "velocity:", velocity);
     }
     // Route to drums or synth based on channel
     else if (keyboardChannel === 9) {
@@ -1347,20 +1368,11 @@ function playKeyboardNote(note, velocity, isNoteOff = false) {
         const activeDrum = ahxDrumSynth || drumSynth;
         activeDrum.triggerDrum(note, velocity);
         highlightDrumPad(note);
-        console.log("[Keyboard] Drum note:", note, "velocity:", velocity);
       }
     } else {
       // Other channels (synth)
       if (currentSynth) {
         currentSynth.handleNoteOn(note, velocity);
-        console.log(
-          "[Keyboard] Synth note:",
-          note,
-          "velocity:",
-          velocity,
-          "channel:",
-          keyboardChannel + 1,
-        );
       }
     }
   }
@@ -1628,6 +1640,9 @@ async function initializeRGSFZ() {
 
     // Show RGSFZ controls
     document.getElementById("rgsfzControls").style.display = "block";
+
+    // Notify motion sequencer of synth change
+    notifySynthChange(sfzPlayer);
 
     // Update button states - Remove all active classes first
     document.getElementById("btnInitSimple").classList.remove("active");
@@ -2282,6 +2297,9 @@ window.addEventListener("preset_imported", (event) => {
 // Initialize on load
 window.addEventListener("load", () => {
   init();
+
+  // Initialize motion sequencer reference
+  motionSequencer = document.getElementById('motionSequencer');
 
   // Initialize visualization components
   if (freqVizCanvas) {

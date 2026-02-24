@@ -113,7 +113,6 @@ class RVKeysSynth {
     }
 
     async initialize() {
-        console.log('[RV Keys] 🎹 Initializing Voltakt Keys (Polyphonic Synth)...');
         try {
             // Frequency analyzer is managed externally
             this.frequencyAnalyzer = null;
@@ -129,7 +128,6 @@ class RVKeysSynth {
 
             // Audio graph: worklet → masterGain → speakerGain → destination
             this.masterGain.connect(this.speakerGain);
-            console.log('[RV Keys] Audio graph connected');
 
             // Load and register AudioWorklet processor (only once per AudioContext)
             if (!this.audioContext._synthWorkletLoaded) {
@@ -158,7 +156,6 @@ class RVKeysSynth {
                 if (type === 'needWasm') {
                     this.loadWasm();
                 } else if (type === 'ready') {
-                    console.log('[RV Keys] ✅ Voltakt Keys ready');
                     this.wasmReady = true;
 
                     // Process any pending notes
@@ -188,7 +185,6 @@ class RVKeysSynth {
 
             this.isActive = true;
 
-            console.log('[RV Keys] Initialized - waiting for WASM...');
 
             // Wait for WASM to be ready or fail (with 10 second timeout)
             const timeout = new Promise((_, reject) =>
@@ -206,7 +202,6 @@ class RVKeysSynth {
 
     async loadWasm() {
         try {
-            console.log('[RV Keys] Loading WASM...');
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
@@ -236,7 +231,6 @@ class RVKeysSynth {
                 }
             });
 
-            console.log('[RV Keys] WASM sent to worklet');
         } catch (error) {
             console.error('[RV Keys] Failed to load WASM:', error);
             this.wasmError = `Failed to load synth engine: ${error.message}`;
@@ -322,7 +316,6 @@ class RVKeysSynth {
     }
 
     async destroy() {
-        console.log('[RV Keys] Destroying...');
 
         if (this.workletNode) {
             this.workletNode.disconnect();
@@ -343,7 +336,6 @@ class RVKeysSynth {
         this.wasmReady = false;
         this.pendingNotes = [];
 
-        console.log('[RV Keys] Destroyed');
     }
 }
 
