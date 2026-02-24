@@ -240,16 +240,19 @@ function updateMIDIInputList() {
 }
 
 async function initializeSynth(engine) {
-  // Resume AudioContext if needed
-  if (audioContext.state === "suspended") {
-    await audioContext.resume();
-  }
+  try {
+    console.log(`[Synth Test] Initializing ${engine}...`);
 
-  // Destroy existing synth
-  if (currentSynth) {
-    currentSynth.destroy();
-    currentSynth = null;
-  }
+    // Resume AudioContext if needed
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+
+    // Destroy existing synth
+    if (currentSynth) {
+      currentSynth.destroy();
+      currentSynth = null;
+    }
 
   // Create shared analyzer if not exists
   if (!sharedAnalyzer) {
@@ -447,6 +450,10 @@ async function initializeSynth(engine) {
 
   // Don't call setAudible(true) - already connected through analyzer
   // (Calling setAudible would create dual path: analyzer + speakerGain = 2x volume!)
+  } catch (error) {
+    console.error(`[Synth Test] FATAL ERROR initializing ${engine}:`, error);
+    synthStatus.innerHTML = `Synth: <span style="color: #ff3333;">${engine} - FATAL ERROR</span><br><span style="color: #ff6666; font-size: 11px;">${error.message}</span>`;
+  }
 }
 
 async function initializeDrum() {

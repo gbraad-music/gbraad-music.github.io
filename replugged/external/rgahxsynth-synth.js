@@ -94,8 +94,11 @@ class RGAHXSynth {
             this.masterGain.connect(this.speakerGain);
             console.log('[RGAHXSynth] Audio graph connected: worklet → masterGain → speakerGain → destination');
 
-            // Load and register AudioWorklet processor (with cache-busting)
-            await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/synths/') ? '../replugged/worklets/synth-worklet-processor.js?v=242' : 'replugged/worklets/synth-worklet-processor.js?v=242');
+            // Load and register AudioWorklet processor (only once per AudioContext)
+            if (!this.audioContext._synthWorkletLoaded) {
+                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/synths/') ? '../replugged/worklets/synth-worklet-processor.js?v=242' : 'replugged/worklets/synth-worklet-processor.js?v=242');
+                this.audioContext._synthWorkletLoaded = true;
+            }
 
             // Create worklet node
             this.workletNode = new AudioWorkletNode(this.audioContext, 'synth-worklet-processor');

@@ -92,10 +92,10 @@ class RVBassSynth {
             { index: 19, name: "LFO Wave", type: "enum", group: "LFO", default: 0,
               options: [{value: 0, label: "Triangle"}, {value: 0.5, label: "Square"}, {value: 1, label: "Sawtooth"}]
             },
-            { index: 20, name: "LFO Rate", type: "float", min: 0, max: 1, default: 0.31, group: "LFO", scale: "normalized", width: 45 },
+            { index: 20, name: "LFO Rate", type: "float", min: 0, max: 1, default: 0, group: "LFO", scale: "normalized", width: 45 },
             { index: 21, name: "LFO Pitch Int", type: "float", min: 0, max: 1, default: 0, group: "LFO", scale: "normalized" },
             { index: 22, name: "LFO Cutoff Int", type: "float", min: 0, max: 1, default: 0, group: "LFO", scale: "normalized", width: 40 },
-            { index: 23, name: "LFO Sync", type: "boolean", default: false, group: "LFO" },
+            { index: 23, name: "LFO Sync", type: "boolean", default: true, group: "LFO" },
 
             // Global (24-26) - no Voice Mode for Bass
             { index: 24, name: "Volume", type: "float", min: 0, max: 1, default: 0.7, group: "Global", scale: "normalized", width: 50, height: 150 },
@@ -143,12 +143,15 @@ class RVBassSynth {
             this.masterGain.connect(this.speakerGain);
             console.log('[RV Bass] Audio graph connected');
 
-            // Load and register AudioWorklet processor
-            await this.audioContext.audioWorklet.addModule(
-                window.location.pathname.includes('/synths/')
-                    ? '../replugged/worklets/synth-worklet-processor.js?v=203'
-                    : 'replugged/worklets/synth-worklet-processor.js?v=203'
-            );
+            // Load and register AudioWorklet processor (only once per AudioContext)
+            if (!this.audioContext._synthWorkletLoaded) {
+                await this.audioContext.audioWorklet.addModule(
+                    window.location.pathname.includes('/synths/')
+                        ? '../replugged/worklets/synth-worklet-processor.js?v=203'
+                        : 'replugged/worklets/synth-worklet-processor.js?v=203'
+                );
+                this.audioContext._synthWorkletLoaded = true;
+            }
 
             // Create worklet node
             this.workletNode = new AudioWorkletNode(this.audioContext, 'synth-worklet-processor');
