@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>microAudio 722 Controller</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+    <link rel="icon" type="image/png" sizes="96x96" href="./favicon-96x96.png">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <meta name="theme-color" content="#CF1A37">
+    <meta name="description" content="WebMIDI controller for KORG microAudio 722">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="top-banner">
+        <button class="hamburger-button" id="menu-btn">☰</button>
+        <div class="banner-title">microAudio 722 MIDI Controller</div>
+        <div class="connection-indicator" id="connectionIndicator">
+            <span class="indicator-dot"></span>
+            <span class="indicator-text">Disconnected</span>
+        </div>
+    </div>
+
+    <!-- Navigation Menu (slide in from left) -->
+    <div class="menu-overlay" id="nav-overlay"></div>
+    <div class="menu-panel" id="nav-menu">
+        <button class="menu-close" id="close-menu">×</button>
+        <div class="menu-items">
+            <div class="menu-section-title">MIDI Connection & Debug</div>
+
+            <!-- MIDI Connection Content -->
+            <div class="menu-section">
+                <div class="status" style="margin-bottom: 15px;">
+                    <div class="status-item" id="midiStatus">
+                        MIDI: <span>Initializing...</span>
+                    </div>
+                </div>
+                <select id="midiOutput" style="margin-bottom: 10px;">
+                    <option value="">Select MIDI Output...</option>
+                </select>
+                <label style="font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 15px;">
+                    MIDI Channel:
+                    <select id="midiChannel" style="margin-left: 5px; width: 80px;">
+                        <option value="0">Ch 1</option>
+                        <option value="1">Ch 2</option>
+                        <option value="2">Ch 3</option>
+                        <option value="3">Ch 4</option>
+                        <option value="4">Ch 5</option>
+                        <option value="5">Ch 6</option>
+                        <option value="6">Ch 7</option>
+                        <option value="7">Ch 8</option>
+                        <option value="8">Ch 9</option>
+                        <option value="9">Ch 10</option>
+                        <option value="10">Ch 11</option>
+                        <option value="11">Ch 12</option>
+                        <option value="12">Ch 13</option>
+                        <option value="13">Ch 14</option>
+                        <option value="14">Ch 15</option>
+                        <option value="15">Ch 16</option>
+                    </select>
+                </label>
+
+                <div style="display: grid; gap: 10px; margin-bottom: 10px;">
+                    <button id="testDeviceInquiry">Test Device Inquiry</button>
+                    <button id="testSearchDevice">Test Search Device</button>
+                    <button id="testModeRequest">Check Mode</button>
+                    <button id="setNormalMode">Set Normal Mode</button>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <button id="requestDataDump">Settings Dump</button>
+                    <button id="scanAllDevices">🔍 Scan</button>
+                </div>
+
+                <button id="fixRouting" style="width: 100%; margin-bottom: 10px; background: #00AA00; border-color: #00FF00; display: none;">
+                    🔧 Fix Routing (Set to MIDI IF)
+                </button>
+
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <label style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px; flex: 1;">
+                        <input type="checkbox" id="filterRepeat" checked style="margin: 0;">
+                        Filter Repetitive
+                    </label>
+                    <button id="clearLog" style="padding: 5px 10px; font-size: 0.75em;">Clear Log</button>
+                </div>
+
+                <div id="midiLog" style="padding: 10px; background: #0a0a0a; border: 1px solid #333; border-radius: 4px; font-family: monospace; font-size: 10px; max-height: 200px; overflow-y: auto; display: none;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- Filter Section -->
+        <div class="section">
+            <div class="section-title">Filter</div>
+            <div class="knob-grid">
+                <pad-knob cc="21" value="64" min="0" max="127" label="Cutoff" default="64"></pad-knob>
+                <pad-knob cc="25" value="0" min="0" max="127" label="Resonance" default="0"></pad-knob>
+            </div>
+
+            <div class="control-row">
+                <label>
+                    Filter Type
+                    <select id="filterType" data-cc="26">
+                        <option value="0">LPF</option>
+                        <option value="1">Bypass</option>
+                        <option value="2">HPF</option>
+                    </select>
+                </label>
+                <label>
+                    Input Source
+                    <select id="inUsbSelect" data-cc="22">
+                        <option value="0">IN</option>
+                        <option value="127">USB</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="control-row">
+                <label>
+                    Input Channel
+                    <select id="inputChannel" data-cc="23">
+                        <option value="0">Ch 1&2</option>
+                        <option value="1">Ch 1</option>
+                        <option value="2">Ch 2</option>
+                    </select>
+                </label>
+                <label>
+                    USB Channel
+                    <select id="usbChannel" data-cc="24">
+                        <option value="0">USB 1&2</option>
+                        <option value="1">USB 1</option>
+                        <option value="2">USB 2</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+
+        <!-- LFO Section -->
+        <div class="section">
+            <div class="section-title">LFO</div>
+            <div class="knob-grid">
+                <pad-knob cc="27" value="64" min="0" max="127" label="LFO Rate" default="64"></pad-knob>
+                <pad-knob cc="29" value="0" min="0" max="127" label="Intensity" default="0"></pad-knob>
+            </div>
+
+            <div class="control-row">
+                <label>
+                    LFO Wave
+                    <select id="lfoWave" data-cc="31">
+                        <option value="0">Triangle</option>
+                        <option value="1">Saw Up</option>
+                        <option value="2">Saw Down</option>
+                        <option value="3">Square</option>
+                        <option value="4">Sine</option>
+                    </select>
+                </label>
+                <label>
+                    LFO Mode
+                    <select id="lfoSync" data-cc="28">
+                        <option value="0">Free</option>
+                        <option value="127">Sync</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="control-row">
+                <label>
+                    Rate Range
+                    <select id="lfoRateRange" data-cc="59">
+                        <option value="0">Narrow</option>
+                        <option value="127">Wide</option>
+                    </select>
+                </label>
+                <label>
+                    Modulation
+                    <select id="lfoEnvSelect" data-cc="30">
+                        <option value="0">LFO</option>
+                        <option value="127">ENV</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+
+        <!-- Envelope Section -->
+        <div class="section">
+            <div class="section-title">Envelope</div>
+            <div class="knob-grid">
+                <pad-knob cc="33" value="64" min="0" max="127" label="Input Gain" default="64"></pad-knob>
+                <pad-knob cc="58" value="64" min="0" max="127" label="ENV Rate" default="64"></pad-knob>
+            </div>
+        </div>
+
+        <!-- FX Routing & Link -->
+        <div class="section">
+            <div class="section-title">FX & Routing</div>
+            <div class="control-row">
+                <label>
+                    FX Routing
+                    <select id="fxRouting" data-cc="34">
+                        <option value="0">Pre</option>
+                        <option value="127">Post</option>
+                    </select>
+                </label>
+                <label>
+                    Stereo Link
+                    <select id="stereoLink" data-cc="57">
+                        <option value="0">Off</option>
+                        <option value="127">On</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+
+        <!-- Channel 1 Noise Gate -->
+        <div class="section">
+            <div class="section-title">Channel 1 - Noise Gate</div>
+            <div class="knob-grid">
+                <pad-knob cc="37" value="64" min="0" max="127" label="Sensitivity" default="64"></pad-knob>
+                <pad-knob cc="38" value="64" min="0" max="127" label="Release" default="64"></pad-knob>
+            </div>
+            <div class="control-row">
+                <label>
+                    Gate On/Off
+                    <select id="ch1GateOnOff" data-cc="35">
+                        <option value="0">Off</option>
+                        <option value="127">On</option>
+                    </select>
+                </label>
+                <label>
+                    Gate Type
+                    <select id="ch1GateType" data-cc="36">
+                        <option value="0">Soft</option>
+                        <option value="127">Hard</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+
+        <!-- Channel 2 Noise Gate -->
+        <div class="section">
+            <div class="section-title">Channel 2 - Noise Gate</div>
+            <div class="knob-grid">
+                <pad-knob cc="41" value="64" min="0" max="127" label="Sensitivity" default="64"></pad-knob>
+                <pad-knob cc="42" value="64" min="0" max="127" label="Release" default="64"></pad-knob>
+            </div>
+            <div class="control-row">
+                <label>
+                    Gate On/Off
+                    <select id="ch2GateOnOff" data-cc="39">
+                        <option value="0">Off</option>
+                        <option value="127">On</option>
+                    </select>
+                </label>
+                <label>
+                    Gate Type
+                    <select id="ch2GateType" data-cc="40">
+                        <option value="0">Soft</option>
+                        <option value="127">Hard</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+
+        <!-- Channel 1 Comp/Limiter -->
+        <div class="section">
+            <div class="section-title">Channel 1 - Compressor/Limiter</div>
+            <div class="knob-grid">
+                <pad-knob cc="46" value="64" min="0" max="127" label="Attack" default="64"></pad-knob>
+                <pad-knob cc="47" value="64" min="0" max="127" label="Sensitivity" default="64"></pad-knob>
+            </div>
+            <div class="control-row">
+                <label>
+                    Mode
+                    <select id="ch1CompSelect" data-cc="43">
+                        <option value="0">Compressor</option>
+                        <option value="127">Limiter</option>
+                    </select>
+                </label>
+                <label>
+                    On/Off
+                    <select id="ch1CompOnOff" data-cc="44">
+                        <option value="0">Off</option>
+                        <option value="127">On</option>
+                    </select>
+                </label>
+                <label>
+                    Type
+                    <select id="ch1CompType" data-cc="45">
+                        <option value="0">Soft</option>
+                        <option value="127">Hard</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+
+        <!-- Channel 2 Comp/Limiter -->
+        <div class="section">
+            <div class="section-title">Channel 2 - Compressor/Limiter</div>
+            <div class="knob-grid">
+                <pad-knob cc="51" value="64" min="0" max="127" label="Attack" default="64"></pad-knob>
+                <pad-knob cc="52" value="64" min="0" max="127" label="Sensitivity" default="64"></pad-knob>
+            </div>
+            <div class="control-row">
+                <label>
+                    Mode
+                    <select id="ch2CompSelect" data-cc="48">
+                        <option value="0">Compressor</option>
+                        <option value="127">Limiter</option>
+                    </select>
+                </label>
+                <label>
+                    On/Off
+                    <select id="ch2CompOnOff" data-cc="49">
+                        <option value="0">Off</option>
+                        <option value="127">On</option>
+                    </select>
+                </label>
+                <label>
+                    Type
+                    <select id="ch2CompType" data-cc="50">
+                        <option value="0">Soft</option>
+                        <option value="127">Hard</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <script src="pad-knob.js"></script>
+    <script src="controller.js"></script>
+</body>
+</html>

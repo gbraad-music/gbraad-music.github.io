@@ -1,0 +1,312 @@
+/* ============================================================
+   MICROAUDIO 722 CONTROLLER - STYLES
+   Based on Regroove Audio Tools styling
+   ============================================================ */
+
+/* CSS Variables */
+:root {
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #1a1a1a;
+    --bg-tertiary: #2a2a2a;
+    --accent: #CF1A37;
+    --accent-dim: #a01528;
+    --text-primary: #ffffff;
+    --text-secondary: #aaaaaa;
+    --border: #333333;
+    --shadow: rgba(207, 26, 55, 0.3);
+}
+
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body */
+body {
+    font-family: Arial, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 0;
+    min-height: 100vh;
+}
+
+/* Top Banner */
+.top-banner {
+    background: var(--accent);
+    padding: 0 20px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    position: relative;
+    z-index: 100;
+    flex-shrink: 0;
+}
+
+.banner-title {
+    font-size: 1.1em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-primary);
+    line-height: 1;
+    flex: 1;
+}
+
+.connection-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.indicator-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #666;
+    transition: background 0.3s;
+}
+
+.connection-indicator.connected .indicator-dot {
+    background: #00FF00;
+    box-shadow: 0 0 8px #00FF00;
+}
+
+.indicator-text {
+    color: #aaa;
+}
+
+.connection-indicator.connected .indicator-text {
+    color: #00FF00;
+}
+
+@media (max-width: 600px) {
+    .connection-indicator {
+        display: none;
+    }
+}
+
+/* Container */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Section Styles */
+.section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    color: #0066FF;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 5px;
+    font-weight: bold;
+}
+
+/* Common Controls */
+button, select, input[type="number"] {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+}
+
+button:hover, select:hover {
+    border-color: #4a4a4a;
+    background: #3a3a3a;
+}
+
+button:active {
+    background: #0066FF;
+    color: var(--text-primary);
+}
+
+select {
+    width: 100%;
+}
+
+/* Status */
+.status {
+    display: flex;
+    gap: 20px;
+    font-size: 12px;
+    margin-top: 15px;
+}
+
+.status-item {
+    color: #666;
+}
+
+.status-item span {
+    color: #0066FF;
+    font-weight: bold;
+}
+
+.status-item.connected span {
+    color: #00FF00;
+}
+
+/* Knob Grid */
+.knob-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+/* Control Row */
+.control-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.control-row label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.control-row select {
+    margin-top: 5px;
+}
+
+/* Hamburger Button */
+.hamburger-button {
+    background: none;
+    border: none;
+    color: white !important;
+    font-size: 1.8em;
+    cursor: pointer;
+    padding: 5px 10px;
+    transition: opacity 0.2s;
+    line-height: 1;
+    width: auto !important;
+}
+
+.hamburger-button:hover {
+    opacity: 0.8;
+}
+
+.hamburger-button:active,
+.hamburger-button:focus {
+    background: none !important;
+    outline: none;
+}
+
+/* Navigation Menu */
+.menu-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+.menu-overlay.active {
+    display: block;
+}
+
+.menu-panel {
+    position: fixed;
+    top: 0;
+    left: -400px;
+    width: 400px;
+    max-width: 90vw;
+    height: 100vh;
+    background: var(--bg-secondary);
+    z-index: 1000;
+    transition: left 0.3s ease;
+    padding: 20px;
+    overflow-y: auto;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.menu-panel.active {
+    left: 0;
+}
+
+.menu-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 2em;
+    cursor: pointer;
+    line-height: 1;
+    transition: all 0.2s;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+.menu-close:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.menu-items {
+    margin-top: 60px;
+}
+
+.menu-section-title {
+    color: #0066FF;
+    text-transform: uppercase;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.menu-section {
+    margin-bottom: 20px;
+}
+
+.menu-section button,
+.menu-section select {
+    width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .knob-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .control-row {
+        grid-template-columns: 1fr;
+    }
+}
