@@ -1,0 +1,550 @@
+{
+  "id": "volca-sample2",
+  "name": "KORG Volca Sample 2",
+  "manufacturer": "KORG",
+  "sections": [
+    {
+      "title": "Part 1",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 7,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        },
+        {
+          "type": "knob",
+          "label": "Pan",
+          "cc": 10,
+          "min": 1,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Speed",
+          "cc": 43,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Hi Cut",
+          "cc": 42,
+          "min": 0,
+          "max": 127,
+          "default": 127
+        },
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 47,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay",
+          "cc": 63,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Part 2",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 14,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        },
+        {
+          "type": "knob",
+          "label": "Pan",
+          "cc": 15,
+          "min": 1,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Speed",
+          "cc": 16,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Hi Cut",
+          "cc": 19,
+          "min": 0,
+          "max": 127,
+          "default": 127
+        },
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 17,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay",
+          "cc": 18,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Part 3",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 20,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        },
+        {
+          "type": "knob",
+          "label": "Pan",
+          "cc": 21,
+          "min": 1,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Speed",
+          "cc": 22,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Hi Cut",
+          "cc": 25,
+          "min": 0,
+          "max": 127,
+          "default": 127
+        },
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 23,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay",
+          "cc": 24,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Part 4",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 26,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        },
+        {
+          "type": "knob",
+          "label": "Pan",
+          "cc": 27,
+          "min": 1,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Speed",
+          "cc": 28,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Hi Cut",
+          "cc": 31,
+          "min": 0,
+          "max": 127,
+          "default": 127
+        },
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 29,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay",
+          "cc": 30,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Part 5",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 50,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        },
+        {
+          "type": "knob",
+          "label": "Pan",
+          "cc": 51,
+          "min": 1,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Speed",
+          "cc": 52,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Hi Cut",
+          "cc": 55,
+          "min": 0,
+          "max": 127,
+          "default": 127
+        },
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 53,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay",
+          "cc": 54,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Part 6",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 56,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        },
+        {
+          "type": "knob",
+          "label": "Pan",
+          "cc": 57,
+          "min": 1,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Speed",
+          "cc": 58,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Hi Cut",
+          "cc": 61,
+          "min": 0,
+          "max": 127,
+          "default": 127
+        },
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 59,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay",
+          "cc": 60,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Part 7",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 76,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        },
+        {
+          "type": "knob",
+          "label": "Pan",
+          "cc": 77,
+          "min": 1,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Speed",
+          "cc": 78,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Hi Cut",
+          "cc": 81,
+          "min": 0,
+          "max": 127,
+          "default": 127
+        },
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 79,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay",
+          "cc": 80,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Part 8",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 82,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        },
+        {
+          "type": "knob",
+          "label": "Pan",
+          "cc": 83,
+          "min": 1,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Speed",
+          "cc": 84,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Hi Cut",
+          "cc": 87,
+          "min": 0,
+          "max": 127,
+          "default": 127
+        },
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 85,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay",
+          "cc": 86,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Part 9",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 102,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        },
+        {
+          "type": "knob",
+          "label": "Pan",
+          "cc": 103,
+          "min": 1,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Speed",
+          "cc": 104,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Hi Cut",
+          "cc": 107,
+          "min": 0,
+          "max": 127,
+          "default": 127
+        },
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 105,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay",
+          "cc": 106,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Part 10",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 108,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        },
+        {
+          "type": "knob",
+          "label": "Pan",
+          "cc": 109,
+          "min": 1,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Speed",
+          "cc": 110,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Hi Cut",
+          "cc": 113,
+          "min": 0,
+          "max": 127,
+          "default": 127
+        },
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 111,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay",
+          "cc": 112,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Global",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Reverb Mix",
+          "cc": 91,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "devices": [
+    {
+      "file": "microaudio-722.json",
+      "manufacturer": "KORG",
+      "name": "microAudio 722",
+      "category": "Audio Interface"
+    },
+    {
+      "file": "nts1-mkii.json",
+      "manufacturer": "KORG",
+      "name": "NTS-1 mkII",
+      "category": "Synthesizer"
+    },
+    {
+      "file": "nts3-kaoss.json",
+      "manufacturer": "KORG",
+      "name": "NTS-3 Kaoss Pad Kit",
+      "category": "Effects"
+    },
+    {
+      "file": "microkorg2.json",
+      "manufacturer": "KORG",
+      "name": "microKORG 2",
+      "category": "Synthesizer"
+    },
+    {
+      "file": "drumlogue.json",
+      "manufacturer": "KORG",
+      "name": "drumlogue",
+      "category": "Drum Machine"
+    },
+    {
+      "file": "volca-kick.json",
+      "manufacturer": "KORG",
+      "name": "Volca Kick",
+      "category": "Drum Machine"
+    },
+    {
+      "file": "volca-fm.json",
+      "manufacturer": "KORG",
+      "name": "Volca FM",
+      "category": "Synthesizer"
+    },
+    {
+      "file": "volca-sample2.json",
+      "manufacturer": "KORG",
+      "name": "Volca Sample 2",
+      "category": "Sampler"
+    }
+  ]
+}

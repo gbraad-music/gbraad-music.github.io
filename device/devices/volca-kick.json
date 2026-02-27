@@ -1,0 +1,112 @@
+{
+  "id": "volca-kick",
+  "name": "KORG Volca Kick",
+  "manufacturer": "KORG",
+  "sections": [
+    {
+      "title": "Pulse Generator",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Colour",
+          "cc": 40,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 41,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Amp Envelope",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 42,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay",
+          "cc": 43,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Drive & Tone",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Drive",
+          "cc": 44,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Tone",
+          "cc": 45,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Resonator",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Pitch",
+          "cc": 46,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Bend",
+          "cc": 47,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Time",
+          "cc": 48,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Accent",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Accent",
+          "cc": 49,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        }
+      ]
+    }
+  ]
+}

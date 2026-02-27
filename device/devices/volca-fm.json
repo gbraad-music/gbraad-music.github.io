@@ -1,0 +1,122 @@
+{
+  "id": "volca-fm",
+  "name": "KORG Volca FM",
+  "manufacturer": "KORG",
+  "sections": [
+    {
+      "title": "Modulator",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 42,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Decay",
+          "cc": 43,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Carrier",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 44,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Decay",
+          "cc": 45,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "LFO",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Rate",
+          "cc": 46,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Pitch Depth",
+          "cc": 47,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "Settings",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Transpose",
+          "cc": 40,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sublabel": "±3 octaves"
+        },
+        {
+          "type": "knob",
+          "label": "Velocity",
+          "cc": 41,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        },
+        {
+          "type": "knob",
+          "label": "Algorithm",
+          "cc": 48,
+          "min": 0,
+          "max": 127,
+          "default": 0,
+          "sublabel": "1-32"
+        }
+      ]
+    },
+    {
+      "title": "Arpeggiator",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Type",
+          "cc": 49,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Division",
+          "cc": 50,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,416 @@
+{
+  "id": "microaudio-722",
+  "name": "KORG microAudio 722",
+  "manufacturer": "KORG",
+  "deviceInquiry": {
+    "manufacturerId": "0x42",
+    "familyId": ["0x75", "0x01"],
+    "memberId": "0x08"
+  },
+  "globalChannel": true,
+  "bulkDumpFormat": {
+    "header": ["0xF0", "0x42", "0x40", "0x00", "0x01", "0x75", "0x40"],
+    "dataOffset": 7,
+    "encoding": "7bit",
+    "autoSyncInterval": 0,
+    "_comment_binaryToMidi": "Byte offsets that store binary 0/1 but need conversion to MIDI 0/127 for UI",
+    "binaryToMidi": [1, 7, 9, 13, 16, 24, 25, 28, 29, 32, 33, 34, 37, 38, 39, 51],
+    "_comment_ccMap": "Maps CC numbers to byte offsets in decoded bulk dump data (see microAUDIO MIDI Implementation Table 1)",
+    "ccMap": {
+      "21": 0,
+      "22": 1,
+      "23": 2,
+      "24": 3,
+      "25": 4,
+      "26": 5,
+      "27": 6,
+      "28": 7,
+      "29": 8,
+      "30": 9,
+      "31": 10,
+      "33": 11,
+      "58": 12,
+      "59": 13,
+      "34": 16,
+      "35": 24,
+      "36": 25,
+      "37": 26,
+      "38": 27,
+      "39": 28,
+      "40": 29,
+      "41": 30,
+      "42": 31,
+      "43": 32,
+      "44": 33,
+      "45": 34,
+      "46": 35,
+      "47": 36,
+      "48": 37,
+      "49": 38,
+      "50": 39,
+      "51": 40,
+      "52": 41,
+      "57": 51
+    }
+  },
+  "sections": [
+    {
+      "title": "Filter",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Cutoff",
+          "cc": 21,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Resonance",
+          "cc": 25,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "Filter Type",
+          "cc": 26,
+          "options": [
+            {"label": "LPF", "value": 0},
+            {"label": "Bypass", "value": 1},
+            {"label": "HPF", "value": 2}
+          ],
+          "default": 1
+        },
+        {
+          "type": "select",
+          "label": "Input Source",
+          "cc": 22,
+          "options": [
+            {"label": "IN", "value": 0},
+            {"label": "USB", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "Input Channel",
+          "cc": 23,
+          "options": [
+            {"label": "Ch 1&2", "value": 0},
+            {"label": "Ch 1", "value": 1},
+            {"label": "Ch 2", "value": 2}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "USB Channel",
+          "cc": 24,
+          "options": [
+            {"label": "USB 1&2", "value": 0},
+            {"label": "USB 1", "value": 1},
+            {"label": "USB 2", "value": 2}
+          ],
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "LFO",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "LFO Rate",
+          "cc": 27,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Intensity",
+          "cc": 29,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "LFO Wave",
+          "cc": 31,
+          "options": [
+            {"label": "Triangle", "value": 0},
+            {"label": "Saw Up", "value": 1},
+            {"label": "Saw Down", "value": 2},
+            {"label": "Square", "value": 3},
+            {"label": "Sine", "value": 4}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "LFO Mode",
+          "cc": 28,
+          "options": [
+            {"label": "Free", "value": 0},
+            {"label": "Sync", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "Rate Range",
+          "cc": 59,
+          "options": [
+            {"label": "Narrow", "value": 0},
+            {"label": "Wide", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "Modulation",
+          "cc": 30,
+          "options": [
+            {"label": "LFO", "value": 0},
+            {"label": "ENV", "value": 127}
+          ],
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "Envelope",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Input Gain",
+          "cc": 33,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "ENV Rate",
+          "cc": 58,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "FX & Routing",
+      "controls": [
+        {
+          "type": "select",
+          "label": "FX Routing",
+          "cc": 34,
+          "options": [
+            {"label": "Pre", "value": 0},
+            {"label": "Post", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "Stereo Link",
+          "cc": 57,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "Ch 1 Noise Gate",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Sensitivity",
+          "cc": 37,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Release",
+          "cc": 38,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "select",
+          "label": "Gate On/Off",
+          "cc": 35,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "Gate Type",
+          "cc": 36,
+          "options": [
+            {"label": "Soft", "value": 0},
+            {"label": "Hard", "value": 127}
+          ],
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "Ch 2 Noise Gate",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Sensitivity",
+          "cc": 41,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Release",
+          "cc": 42,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "select",
+          "label": "Gate On/Off",
+          "cc": 39,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "Gate Type",
+          "cc": 40,
+          "options": [
+            {"label": "Soft", "value": 0},
+            {"label": "Hard", "value": 127}
+          ],
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "Ch 1 Comp/Limiter",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 46,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Sensitivity",
+          "cc": 47,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "select",
+          "label": "Mode",
+          "cc": 43,
+          "options": [
+            {"label": "Compressor", "value": 0},
+            {"label": "Limiter", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "On/Off",
+          "cc": 44,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "Type",
+          "cc": 45,
+          "options": [
+            {"label": "Soft", "value": 0},
+            {"label": "Hard", "value": 127}
+          ],
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "Ch 2 Comp/Limiter",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 51,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Sensitivity",
+          "cc": 52,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "select",
+          "label": "Mode",
+          "cc": 48,
+          "options": [
+            {"label": "Compressor", "value": 0},
+            {"label": "Limiter", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "On/Off",
+          "cc": 49,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "Type",
+          "cc": 50,
+          "options": [
+            {"label": "Soft", "value": 0},
+            {"label": "Hard", "value": 127}
+          ],
+          "default": 0
+        }
+      ]
+    }
+  ]
+}

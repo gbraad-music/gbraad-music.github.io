@@ -1,0 +1,729 @@
+{
+  "id": "microkorg2",
+  "name": "KORG microKORG 2",
+  "manufacturer": "KORG",
+  "sections": [
+    {
+      "title": "OSC 1",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Wave",
+          "cc": 8,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Shape/Sample",
+          "cc": 9,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Semitones",
+          "cc": 16,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sublabel": "-24 to +24"
+        },
+        {
+          "type": "knob",
+          "label": "Fine Tune",
+          "cc": 17,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sublabel": "-50 to +50 cent"
+        },
+        {
+          "type": "knob",
+          "label": "Mod Amount",
+          "cc": 15,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 23,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        }
+      ]
+    },
+    {
+      "title": "OSC 2",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Wave",
+          "cc": 18,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Shape/Sample",
+          "cc": 19,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Semitones",
+          "cc": 21,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sublabel": "-24 to +24"
+        },
+        {
+          "type": "knob",
+          "label": "Fine Tune",
+          "cc": 22,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sublabel": "-50 to +50 cent"
+        },
+        {
+          "type": "knob",
+          "label": "Mod Amount",
+          "cc": 20,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 24,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        }
+      ]
+    },
+    {
+      "title": "OSC 3",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Wave",
+          "cc": 48,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Shape/Sample",
+          "cc": 49,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Semitones",
+          "cc": 51,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sublabel": "-24 to +24"
+        },
+        {
+          "type": "knob",
+          "label": "Fine Tune",
+          "cc": 52,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sublabel": "-50 to +50 cent"
+        },
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 25,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        }
+      ]
+    },
+    {
+      "title": "Noise",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Type",
+          "cc": 29,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Color",
+          "cc": 30,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 26,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "Filter",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Cutoff",
+          "cc": 74,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Resonance",
+          "cc": 71,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Type",
+          "cc": 27,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Drive",
+          "cc": 83,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Keytrack",
+          "cc": 28,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sublabel": "-63 to +63"
+        }
+      ]
+    },
+    {
+      "title": "Filter EG",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Intensity",
+          "cc": 84,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sublabel": "-63 to +63"
+        },
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 85,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay",
+          "cc": 86,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Sustain",
+          "cc": 87,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Release",
+          "cc": 88,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Amp EG",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 73,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay",
+          "cc": 75,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Sustain",
+          "cc": 70,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        },
+        {
+          "type": "knob",
+          "label": "Release",
+          "cc": 72,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Velocity Sens",
+          "cc": 79,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "LFO 1",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Wave",
+          "cc": 89,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Frequency",
+          "cc": 90,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Smooth",
+          "cc": 91,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "LFO 2",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Wave",
+          "cc": 102,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Frequency",
+          "cc": 76,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Delay",
+          "cc": 92,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "Modulation",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Mod Control 1",
+          "cc": 12,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Mod Control 2",
+          "cc": 111,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Mod Control 3",
+          "cc": 112,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Effects",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Delay Ctrl 1",
+          "cc": 115,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Delay Ctrl 2",
+          "cc": 13,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Reverb Ctrl 2",
+          "cc": 14,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Timbre",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 7,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        },
+        {
+          "type": "knob",
+          "label": "Pan",
+          "cc": 10,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sublabel": "L63 to R63"
+        },
+        {
+          "type": "knob",
+          "label": "Transpose",
+          "cc": 35,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sublabel": "-24 to +24"
+        },
+        {
+          "type": "knob",
+          "label": "Fine Tune",
+          "cc": 36,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sublabel": "-50 to +50 cent"
+        }
+      ]
+    },
+    {
+      "title": "Unison",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Detune",
+          "cc": 33,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Spread",
+          "cc": 34,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Arpeggiator (NRPN)",
+      "controls": [
+        {
+          "type": "nrpn",
+          "label": "Swing",
+          "nrpn": {"msb": 0, "lsb": 5, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sublabel": "-100 to +100"
+        },
+        {
+          "type": "nrpn",
+          "label": "Resolution",
+          "nrpn": {"msb": 0, "lsb": 6, "is14bit": false},
+          "min": 0,
+          "max": 6,
+          "default": 4
+        },
+        {
+          "type": "nrpn",
+          "label": "Type",
+          "nrpn": {"msb": 0, "lsb": 7, "is14bit": false},
+          "min": 0,
+          "max": 9,
+          "default": 0
+        },
+        {
+          "type": "nrpn",
+          "label": "Octave Range",
+          "nrpn": {"msb": 0, "lsb": 8, "is14bit": false},
+          "min": 0,
+          "max": 3,
+          "default": 0
+        },
+        {
+          "type": "nrpn",
+          "label": "Gate Time",
+          "nrpn": {"msb": 0, "lsb": 10, "is14bit": false},
+          "min": 0,
+          "max": 100,
+          "default": 50
+        }
+      ]
+    },
+    {
+      "title": "Vocoder (NRPN)",
+      "controls": [
+        {
+          "type": "nrpn",
+          "label": "Mic Direct",
+          "nrpn": {"msb": 5, "lsb": 1, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "nrpn",
+          "label": "Dry/Wet",
+          "nrpn": {"msb": 5, "lsb": 2, "is14bit": false},
+          "min": 0,
+          "max": 100,
+          "default": 50
+        },
+        {
+          "type": "nrpn",
+          "label": "Formant",
+          "nrpn": {"msb": 5, "lsb": 3, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sublabel": "-63 to +63"
+        },
+        {
+          "type": "nrpn",
+          "label": "Resonance",
+          "nrpn": {"msb": 5, "lsb": 4, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Vocoder Bands 1-8 (NRPN)",
+      "controls": [
+        {
+          "type": "nrpn",
+          "label": "Band 1",
+          "nrpn": {"msb": 5, "lsb": 16, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "nrpn",
+          "label": "Band 2",
+          "nrpn": {"msb": 5, "lsb": 17, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "nrpn",
+          "label": "Band 3",
+          "nrpn": {"msb": 5, "lsb": 18, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "nrpn",
+          "label": "Band 4",
+          "nrpn": {"msb": 5, "lsb": 19, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "nrpn",
+          "label": "Band 5",
+          "nrpn": {"msb": 5, "lsb": 20, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "nrpn",
+          "label": "Band 6",
+          "nrpn": {"msb": 5, "lsb": 21, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "nrpn",
+          "label": "Band 7",
+          "nrpn": {"msb": 5, "lsb": 22, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "nrpn",
+          "label": "Band 8",
+          "nrpn": {"msb": 5, "lsb": 23, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Vocoder Bands 9-16 (NRPN)",
+      "controls": [
+        {
+          "type": "nrpn",
+          "label": "Band 9",
+          "nrpn": {"msb": 5, "lsb": 24, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "nrpn",
+          "label": "Band 10",
+          "nrpn": {"msb": 5, "lsb": 25, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "nrpn",
+          "label": "Band 11",
+          "nrpn": {"msb": 5, "lsb": 26, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "nrpn",
+          "label": "Band 12",
+          "nrpn": {"msb": 5, "lsb": 27, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "nrpn",
+          "label": "Band 13",
+          "nrpn": {"msb": 5, "lsb": 28, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "nrpn",
+          "label": "Band 14",
+          "nrpn": {"msb": 5, "lsb": 29, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "nrpn",
+          "label": "Band 15",
+          "nrpn": {"msb": 5, "lsb": 30, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "nrpn",
+          "label": "Band 16",
+          "nrpn": {"msb": 5, "lsb": 31, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    }
+  ]
+}

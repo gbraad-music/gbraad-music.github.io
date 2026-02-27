@@ -1,0 +1,391 @@
+{
+  "id": "drumlogue",
+  "name": "KORG drumlogue",
+  "manufacturer": "KORG",
+  "deviceInquiry": {
+    "manufacturerId": "0x42",
+    "familyId": ["0x59", "0x01"],
+    "memberId": "0x00"
+  },
+  "sections": [
+    {
+      "title": "Master",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Volume",
+          "cc": 7,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        }
+      ]
+    },
+    {
+      "title": "Bass Drum (BD)",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Type",
+          "cc": 14,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Drive",
+          "cc": 15,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 16,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay Level",
+          "cc": 17,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Snare Drum (SD)",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Type",
+          "cc": 18,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Drive",
+          "cc": 19,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 20,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay Level",
+          "cc": 21,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Hi-Hat (HI)",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Tune",
+          "cc": 26,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Detune",
+          "cc": 27,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Decay Level",
+          "cc": 46,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Closed Hi-Hat (CH)",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Tune",
+          "cc": 55,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Decay Level",
+          "cc": 56,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Clap (CP)",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Tune",
+          "cc": 58,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Decay Level",
+          "cc": 59,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Sample 1 (SP1)",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Tune",
+          "cc": 85,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 86,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay Level",
+          "cc": 87,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Sample 2 (SP2)",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Tune",
+          "cc": 110,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 111,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Decay Level",
+          "cc": 112,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "User Synth Part 1",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Param 1",
+          "cc": 22,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Param 2",
+          "cc": 23,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Param 3",
+          "cc": 24,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Param 4",
+          "cc": 47,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "User Synth Part 2",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Param 1-8",
+          "cc": 61,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sublabel": "Use CC 61-68"
+        },
+        {
+          "type": "knob",
+          "label": "Param 9-16",
+          "cc": 80,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sublabel": "Use CC 80-87"
+        }
+      ]
+    },
+    {
+      "title": "Delay",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Param 1",
+          "cc": 12,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Param 2",
+          "cc": 48,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Param 3",
+          "cc": 49,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Return",
+          "cc": 89,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 92,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Reverb",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Param 1",
+          "cc": 50,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Param 2",
+          "cc": 51,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Param 3",
+          "cc": 52,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Param 4",
+          "cc": 53,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Return",
+          "cc": 60,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "Multi Level",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Level",
+          "cc": 57,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        }
+      ]
+    }
+  ]
+}

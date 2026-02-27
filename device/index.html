@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generic MIDI Device Controller</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
+    <link rel="icon" type="image/png" sizes="96x96" href="./icons/favicon-96x96.png">
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+    <meta name="description" content="Generic WebMIDI controller for KORG and other MIDI devices">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="top-banner">
+        <button class="hamburger-button" id="menu-btn">☰</button>
+        <div class="banner-title">MIDI Device Controller</div>
+        <div class="connection-indicator" id="connectionIndicator">
+            <span class="indicator-dot"></span>
+            <span class="indicator-text">Disconnected</span>
+        </div>
+    </div>
+
+    <!-- MIDI Learn Indicator -->
+    <div id="learnIndicator" style="display: none; position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: #ff6600; color: #fff; padding: 10px 20px; border-radius: 4px; font-size: 12px; z-index: 999; box-shadow: 0 4px 12px rgba(255,102,0,0.4);">
+        MIDI Learn Active
+    </div>
+
+    <!-- Navigation Menu -->
+    <div class="menu-overlay" id="nav-overlay"></div>
+    <div class="menu-panel" id="nav-menu">
+        <button class="menu-close" id="close-menu">×</button>
+        <div class="menu-items">
+            <div class="menu-section-title">Device Selection</div>
+
+            <div class="menu-section">
+                <label style="font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 10px;">
+                    Device Type:
+                    <select id="deviceSelect" style="width: 100%; margin-top: 5px;">
+                        <option value="">Loading devices...</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="menu-section-title">Parameters</div>
+
+            <div class="menu-section">
+                <div style="display: grid; gap: 8px;">
+                    <button id="exportParamsBtn" style="width: 100%; padding: 8px; background: #1a1a1a; border: 1px solid #2a2a2a; color: #aaa; cursor: pointer; border-radius: 4px; font-size: 10px; text-transform: uppercase;">
+                        Export to File
+                    </button>
+                    <button id="importParamsBtn" style="width: 100%; padding: 8px; background: #1a1a1a; border: 1px solid #2a2a2a; color: #aaa; cursor: pointer; border-radius: 4px; font-size: 10px; text-transform: uppercase;">
+                        Import from File
+                    </button>
+                    <input type="file" id="importParamsFile" accept=".json" style="display: none;">
+                    <button id="copyParamsBtn" style="width: 100%; padding: 8px; background: #1a1a1a; border: 1px solid #2a2a2a; color: #aaa; cursor: pointer; border-radius: 4px; font-size: 10px; text-transform: uppercase;">
+                        Copy to Clipboard
+                    </button>
+                    <button id="pasteParamsBtn" style="width: 100%; padding: 8px; background: #1a1a1a; border: 1px solid #2a2a2a; color: #aaa; cursor: pointer; border-radius: 4px; font-size: 10px; text-transform: uppercase;">
+                        Paste from Clipboard
+                    </button>
+                </div>
+            </div>
+
+            <div class="menu-section-title">MIDI Learn & Hardware</div>
+
+            <div class="menu-section">
+                <label style="font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 10px;">
+                    Learn Input Filter:
+                    <select id="learnInputSelect" style="width: 100%; margin-top: 5px;">
+                        <option value="">Any Input</option>
+                    </select>
+                </label>
+
+                <button id="midiLearnBtn" style="width: 100%; margin-bottom: 10px; padding: 10px; background: #1a1a1a; border: 1px solid #2a2a2a; color: #aaa; cursor: pointer; border-radius: 4px; text-transform: uppercase; font-size: 11px; font-weight: bold;">
+                    MIDI Learn
+                </button>
+
+                <div style="margin-bottom: 15px;">
+                    <div style="font-size: 10px; color: #888; margin-bottom: 5px; text-transform: uppercase;">Hardware Mappings:</div>
+                    <div id="mappingsList" style="padding: 8px; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 4px; min-height: 40px;">
+                        <div style="color: #555; font-size: 10px;">No hardware mappings</div>
+                    </div>
+                    <button id="clearMappingsBtn" style="width: 100%; margin-top: 5px; padding: 5px; background: #1a1a1a; border: 1px solid #2a2a2a; color: #aaa; cursor: pointer; border-radius: 3px; font-size: 9px;">
+                        Clear Mappings
+                    </button>
+                </div>
+            </div>
+
+            <div class="menu-section-title">MIDI Connection & Debug</div>
+
+            <div class="menu-section">
+                <div class="status" style="margin-bottom: 15px;">
+                    <div class="status-item" id="midiStatus">
+                        MIDI: <span>Initializing...</span>
+                    </div>
+                </div>
+                <select id="midiOutput" style="margin-bottom: 10px;">
+                    <option value="">Select MIDI Output...</option>
+                </select>
+                <label style="font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 15px;">
+                    MIDI Channel:
+                    <select id="midiChannel" style="margin-left: 5px; width: 80px;">
+                        <option value="0">Ch 1</option>
+                        <option value="1">Ch 2</option>
+                        <option value="2">Ch 3</option>
+                        <option value="3">Ch 4</option>
+                        <option value="4">Ch 5</option>
+                        <option value="5">Ch 6</option>
+                        <option value="6">Ch 7</option>
+                        <option value="7">Ch 8</option>
+                        <option value="8">Ch 9</option>
+                        <option value="9">Ch 10</option>
+                        <option value="10">Ch 11</option>
+                        <option value="11">Ch 12</option>
+                        <option value="12">Ch 13</option>
+                        <option value="13">Ch 14</option>
+                        <option value="14">Ch 15</option>
+                        <option value="15">Ch 16</option>
+                    </select>
+                </label>
+
+                <div style="display: grid; gap: 10px; margin-bottom: 10px;">
+                    <button id="scanDevices">Scan for Devices</button>
+                    <button id="testDeviceInquiry">Test Device Inquiry</button>
+                    <button id="syncFromDevice">Sync from Device</button>
+                </div>
+
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <label style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px; flex: 1;">
+                        <input type="checkbox" id="filterRepeat" checked style="margin: 0;">
+                        Filter Repetitive
+                    </label>
+                    <button id="clearLog" style="padding: 5px 10px; font-size: 0.75em;">Clear Log</button>
+                </div>
+
+                <div id="midiLog" style="padding: 10px; background: #0a0a0a; border: 1px solid #333; border-radius: 4px; font-family: monospace; font-size: 10px; max-height: 200px; overflow-y: auto; display: none;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Motion Sequencer -->
+    <div style="max-width: 1400px; margin: 0 auto; padding: 20px 20px 0 20px;">
+        <motion-sequencer id="motionSequencer"></motion-sequencer>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container" id="deviceControls">
+        <div class="section" style="grid-column: 1 / -1; text-align: center;">
+            <p style="color: var(--text-secondary); font-size: 0.9em;">
+                Select a device from the menu (☰) to get started
+            </p>
+        </div>
+    </div>
+
+    <script src="components/pad-knob.js"></script>
+    <script src="components/device-loader.js"></script>
+    <script src="components/motion-sequencer.js"></script>
+    <script src="components/parameter-manager.js"></script>
+    <script src="components/controller.js"></script>
+    <script>
+        // Setup parameter import/export handlers
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('exportParamsBtn')?.addEventListener('click', () => {
+                const filename = window.parameterManager.exportToFile();
+                if (filename) {
+                    alert(`Parameters exported to ${filename}`);
+                }
+            });
+
+            document.getElementById('importParamsBtn')?.addEventListener('click', () => {
+                document.getElementById('importParamsFile').click();
+            });
+
+            document.getElementById('importParamsFile')?.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                try {
+                    const params = await window.parameterManager.importFromFile(file);
+                    alert(`Loaded ${Object.keys(params.controls).length} parameters from ${params.deviceName}`);
+                } catch (error) {
+                    alert(`Failed to import: ${error.message}`);
+                }
+                e.target.value = '';
+            });
+
+            document.getElementById('copyParamsBtn')?.addEventListener('click', async () => {
+                const success = await window.parameterManager.exportToClipboard();
+                if (success) {
+                    alert('Parameters copied to clipboard');
+                } else {
+                    alert('Failed to copy to clipboard');
+                }
+            });
+
+            document.getElementById('pasteParamsBtn')?.addEventListener('click', async () => {
+                try {
+                    const params = await window.parameterManager.importFromClipboard();
+                    alert(`Loaded ${Object.keys(params.controls).length} parameters from clipboard`);
+                } catch (error) {
+                    alert(`Failed to paste: ${error.message}`);
+                }
+            });
+        });
+    </script>
+    <script>
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+                    .catch(err => console.error('[PWA] Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>

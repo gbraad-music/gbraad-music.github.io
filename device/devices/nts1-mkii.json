@@ -1,0 +1,513 @@
+{
+  "id": "nts1-mkii",
+  "name": "KORG NTS-1 mkII",
+  "manufacturer": "KORG",
+  "deviceInquiry": {
+    "manufacturerId": "0x42",
+    "familyId": ["0x51", "0x01"],
+    "memberId": "0x00"
+  },
+  "sections": [
+    {
+      "title": "Oscillator",
+      "controls": [
+        {
+          "type": "select",
+          "label": "OSC Type",
+          "cc": 53,
+          "options": [
+            {"label": "OFF", "value": 0},
+            {"label": "SAW", "value": 18},
+            {"label": "TRI", "value": 36},
+            {"label": "SQR", "value": 54},
+            {"label": "VPM", "value": 72},
+            {"label": "NOISE", "value": 90},
+            {"label": "WAVES", "value": 127}
+          ],
+          "default": 18
+        },
+        {
+          "type": "knob",
+          "label": "OSC A",
+          "cc": 54,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "OSC B",
+          "cc": 55,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "LFO Rate",
+          "cc": 24,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "LFO Depth",
+          "cc": 26,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "Filter",
+      "controls": [
+        {
+          "type": "select",
+          "label": "Filter Type",
+          "cc": 42,
+          "options": [
+            {"label": "LP2", "value": 0},
+            {"label": "LP4", "value": 18},
+            {"label": "BP2", "value": 36},
+            {"label": "BP4", "value": 54},
+            {"label": "HP2", "value": 72},
+            {"label": "HP4", "value": 90},
+            {"label": "OFF", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Cutoff",
+          "cc": 43,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Resonance",
+          "cc": 44,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Sweep Depth",
+          "cc": 45,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Sweep Rate",
+          "cc": 46,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Envelope",
+      "controls": [
+        {
+          "type": "select",
+          "label": "EG Type",
+          "cc": 14,
+          "options": [
+            {"label": "ADSR", "value": 0},
+            {"label": "AHR", "value": 25},
+            {"label": "AR", "value": 50},
+            {"label": "AR LOOP", "value": 75},
+            {"label": "OPEN", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Attack",
+          "cc": 16,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Release",
+          "cc": 19,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Modulation FX",
+      "controls": [
+        {
+          "type": "select",
+          "label": "Mod Type",
+          "cc": 88,
+          "options": [
+            {"label": "OFF", "value": 0},
+            {"label": "CHORUS", "value": 14},
+            {"label": "ENSEMBLE", "value": 28},
+            {"label": "PHASER", "value": 42},
+            {"label": "FLANGER", "value": 56},
+            {"label": "SOFT CLIP", "value": 70},
+            {"label": "HARD CLIP", "value": 84},
+            {"label": "SINE FOLD", "value": 98},
+            {"label": "FUZZ", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Mod A",
+          "cc": 28,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Mod B",
+          "cc": 29,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Delay",
+      "controls": [
+        {
+          "type": "select",
+          "label": "Delay Type",
+          "cc": 89,
+          "options": [
+            {"label": "OFF", "value": 0},
+            {"label": "STEREO", "value": 9},
+            {"label": "MONO", "value": 18},
+            {"label": "PING PONG", "value": 27},
+            {"label": "HIGHPASS", "value": 36},
+            {"label": "TAPE", "value": 45},
+            {"label": "ONE", "value": 54},
+            {"label": "STEREO BPM", "value": 63},
+            {"label": "MONO BPM", "value": 72},
+            {"label": "PING PONG BPM", "value": 81},
+            {"label": "HIGH BPM", "value": 90},
+            {"label": "TAPE BPM", "value": 99},
+            {"label": "DOUBLING", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Delay A",
+          "cc": 30,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Delay B",
+          "cc": 31,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Mix",
+          "cc": 33,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "Reverb",
+      "controls": [
+        {
+          "type": "select",
+          "label": "Reverb Type",
+          "cc": 90,
+          "options": [
+            {"label": "OFF", "value": 0},
+            {"label": "HALL", "value": 11},
+            {"label": "SMOOTH", "value": 22},
+            {"label": "ARENA", "value": 33},
+            {"label": "PLATE", "value": 44},
+            {"label": "ROOM", "value": 55},
+            {"label": "EARLY", "value": 66},
+            {"label": "SPACE", "value": 77},
+            {"label": "RISER", "value": 88},
+            {"label": "SUBMARINE", "value": 99},
+            {"label": "HORROR", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Reverb A",
+          "cc": 34,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Reverb B",
+          "cc": 35,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Mix",
+          "cc": 36,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "Tremolo",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Depth",
+          "cc": 20,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Rate",
+          "cc": 21,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Arpeggiator",
+      "controls": [
+        {
+          "type": "select",
+          "label": "Pattern",
+          "cc": 117,
+          "options": [
+            {"label": "UP", "value": 0},
+            {"label": "DOWN", "value": 12},
+            {"label": "UP-DOWN", "value": 24},
+            {"label": "DOWN-UP", "value": 36},
+            {"label": "CONV", "value": 48},
+            {"label": "DIV", "value": 60},
+            {"label": "CONV-DIV", "value": 72},
+            {"label": "DIV-CONV", "value": 84},
+            {"label": "RAND", "value": 96},
+            {"label": "STOCH", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "Intervals",
+          "cc": 118,
+          "options": [
+            {"label": "OCT", "value": 0},
+            {"label": "MAJ", "value": 21},
+            {"label": "SUS", "value": 42},
+            {"label": "AUG", "value": 63},
+            {"label": "MIN", "value": 84},
+            {"label": "DIM", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "Length",
+          "cc": 119,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Master",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Volume",
+          "cc": 7,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        }
+      ]
+    },
+    {
+      "title": "OSC Deep Edit (NRPN)",
+      "controls": [
+        {
+          "type": "nrpn",
+          "label": "Param 1",
+          "nrpn": {"msb": 0, "lsb": 0, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        },
+        {
+          "type": "nrpn",
+          "label": "Param 2",
+          "nrpn": {"msb": 0, "lsb": 1, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        },
+        {
+          "type": "nrpn",
+          "label": "Param 3",
+          "nrpn": {"msb": 0, "lsb": 2, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        },
+        {
+          "type": "nrpn",
+          "label": "Param 4",
+          "nrpn": {"msb": 0, "lsb": 3, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        }
+      ]
+    },
+    {
+      "title": "Mod FX Deep Edit (NRPN)",
+      "controls": [
+        {
+          "type": "nrpn",
+          "label": "Param 1",
+          "nrpn": {"msb": 1, "lsb": 0, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        },
+        {
+          "type": "nrpn",
+          "label": "Param 2",
+          "nrpn": {"msb": 1, "lsb": 1, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        },
+        {
+          "type": "nrpn",
+          "label": "Param 3",
+          "nrpn": {"msb": 1, "lsb": 2, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        },
+        {
+          "type": "nrpn",
+          "label": "Param 4",
+          "nrpn": {"msb": 1, "lsb": 3, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        }
+      ]
+    },
+    {
+      "title": "Delay Deep Edit (NRPN)",
+      "controls": [
+        {
+          "type": "nrpn",
+          "label": "Param 1",
+          "nrpn": {"msb": 2, "lsb": 0, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        },
+        {
+          "type": "nrpn",
+          "label": "Param 2",
+          "nrpn": {"msb": 2, "lsb": 1, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        },
+        {
+          "type": "nrpn",
+          "label": "Param 3",
+          "nrpn": {"msb": 2, "lsb": 2, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        },
+        {
+          "type": "nrpn",
+          "label": "Param 4",
+          "nrpn": {"msb": 2, "lsb": 3, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        }
+      ]
+    },
+    {
+      "title": "Reverb Deep Edit (NRPN)",
+      "controls": [
+        {
+          "type": "nrpn",
+          "label": "Param 1",
+          "nrpn": {"msb": 3, "lsb": 0, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        },
+        {
+          "type": "nrpn",
+          "label": "Param 2",
+          "nrpn": {"msb": 3, "lsb": 1, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        },
+        {
+          "type": "nrpn",
+          "label": "Param 3",
+          "nrpn": {"msb": 3, "lsb": 2, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        },
+        {
+          "type": "nrpn",
+          "label": "Param 4",
+          "nrpn": {"msb": 3, "lsb": 3, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        }
+      ]
+    }
+  ]
+}

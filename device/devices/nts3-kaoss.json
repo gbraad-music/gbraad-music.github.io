@@ -1,0 +1,504 @@
+{
+  "id": "nts3-kaoss",
+  "name": "KORG NTS-3 Kaoss Pad Kit",
+  "manufacturer": "KORG",
+  "deviceInquiry": {
+    "manufacturerId": "0x42",
+    "familyId": ["0x51", "0x01"],
+    "memberId": "0x02"
+  },
+  "sections": [
+    {
+      "title": "Total FX",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Pad X",
+          "cc": 12,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Pad Y",
+          "cc": 13,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Depth",
+          "cc": 14,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "select",
+          "label": "Touch",
+          "cc": 102,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "Freeze",
+          "cc": 103,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "FX 1",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Pad X",
+          "cc": 16,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Pad Y",
+          "cc": 17,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Depth",
+          "cc": 18,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Selection",
+          "cc": 80,
+          "min": 0,
+          "max": 127,
+          "default": 0,
+          "sublabel": "Effect Type"
+        },
+        {
+          "type": "select",
+          "label": "Touch",
+          "cc": 104,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "Freeze",
+          "cc": 105,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "On/Off",
+          "cc": 106,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 127
+        }
+      ]
+    },
+    {
+      "title": "FX 2",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Pad X",
+          "cc": 20,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Pad Y",
+          "cc": 21,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Depth",
+          "cc": 22,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Selection",
+          "cc": 81,
+          "min": 0,
+          "max": 127,
+          "default": 0,
+          "sublabel": "Effect Type"
+        },
+        {
+          "type": "select",
+          "label": "Touch",
+          "cc": 108,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "Freeze",
+          "cc": 109,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "On/Off",
+          "cc": 110,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 127
+        }
+      ]
+    },
+    {
+      "title": "FX 3",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Pad X",
+          "cc": 24,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Pad Y",
+          "cc": 25,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Depth",
+          "cc": 26,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Selection",
+          "cc": 82,
+          "min": 0,
+          "max": 127,
+          "default": 0,
+          "sublabel": "Effect Type"
+        },
+        {
+          "type": "select",
+          "label": "Touch",
+          "cc": 112,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "Freeze",
+          "cc": 113,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "On/Off",
+          "cc": 114,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 127
+        }
+      ]
+    },
+    {
+      "title": "FX 4",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Pad X",
+          "cc": 28,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Pad Y",
+          "cc": 29,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Depth",
+          "cc": 30,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Selection",
+          "cc": 83,
+          "min": 0,
+          "max": 127,
+          "default": 0,
+          "sublabel": "Effect Type"
+        },
+        {
+          "type": "select",
+          "label": "Touch",
+          "cc": 116,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "Freeze",
+          "cc": 117,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 0
+        },
+        {
+          "type": "select",
+          "label": "On/Off",
+          "cc": 118,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 127
+        }
+      ]
+    },
+    {
+      "title": "Master",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Volume",
+          "cc": 7,
+          "min": 0,
+          "max": 127,
+          "default": 100
+        },
+        {
+          "type": "select",
+          "label": "Input Mute",
+          "cc": 15,
+          "options": [
+            {"label": "Off", "value": 0},
+            {"label": "On", "value": 127}
+          ],
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "FX 1 Deep Edit (NRPN)",
+      "controls": [
+        {
+          "type": "nrpn",
+          "label": "Param 1",
+          "nrpn": {"msb": 1, "lsb": 1, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        },
+        {
+          "type": "nrpn",
+          "label": "Input Select",
+          "nrpn": {"msb": 1, "lsb": 120, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "nrpn",
+          "label": "Release Time",
+          "nrpn": {"msb": 1, "lsb": 121, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 0
+        },
+        {
+          "type": "nrpn",
+          "label": "Output Gain",
+          "nrpn": {"msb": 1, "lsb": 123, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        }
+      ]
+    },
+    {
+      "title": "FX 2 Deep Edit (NRPN)",
+      "controls": [
+        {
+          "type": "nrpn",
+          "label": "Param 1",
+          "nrpn": {"msb": 2, "lsb": 1, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        },
+        {
+          "type": "nrpn",
+          "label": "Input Select",
+          "nrpn": {"msb": 2, "lsb": 120, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "nrpn",
+          "label": "Release Time",
+          "nrpn": {"msb": 2, "lsb": 121, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 0
+        },
+        {
+          "type": "nrpn",
+          "label": "Output Gain",
+          "nrpn": {"msb": 2, "lsb": 123, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        }
+      ]
+    },
+    {
+      "title": "FX 3 Deep Edit (NRPN)",
+      "controls": [
+        {
+          "type": "nrpn",
+          "label": "Param 1",
+          "nrpn": {"msb": 3, "lsb": 1, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        },
+        {
+          "type": "nrpn",
+          "label": "Input Select",
+          "nrpn": {"msb": 3, "lsb": 120, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "nrpn",
+          "label": "Release Time",
+          "nrpn": {"msb": 3, "lsb": 121, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 0
+        },
+        {
+          "type": "nrpn",
+          "label": "Output Gain",
+          "nrpn": {"msb": 3, "lsb": 123, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        }
+      ]
+    },
+    {
+      "title": "FX 4 Deep Edit (NRPN)",
+      "controls": [
+        {
+          "type": "nrpn",
+          "label": "Param 1",
+          "nrpn": {"msb": 4, "lsb": 1, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        },
+        {
+          "type": "nrpn",
+          "label": "Input Select",
+          "nrpn": {"msb": 4, "lsb": 120, "is14bit": false},
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "nrpn",
+          "label": "Release Time",
+          "nrpn": {"msb": 4, "lsb": 121, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 0
+        },
+        {
+          "type": "nrpn",
+          "label": "Output Gain",
+          "nrpn": {"msb": 4, "lsb": 123, "is14bit": true},
+          "min": 0,
+          "max": 16383,
+          "default": 8192
+        }
+      ]
+    }
+  ]
+}
