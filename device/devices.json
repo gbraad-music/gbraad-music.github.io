@@ -47,6 +47,12 @@
       "manufacturer": "KORG",
       "name": "Volca Sample 2",
       "category": "Sampler"
+    },
+    {
+      "file": "regroove.json",
+      "manufacturer": "Regroove Audio Tools",
+      "name": "Regroove",
+      "category": "Audio Player"
     }
   ]
 }

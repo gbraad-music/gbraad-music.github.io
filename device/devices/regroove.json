@@ -1,0 +1,371 @@
+{
+  "id": "regroove",
+  "name": "Regroove",
+  "manufacturer": "Regroove Audio Tools",
+  "description": "Tracker-based audio player with effects and MIDI control",
+  "globalChannel": true,
+  "manufacturerId": "0x7D",
+  "deviceId": "0x00",
+  "supportsDeviceId": true,
+  "sections": [
+    {
+      "title": "Transport",
+      "controls": [
+        {
+          "type": "pad",
+          "label": "Play",
+          "sysex": "F0 7D {DEVICE_ID} 20 F7",
+          "note": "Start playback"
+        },
+        {
+          "type": "pad",
+          "label": "Stop",
+          "sysex": "F0 7D {DEVICE_ID} 21 F7",
+          "note": "Stop playback"
+        },
+        {
+          "type": "pad",
+          "label": "Pause",
+          "sysex": "F0 7D {DEVICE_ID} 22 F7",
+          "note": "Pause/Continue"
+        },
+        {
+          "type": "pad",
+          "label": "Loop",
+          "sysex": "F0 7D {DEVICE_ID} 43 01 F7",
+          "note": "Loop Current"
+        },
+        {
+          "type": "pad",
+          "label": "Next",
+          "sysex": "F0 7D {DEVICE_ID} 24 F7",
+          "note": "Next Order"
+        },
+        {
+          "type": "pad",
+          "label": "Prev",
+          "sysex": "F0 7D {DEVICE_ID} 25 F7",
+          "note": "Prev Order"
+        }
+      ]
+    },
+    {
+      "title": "Channels",
+      "controls": [
+        {
+          "type": "pad",
+          "label": "M1",
+          "toggle": true,
+          "sysex": "F0 7D {DEVICE_ID} 30 00 {VALUE} F7",
+          "note": "Mute Ch 1"
+        },
+        {
+          "type": "pad",
+          "label": "M2",
+          "toggle": true,
+          "sysex": "F0 7D {DEVICE_ID} 30 01 {VALUE} F7",
+          "note": "Mute Ch 2"
+        },
+        {
+          "type": "pad",
+          "label": "M3",
+          "toggle": true,
+          "sysex": "F0 7D {DEVICE_ID} 30 02 {VALUE} F7",
+          "note": "Mute Ch 3"
+        },
+        {
+          "type": "pad",
+          "label": "M4",
+          "toggle": true,
+          "sysex": "F0 7D {DEVICE_ID} 30 03 {VALUE} F7",
+          "note": "Mute Ch 4"
+        },
+        {
+          "type": "pad",
+          "label": "S1",
+          "toggle": true,
+          "sysex": "F0 7D {DEVICE_ID} 31 00 {VALUE} F7",
+          "note": "Solo Ch 1"
+        },
+        {
+          "type": "pad",
+          "label": "S2",
+          "toggle": true,
+          "sysex": "F0 7D {DEVICE_ID} 31 01 {VALUE} F7",
+          "note": "Solo Ch 2"
+        },
+        {
+          "type": "pad",
+          "label": "S3",
+          "toggle": true,
+          "sysex": "F0 7D {DEVICE_ID} 31 02 {VALUE} F7",
+          "note": "Solo Ch 3"
+        },
+        {
+          "type": "pad",
+          "label": "S4",
+          "toggle": true,
+          "sysex": "F0 7D {DEVICE_ID} 31 03 {VALUE} F7",
+          "note": "Solo Ch 4"
+        }
+      ]
+    },
+    {
+      "title": "Channel Volume",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Ch1",
+          "cc": 95,
+          "min": 0,
+          "max": 127,
+          "default": 127,
+          "sysex": "F0 7D {DEVICE_ID} 32 00 {VALUE} F7"
+        },
+        {
+          "type": "knob",
+          "label": "Ch2",
+          "cc": 97,
+          "min": 0,
+          "max": 127,
+          "default": 127,
+          "sysex": "F0 7D {DEVICE_ID} 32 01 {VALUE} F7"
+        },
+        {
+          "type": "knob",
+          "label": "Ch3",
+          "cc": 99,
+          "min": 0,
+          "max": 127,
+          "default": 127,
+          "sysex": "F0 7D {DEVICE_ID} 32 02 {VALUE} F7"
+        },
+        {
+          "type": "knob",
+          "label": "Ch4",
+          "cc": 101,
+          "min": 0,
+          "max": 127,
+          "default": 127,
+          "sysex": "F0 7D {DEVICE_ID} 32 03 {VALUE} F7"
+        }
+      ]
+    },
+    {
+      "title": "Channel Panning",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Ch1",
+          "cc": 96,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 58 00 {VALUE} F7"
+        },
+        {
+          "type": "knob",
+          "label": "Ch2",
+          "cc": 98,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 58 01 {VALUE} F7"
+        },
+        {
+          "type": "knob",
+          "label": "Ch3",
+          "cc": 100,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 58 02 {VALUE} F7"
+        },
+        {
+          "type": "knob",
+          "label": "Ch4",
+          "cc": 102,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 58 03 {VALUE} F7"
+        }
+      ]
+    },
+    {
+      "title": "Distortion",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Drive",
+          "cc": 80,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 71 00 00 01 {VALUE} {CC81} F7"
+        },
+        {
+          "type": "knob",
+          "label": "Mix",
+          "cc": 81,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 71 00 00 01 {CC80} {VALUE} F7"
+        }
+      ]
+    },
+    {
+      "title": "Filter",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Cutoff",
+          "cc": 82,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 71 00 01 01 {VALUE} {CC83} F7"
+        },
+        {
+          "type": "knob",
+          "label": "Resonance",
+          "cc": 83,
+          "min": 0,
+          "max": 127,
+          "default": 32,
+          "sysex": "F0 7D {DEVICE_ID} 71 00 01 01 {CC82} {VALUE} F7"
+        }
+      ]
+    },
+    {
+      "title": "EQ",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Low",
+          "cc": 84,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 71 00 02 01 {VALUE} {CC85} {CC86} F7"
+        },
+        {
+          "type": "knob",
+          "label": "Mid",
+          "cc": 85,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 71 00 02 01 {CC84} {VALUE} {CC86} F7"
+        },
+        {
+          "type": "knob",
+          "label": "High",
+          "cc": 86,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 71 00 02 01 {CC84} {CC85} {VALUE} F7"
+        }
+      ]
+    },
+    {
+      "title": "Compressor",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Threshold",
+          "cc": 87,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 71 00 03 01 {VALUE} {CC88} 20 30 10 F7"
+        },
+        {
+          "type": "knob",
+          "label": "Ratio",
+          "cc": 88,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 71 00 03 01 {CC87} {VALUE} 20 30 10 F7"
+        }
+      ]
+    },
+    {
+      "title": "Delay",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Time",
+          "cc": 89,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 71 00 04 01 {VALUE} {CC90} {CC91} F7"
+        },
+        {
+          "type": "knob",
+          "label": "Feedback",
+          "cc": 90,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 71 00 04 01 {CC89} {VALUE} {CC91} F7"
+        },
+        {
+          "type": "knob",
+          "label": "Mix",
+          "cc": 91,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 71 00 04 01 {CC89} {CC90} {VALUE} F7"
+        }
+      ]
+    },
+    {
+      "title": "Mixer",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Master Vol",
+          "cc": 92,
+          "min": 0,
+          "max": 127,
+          "default": 100,
+          "sysex": "F0 7D {DEVICE_ID} 33 {VALUE} F7"
+        },
+        {
+          "type": "knob",
+          "label": "Input Vol",
+          "cc": 93,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 35 {VALUE} F7"
+        },
+        {
+          "type": "knob",
+          "label": "Stereo Sep",
+          "cc": 94,
+          "min": 0,
+          "max": 127,
+          "default": 64,
+          "sysex": "F0 7D {DEVICE_ID} 57 {VALUE} F7"
+        }
+      ]
+    },
+    {
+      "title": "Device",
+      "controls": [
+        {
+          "type": "device-id-select",
+          "label": "Device ID",
+          "default": 0
+        }
+      ]
+    }
+  ]
+}

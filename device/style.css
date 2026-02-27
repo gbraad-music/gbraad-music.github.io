@@ -49,6 +49,10 @@ body {
     position: relative;
     z-index: 100;
     flex-shrink: 0;
+    /* Performance optimizations */
+    will-change: auto;
+    contain: layout style;
+    transform: translateZ(0); /* Force GPU layer */
 }
 
 .banner-title {
@@ -68,6 +72,9 @@ body {
     font-size: 0.75em;
     text-transform: uppercase;
     letter-spacing: 1px;
+    /* Isolate from page reflows */
+    contain: layout style paint;
+    will-change: auto;
 }
 
 .indicator-dot {
@@ -75,16 +82,18 @@ body {
     height: 8px;
     border-radius: 50%;
     background: #666;
-    transition: background 0.3s;
+    /* Remove transition - not needed for connection state */
 }
 
 .connection-indicator.connected .indicator-dot {
     background: #00FF00;
-    box-shadow: 0 0 8px #00FF00;
+    /* Remove expensive box-shadow during animations */
 }
 
 .indicator-text {
     color: #aaa;
+    /* Prevent text changes from causing reflows */
+    white-space: nowrap;
 }
 
 .connection-indicator.connected .indicator-text {

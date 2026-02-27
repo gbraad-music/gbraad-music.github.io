@@ -6,6 +6,7 @@
 let midiAccess = null;
 let selectedOutput = null;
 let midiChannel = 0;
+let deviceId = 0;  // For devices that use SysEx device IDs (like Regroove)
 let deviceLoader = null;
 let lastLogMessage = '';
 let lastLogCount = 0;
@@ -31,6 +32,15 @@ let autoSyncEnabled = true;
 
 // Flag to prevent UI regeneration during focus sync
 let isFocusSync = false;
+
+// Debounce sync requests (prevent duplicate calls within 2 seconds)
+let lastSyncRequest = 0;
+
+// Prevent duplicate auto-connection
+let hasAutoConnected = false;
+let lastDeviceInquiryTime = 0;
+let processingDeviceInquiry = false;
+let autoDetectInProgress = false;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {
@@ -60,16 +70,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (now - lastFocusSync < 3000) return;
         lastFocusSync = now;
 
-        // Set flag to prevent UI regeneration in auto-connect
-        isFocusSync = true;
-
-        // Send device inquiry to trigger full init flow
-        sendDeviceInquiry();
-
-        // Clear flag after flow completes
-        setTimeout(() => {
-            isFocusSync = false;
-        }, 2000);
+        // Just sync parameters, don't send device inquiry
+        syncFromDevice(true); // Silent mode
     });
 
     // Initialize motion sequencer
@@ -128,7 +130,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 holdTimeouts.delete(cc);
             }, 200));
 
-            sendCC(cc, value);
+            // Check if this control has custom SysEx (like Regroove effects)
+            if (element.dataset && element.dataset.sysex) {
+                sendKnobSysEx(element.dataset.sysex, cc, value);
+            } else {
+                sendCC(cc, value);
+            }
 
             // Broadcast to all windows (including popups)
             uiSyncChannel.postMessage({ type: 'cc-update', cc, value });
@@ -252,6 +259,58 @@ uiSyncChannel.onmessage = (event) => {
 
         // Broadcast update to all OTHER windows (popups)
         uiSyncChannel.postMessage({ type: 'cc-update', cc, value });
+    } else if (event.data.type === 'popup-pad-trigger') {
+        // Popup triggered a pad - send MIDI and update all windows
+        const { label, sysex, toggle, pressed } = event.data;
+
+        // Find the main pad
+        const mainPad = document.querySelector(`trigger-pad[label="${label}"]`);
+        if (mainPad) {
+            // Simulate the pad trigger by calling the same logic
+            if (!selectedOutput) return;
+
+            // For toggle pads, only trigger on press
+            if (toggle && !pressed) return;
+            // For non-toggle pads, only send on press
+            if (!toggle && !pressed) return;
+
+            if (sysex) {
+                let sysexStr = sysex.trim();
+
+                // Handle toggle value substitution
+                if (toggle && mainPad.dataset.toggle) {
+                    const currentState = parseInt(mainPad.dataset.toggleState || '0');
+                    const newState = currentState === 0 ? 1 : 0;
+                    mainPad.dataset.toggleState = newState.toString();
+
+                    sysexStr = sysexStr.replace('{VALUE}', newState.toString(16).toUpperCase().padStart(2, '0'));
+
+                    // Update visual state in main window
+                    if (newState === 1) {
+                        mainPad.setAttribute('active', '');
+                    } else {
+                        mainPad.removeAttribute('active');
+                    }
+
+                    // Broadcast state to all popups
+                    uiSyncChannel.postMessage({ type: 'pad-state-update', label, active: newState === 1 });
+                }
+
+                // Replace templates
+                sysexStr = sysexStr.replace(/\{DEVICE_ID\}/g, deviceId.toString(16).toUpperCase().padStart(2, '0'));
+                sysexStr = sysexStr.replace(/\{CC(\d+)\}/g, (match, ccNum) => {
+                    const knob = document.querySelector(`pad-knob[cc="${ccNum}"]`);
+                    const value = knob ? parseInt(knob.getAttribute('value')) || 64 : 64;
+                    return value.toString(16).toUpperCase().padStart(2, '0');
+                });
+                sysexStr = sysexStr.replace(/\{VALUE\}/g, '00');
+
+                // Parse and send
+                const bytes = sysexStr.split(' ').map(b => parseInt(b, 16));
+                selectedOutput.send(bytes);
+                logMIDI(`TX Pad ${label}: ${sysexStr}`, 'send');
+            }
+        }
     } else if (event.data.type === 'cc-update') {
         // Another window sent an update - just update UI
         const { cc, value } = event.data;
@@ -292,6 +351,7 @@ function popOutSection(mainSection, sectionDef) {
             <title>${sectionDef.title} - MIDI Controller</title>
             <link rel="stylesheet" href="style.css">
             <script src="components/pad-knob.js"></script>
+            <script src="components/trigger-pad.js"></script>
             <script>
                 // Setup BroadcastChannel to receive UI updates
                 const uiSyncChannel = new BroadcastChannel('midi-ui-sync');
@@ -307,6 +367,18 @@ function popOutSection(mainSection, sectionDef) {
                         const select = document.querySelector(\`select[data-cc="\${cc}"]\`);
                         if (select) {
                             select.value = value;
+                        }
+                    }
+                    if (event.data.type === 'pad-state-update') {
+                        const { label, active } = event.data;
+                        // Update pad active state
+                        const pad = document.querySelector(\`trigger-pad[label="\${label}"]\`);
+                        if (pad) {
+                            if (active) {
+                                pad.setAttribute('active', '');
+                            } else {
+                                pad.removeAttribute('active');
+                            }
                         }
                     }
                 };
@@ -332,15 +404,16 @@ function popOutSection(mainSection, sectionDef) {
         // Create controls container
         const controlsContainer = popup.document.createElement('div');
 
-        // Separate knobs and other controls
+        // Separate knobs, pads, and other controls
         const knobs = sectionDef.controls.filter(c => c.type === 'knob' || c.type === 'knob-14bit' || c.type === 'nrpn');
-        const others = sectionDef.controls.filter(c => c.type !== 'knob' && c.type !== 'knob-14bit' && c.type !== 'nrpn');
+        const pads = sectionDef.controls.filter(c => c.type === 'pad');
+        const others = sectionDef.controls.filter(c => c.type !== 'knob' && c.type !== 'knob-14bit' && c.type !== 'nrpn' && c.type !== 'pad');
 
         // Add knobs in a grid
         if (knobs.length > 0) {
             const knobGrid = popup.document.createElement('div');
             knobGrid.className = 'knob-grid';
-            knobGrid.style.gridTemplateColumns = `repeat(${Math.min(knobs.length, 3)}, 1fr)`;
+            knobGrid.style.gridTemplateColumns = `repeat(${Math.min(knobs.length, 4)}, 1fr)`;
 
             knobs.forEach(controlDef => {
                 const knob = popup.document.createElement('pad-knob');
@@ -374,6 +447,59 @@ function popOutSection(mainSection, sectionDef) {
             });
 
             controlsContainer.appendChild(knobGrid);
+        }
+
+        // Add pads in a grid
+        if (pads.length > 0) {
+            const padGrid = popup.document.createElement('div');
+            padGrid.className = 'knob-grid';
+            padGrid.style.gridTemplateColumns = `repeat(${Math.min(pads.length, 4)}, 1fr)`;
+            padGrid.style.marginTop = knobs.length > 0 ? '15px' : '0';
+
+            pads.forEach(controlDef => {
+                const pad = popup.document.createElement('trigger-pad');
+                pad.setAttribute('label', controlDef.label);
+
+                if (controlDef.note) {
+                    pad.setAttribute('note', controlDef.note);
+                }
+
+                if (controlDef.sysex) {
+                    pad.setAttribute('sysex', controlDef.sysex);
+                }
+
+                // Store toggle state if this is a toggle pad
+                if (controlDef.toggle) {
+                    pad.dataset.toggle = 'true';
+                    pad.dataset.toggleState = '0';
+
+                    // Get current state from main section
+                    const mainPad = mainSection.querySelector(`trigger-pad[label="${controlDef.label}"]`);
+                    if (mainPad && mainPad.dataset.toggleState) {
+                        pad.dataset.toggleState = mainPad.dataset.toggleState;
+                        if (mainPad.dataset.toggleState === '1') {
+                            pad.setAttribute('active', '');
+                        }
+                    }
+                }
+
+                // Send via BroadcastChannel to trigger MIDI send in main window
+                pad.addEventListener('pad-trigger', (e) => {
+                    const channel = new BroadcastChannel('midi-ui-sync');
+                    channel.postMessage({
+                        type: 'popup-pad-trigger',
+                        label: controlDef.label,
+                        sysex: controlDef.sysex,
+                        toggle: controlDef.toggle,
+                        pressed: e.detail.pressed
+                    });
+                    channel.close();
+                });
+
+                padGrid.appendChild(pad);
+            });
+
+            controlsContainer.appendChild(padGrid);
         }
 
         // Add other controls
@@ -488,15 +614,16 @@ function createSection(sectionDef) {
     // Controls container
     const controlsContainer = document.createElement('div');
 
-    // Separate knobs and other controls
+    // Separate knobs, pads, and other controls
     const knobs = sectionDef.controls.filter(c => c.type === 'knob' || c.type === 'knob-14bit' || c.type === 'nrpn');
-    const others = sectionDef.controls.filter(c => c.type !== 'knob' && c.type !== 'knob-14bit' && c.type !== 'nrpn');
+    const pads = sectionDef.controls.filter(c => c.type === 'pad');
+    const others = sectionDef.controls.filter(c => c.type !== 'knob' && c.type !== 'knob-14bit' && c.type !== 'nrpn' && c.type !== 'pad');
 
     // Add knobs in a grid
     if (knobs.length > 0) {
         const knobGrid = document.createElement('div');
         knobGrid.className = 'knob-grid';
-        knobGrid.style.gridTemplateColumns = `repeat(${Math.min(knobs.length, 3)}, 1fr)`;
+        knobGrid.style.gridTemplateColumns = `repeat(${Math.min(knobs.length, 4)}, 1fr)`;
 
         knobs.forEach(controlDef => {
             const control = createControl(controlDef);
@@ -506,11 +633,26 @@ function createSection(sectionDef) {
         controlsContainer.appendChild(knobGrid);
     }
 
+    // Add pads in a grid
+    if (pads.length > 0) {
+        const padGrid = document.createElement('div');
+        padGrid.className = 'knob-grid';
+        padGrid.style.gridTemplateColumns = `repeat(${Math.min(pads.length, 4)}, 1fr)`;
+        padGrid.style.marginTop = knobs.length > 0 ? '15px' : '0';
+
+        pads.forEach(controlDef => {
+            const control = createControl(controlDef);
+            if (control) padGrid.appendChild(control);
+        });
+
+        controlsContainer.appendChild(padGrid);
+    }
+
     // Add other controls
     if (others.length > 0) {
         const controlRow = document.createElement('div');
         controlRow.className = 'control-row';
-        controlRow.style.marginTop = knobs.length > 0 ? '15px' : '0';
+        controlRow.style.marginTop = (knobs.length > 0 || pads.length > 0) ? '15px' : '0';
 
         others.forEach(controlDef => {
             const control = createControl(controlDef);
@@ -532,8 +674,12 @@ function createControl(controlDef) {
             return createKnob(controlDef);
         case 'nrpn':
             return createNRPNKnob(controlDef);
+        case 'pad':
+            return createPad(controlDef);
         case 'select':
             return createSelect(controlDef);
+        case 'device-id-select':
+            return createDeviceIdSelect(controlDef);
         case 'toggle':
             return createToggle(controlDef);
         default:
@@ -554,6 +700,11 @@ function createKnob(def) {
 
     if (def.sublabel) {
         knob.setAttribute('sublabel', def.sublabel);
+    }
+
+    // Store SysEx template if defined (for devices like Regroove that use SysEx instead of CC)
+    if (def.sysex) {
+        knob.dataset.sysex = def.sysex;
     }
 
     // Add MIDI learn click handler
@@ -674,6 +825,129 @@ function createToggle(def) {
     return container;
 }
 
+// Create a device ID selector control
+function createDeviceIdSelect(def) {
+    const container = document.createElement('div');
+    container.style.marginBottom = '10px';
+
+    const label = document.createElement('label');
+    label.style.fontSize = '11px';
+    label.style.color = 'var(--text-secondary)';
+    label.style.display = 'block';
+    label.textContent = def.label + ':';
+
+    const select = document.createElement('select');
+    select.style.marginTop = '5px';
+    select.id = 'deviceIdSelect';
+
+    // Add device ID options (0-127, plus broadcast)
+    for (let i = 0; i <= 127; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = i === 127 ? `${i} (Broadcast)` : `${i}`;
+        select.appendChild(option);
+    }
+
+    // Set default value
+    const defaultId = def.default !== undefined ? def.default : 0;
+    select.value = defaultId;
+    deviceId = defaultId;
+
+    // Add change listener
+    select.addEventListener('change', (e) => {
+        deviceId = parseInt(e.target.value);
+        console.log('[Controller] Device ID changed to:', deviceId);
+    });
+
+    label.appendChild(select);
+    container.appendChild(label);
+    return container;
+}
+
+// Create a trigger pad control
+function createPad(def) {
+    const pad = document.createElement('trigger-pad');
+    pad.setAttribute('label', def.label);
+
+    if (def.note) {
+        pad.setAttribute('note', def.note);
+    }
+
+    if (def.sysex) {
+        pad.setAttribute('sysex', def.sysex);
+    }
+
+    // Store toggle state if this is a toggle pad
+    if (def.toggle) {
+        pad.dataset.toggle = 'true';
+        pad.dataset.toggleState = '0';
+    }
+
+    // Handle pad trigger events
+    pad.addEventListener('pad-trigger', (e) => {
+        const { sysex, pressed } = e.detail;
+
+        // For toggle pads, only trigger on press (not release)
+        if (def.toggle && !pressed) {
+            return;
+        }
+
+        // For non-toggle pads, only send on press (transport controls)
+        if (!def.toggle && !pressed) {
+            return;
+        }
+
+        if (!selectedOutput) {
+            console.warn('[Controller] No MIDI output selected');
+            return;
+        }
+
+        if (sysex) {
+            // Parse SysEx string
+            let sysexStr = sysex.trim();
+
+            // Handle toggle value substitution
+            if (def.toggle) {
+                const currentState = parseInt(pad.dataset.toggleState);
+                const newState = currentState === 0 ? 1 : 0;
+                pad.dataset.toggleState = newState.toString();
+
+                // Replace {VALUE} with toggle state
+                sysexStr = sysexStr.replace('{VALUE}', newState.toString(16).toUpperCase().padStart(2, '0'));
+
+                // Update visual state
+                if (newState === 1) {
+                    pad.setAttribute('active', '');
+                } else {
+                    pad.removeAttribute('active');
+                }
+            }
+
+            // Replace {DEVICE_ID} template with current device ID
+            sysexStr = sysexStr.replace(/\{DEVICE_ID\}/g, deviceId.toString(16).toUpperCase().padStart(2, '0'));
+
+            // Replace {CCxx} templates with current CC values
+            sysexStr = sysexStr.replace(/\{CC(\d+)\}/g, (match, ccNum) => {
+                const knob = document.querySelector(`pad-knob[cc="${ccNum}"]`);
+                const value = knob ? parseInt(knob.getAttribute('value')) || 64 : 64;
+                return value.toString(16).toUpperCase().padStart(2, '0');
+            });
+
+            // Replace {VALUE} in non-toggle pads (for effects)
+            sysexStr = sysexStr.replace(/\{VALUE\}/g, '00');
+
+            // Parse hex string to byte array
+            const bytes = sysexStr.split(' ').map(b => parseInt(b, 16));
+
+            // Send SysEx
+            selectedOutput.send(bytes);
+            logMIDI(`TX Pad ${def.label}: ${sysexStr}`, 'send');
+        }
+    });
+
+    return pad;
+}
+
 // Clear device UI
 function clearDeviceUI() {
     const container = document.getElementById('deviceControls');
@@ -705,7 +979,8 @@ async function initMIDI() {
             console.log('[MIDI] Device state changed:', e.port.name, e.port.state);
             populateMIDIOutputs();
             setupMIDIInputs();
-            setTimeout(() => autoDetectDevice(), 500);
+            // Don't auto-detect on state changes - only on initial load
+            // State changes during init will trigger multiple times unnecessarily
         };
     } catch (error) {
         console.error('[MIDI] Failed to initialize WebMIDI:', error);
@@ -718,11 +993,11 @@ function setupMIDIInputs() {
     if (!midiAccess) return;
 
     const inputs = Array.from(midiAccess.inputs.values());
-    console.log(`[MIDI] Found ${inputs.length} input(s)`);
+    console.log(`[MIDI] Setting up ${inputs.length} MIDI input(s)`);
 
-    inputs.forEach(input => {
+    inputs.forEach((input, index) => {
         input.onmidimessage = (event) => handleMIDIMessage(event, input.name);
-        console.log(`[MIDI] Listening to input: ${input.name}`);
+        console.log(`[MIDI] Input ${index + 1}/${inputs.length}: ${input.name} (ID: ${input.id})`);
     });
 
     // Populate learn input selector
@@ -800,32 +1075,44 @@ function handleMIDIMessage(event, deviceName = '') {
 
     // Parse SysEx messages
     if (data[0] === 0xF0) {
+        // Handle Device Inquiry Reply
         if (data[1] === 0x7E && data[3] === 0x06 && data[4] === 0x02) {
-            // Device Inquiry Reply
-            const manufacturerId = data[5];
-            const familyLSB = data[6];
-            const familyMSB = data[7];
-            const memberLSB = data[8];
+            // Ignore if already auto-connected OR already processing
+            if (!hasAutoConnected && !processingDeviceInquiry) {
+                // Set flag IMMEDIATELY
+                processingDeviceInquiry = true;
 
-            logMIDI(' Device Inquiry Reply received!', 'success');
+                const manufacturerId = data[5];
+                const familyLSB = data[6];
+                const familyMSB = data[7];
+                const memberLSB = data[8];
 
-            // Try to match device
-            const matchedDevice = deviceLoader.findDeviceByInquiry(
-                manufacturerId,
-                [familyLSB, familyMSB],
-                memberLSB
-            );
+                logMIDI('Device Inquiry Reply received!', 'success');
 
-            if (matchedDevice) {
-                logMIDI(` Detected: ${matchedDevice.name}`, 'success');
-                autoConnectDevice(deviceName, matchedDevice);
-            } else {
-                logMIDI(`Device: Mfr=${manufacturerId.toString(16)} Family=${familyLSB.toString(16)}${familyMSB.toString(16)} Member=${memberLSB.toString(16)}`, 'info');
+                // Try to match device
+                const matchedDevice = deviceLoader.findDeviceByInquiry(
+                    manufacturerId,
+                    [familyLSB, familyMSB],
+                    memberLSB
+                );
+
+                if (matchedDevice) {
+                    logMIDI(`Detected: ${matchedDevice.name}`, 'success');
+                    autoConnectDevice(deviceName, matchedDevice);
+                } else {
+                    logMIDI(`Device: Mfr=${manufacturerId.toString(16)} Family=${familyLSB.toString(16)}${familyMSB.toString(16)} Member=${memberLSB.toString(16)}`, 'info');
+                    // Reset flag if device not matched (allow retry)
+                    setTimeout(() => {
+                        processingDeviceInquiry = false;
+                    }, 100);
+                }
             }
+            // DON'T return - continue processing other SysEx messages
         }
 
         // KORG bulk parameter dump - device-specific parsing
-        if (data[1] === 0x42) {
+        if (data[1] === 0x42 && data[6] === 0x40) {
+            // Only process 0x40 (DATA DUMP), ignore 0x41 (PARAMETER CHANGE)
             const device = deviceLoader.getCurrentDevice();
             if (device && device.bulkDumpFormat) {
                 const ccValues = parseBulkDump(data, device.bulkDumpFormat);
@@ -1155,8 +1442,45 @@ function sendNRPN(msb, lsb, value, is14bit = true, log = false) {
     }
 }
 
+// Send SysEx message for knob controls (used by Regroove effects)
+function sendKnobSysEx(sysexTemplate, cc, value) {
+    if (!selectedOutput) return;
+
+    try {
+        // Start with the template
+        let sysexStr = sysexTemplate.trim();
+
+        // Replace {DEVICE_ID} with current device ID
+        sysexStr = sysexStr.replace(/\{DEVICE_ID\}/g, deviceId.toString(16).toUpperCase().padStart(2, '0'));
+
+        // Replace {VALUE} with the knob's current value
+        sysexStr = sysexStr.replace(/\{VALUE\}/g, value.toString(16).toUpperCase().padStart(2, '0'));
+
+        // Replace {CCxx} templates with other knob values
+        sysexStr = sysexStr.replace(/\{CC(\d+)\}/g, (match, ccNum) => {
+            const knob = document.querySelector(`pad-knob[cc="${ccNum}"]`);
+            const knobValue = knob ? parseInt(knob.getAttribute('value')) || 64 : 64;
+            return knobValue.toString(16).toUpperCase().padStart(2, '0');
+        });
+
+        // Parse hex string to byte array
+        const bytes = sysexStr.split(' ').map(b => parseInt(b, 16));
+
+        // Send SysEx
+        selectedOutput.send(bytes);
+        logMIDI(`TX SysEx CC${cc}: ${sysexStr}`, 'send');
+    } catch (error) {
+        logMIDI(`SysEx Error: ${error.message}`, 'error');
+    }
+}
+
 // Request all parameter values from device
 function syncFromDevice(silent = false) {
+    // Debounce: prevent duplicate sync requests within 2 seconds
+    const now = Date.now();
+    if (now - lastSyncRequest < 2000) return;
+    lastSyncRequest = now;
+
     const device = deviceLoader.getCurrentDevice();
     if (!device) {
         if (!silent) logMIDI('No device selected', 'error');
@@ -1178,12 +1502,13 @@ function syncFromDevice(silent = false) {
     }
 
     // KORG Current Program Data Dump Request
-    // Format: F0 42 3g 00 01 75 10 F7
+    // Format: F0 42 4g 00 01 75 10 F7 (4g = 0x40 + global channel)
     const manufacturerId = parseInt(device.deviceInquiry.manufacturerId);
+    const channel = device.globalChannel ? 0 : midiChannel; // Use channel 0 for global channel devices
     const sysex = [
         0xF0,
         manufacturerId,
-        0x30 + midiChannel,
+        0x40 + channel, // FIXED: Was 0x30, should be 0x40 for KORG SysEx
         0x00,
         0x01,
         0x75,
@@ -1269,26 +1594,40 @@ function sendDeviceInquiry() {
 // Auto-detect device on startup
 async function autoDetectDevice() {
     if (!midiAccess) return;
+    if (hasAutoConnected) return;
+    if (autoDetectInProgress) return;
+
+    autoDetectInProgress = true;
 
     const outputs = Array.from(midiAccess.outputs.values());
-    if (outputs.length === 0) return;
-
-    console.log('[MIDI] Auto-detecting devices...');
+    if (outputs.length === 0) {
+        autoDetectInProgress = false;
+        return;
+    }
 
     const inquiry = [0xF0, 0x7E, 0x7F, 0x06, 0x01, 0xF7];
 
-    for (const output of outputs) {
-        try {
-            output.send(inquiry);
-        } catch (error) {
-            console.error(`[MIDI] Failed to query ${output.name}:`, error);
-        }
+    // Send ONE inquiry on the first output (0x7F = broadcast to all devices)
+    try {
+        outputs[0].send(inquiry);
+        logMIDI('TX: F0 7E 7F 06 01 F7 (Device Inquiry)', 'send');
+    } catch (error) {
+        console.error('[MIDI] Failed to send Device Inquiry:', error);
     }
+
+    // Reset flag after 2 seconds (enough time for device to respond)
+    setTimeout(() => {
+        autoDetectInProgress = false;
+    }, 2000);
 }
 
 // Auto-connect to detected device
 function autoConnectDevice(inputDeviceName, matchedDevice) {
     if (!midiAccess) return;
+
+    // Prevent duplicate auto-connection - SET FLAG IMMEDIATELY
+    if (hasAutoConnected) return;
+    hasAutoConnected = true; // SET THIS IMMEDIATELY to block concurrent calls
 
     const outputs = Array.from(midiAccess.outputs.values());
     let matchingOutput = outputs.find(output => output.name === inputDeviceName);
@@ -1307,6 +1646,8 @@ function autoConnectDevice(inputDeviceName, matchedDevice) {
             updateMIDIStatus(`Connected: ${matchingOutput.name}`, true);
             updateConnectionIndicator(true, matchingOutput.name);
         }
+
+        logMIDI(`Auto-connected to: ${matchingOutput.name}`, 'success');
 
         // Auto-select device in device dropdown
         const deviceSelect = document.getElementById('deviceSelect');
@@ -1335,8 +1676,7 @@ function autoConnectDevice(inputDeviceName, matchedDevice) {
             }
         }
 
-        logMIDI(` Auto-connected to: ${matchingOutput.name}`, 'success');
-        console.log('[MIDI] Auto-connected to:', matchingOutput.name);
+        logMIDI(`Auto-connected to: ${matchingOutput.name}`, 'success');
     }
 }
 
@@ -1347,13 +1687,18 @@ async function scanAllDevices() {
         return;
     }
 
+    // Reset auto-connection flags to allow re-detection
+    hasAutoConnected = false;
+    processingDeviceInquiry = false;
+    autoDetectInProgress = false;
+
     const outputs = Array.from(midiAccess.outputs.values());
     if (outputs.length === 0) {
         logMIDI('Error: No MIDI outputs found', 'error');
         return;
     }
 
-    logMIDI(` Scanning ${outputs.length} MIDI output(s)...`, 'info');
+    logMIDI(`Scanning ${outputs.length} MIDI output(s)...`, 'info');
 
     const inquiry = [0xF0, 0x7E, 0x7F, 0x06, 0x01, 0xF7];
 
