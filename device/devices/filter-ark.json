@@ -1,0 +1,84 @@
+{
+  "id": "filter-ark",
+  "name": "KORG Filter Ark",
+  "manufacturer": "KORG",
+  "description": "Control filters from legendary instruments like the MS-20 and miniKORG",
+  "globalChannel": true,
+  "manufacturerId": "0x42",
+  "sections": [
+    {
+      "title": "Macro",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "A",
+          "cc": 24,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "B",
+          "cc": 25,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "C",
+          "cc": 26,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "D",
+          "cc": 27,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    },
+    {
+      "title": "Levels",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Input",
+          "cc": 92,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Output",
+          "cc": 93,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Noise",
+          "cc": 94,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "FX Depth",
+          "cc": 95,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    }
+  ]
+}

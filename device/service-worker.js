@@ -1,4 +1,4 @@
-const CACHE_NAME = 'device-controller-v80';
+const CACHE_NAME = 'device-controller-v82';
 const urlsToCache = [
   './',
   './index.html',
@@ -22,7 +22,8 @@ const urlsToCache = [
   './devices/volca-kick.json',
   './devices/volca-fm.json',
   './devices/volca-sample2.json',
-  './devices/regroove.json'
+  './devices/regroove.json',
+  './devices/filter-ark.json'
 ];
 
 // Install service worker

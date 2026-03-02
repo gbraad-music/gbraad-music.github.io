@@ -53,6 +53,12 @@
       "manufacturer": "Regroove Audio Tools",
       "name": "Regroove",
       "category": "Audio Player"
+    },
+    {
+      "file": "filter-ark.json",
+      "manufacturer": "KORG",
+      "name": "KORG Filter Ark",
+      "category": "Filter"
     }
   ]
 }
