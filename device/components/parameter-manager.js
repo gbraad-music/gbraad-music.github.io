@@ -30,8 +30,8 @@ class ParameterManager {
             controls: {}
         };
 
-        // Collect all knob, select, and toggle values
-        document.querySelectorAll('pad-knob, select[data-cc], input[type="checkbox"][data-cc]').forEach(control => {
+        // Collect all knob, select, toggle, and xy-pad values
+        document.querySelectorAll('pad-knob, select[data-cc], input[type="checkbox"][data-cc], xy-pad').forEach(control => {
             let cc, value, type, nrpnInfo = null;
 
             if (control.tagName === 'PAD-KNOB') {
@@ -50,6 +50,23 @@ class ParameterManager {
                     type = 'cc';
                     cc = parseInt(control.getAttribute('cc'));
                 }
+            } else if (control.tagName === 'XY-PAD') {
+                // Store both X and Y values separately
+                type = 'cc';
+                const xCC = parseInt(control.getAttribute('x-cc'));
+                const yCC = parseInt(control.getAttribute('y-cc'));
+                const xValue = parseInt(control.getAttribute('x-value'));
+                const yValue = parseInt(control.getAttribute('y-value'));
+
+                // Add X value
+                if (xCC !== undefined && !isNaN(xValue)) {
+                    params.controls[`cc${xCC}`] = { type: 'cc', value: xValue };
+                }
+                // Add Y value
+                if (yCC !== undefined && !isNaN(yValue)) {
+                    params.controls[`cc${yCC}`] = { type: 'cc', value: yValue };
+                }
+                return; // Skip the normal processing below
             } else if (control.tagName === 'SELECT') {
                 type = 'cc';
                 cc = parseInt(control.getAttribute('data-cc'));
@@ -184,6 +201,26 @@ class ParameterManager {
                     element = document.querySelector(`input[type="checkbox"][data-cc="${cc}"]`);
                     if (element) {
                         element.checked = control.value > 63;
+                        if (sendToDevice && window.sendCC) {
+                            window.sendCC(cc, control.value);
+                        }
+                        applied++;
+                        return;
+                    }
+
+                    // Try xy-pad (check both x-cc and y-cc)
+                    const xyPadX = document.querySelector(`xy-pad[x-cc="${cc}"]`);
+                    if (xyPadX) {
+                        xyPadX.setAttribute('x-value', control.value);
+                        if (sendToDevice && window.sendCC) {
+                            window.sendCC(cc, control.value);
+                        }
+                        applied++;
+                        return;
+                    }
+                    const xyPadY = document.querySelector(`xy-pad[y-cc="${cc}"]`);
+                    if (xyPadY) {
+                        xyPadY.setAttribute('y-value', control.value);
                         if (sendToDevice && window.sendCC) {
                             window.sendCC(cc, control.value);
                         }

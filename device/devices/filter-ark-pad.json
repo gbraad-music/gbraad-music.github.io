@@ -1,0 +1,73 @@
+{
+  "id": "filter-ark-pad",
+  "name": "KORG Filter Ark [Pad]",
+  "manufacturer": "KORG",
+  "description": "Control filters from legendary instruments like the MS-20 and miniKORG",
+  "globalChannel": true,
+  "manufacturerId": "0x42",
+  "sections": [
+    {
+      "title": "Macro AB",
+      "controls": [
+        {
+          "type": "xy-pad",
+          "label": "Macro A / B",
+          "xCC": 24,
+          "yCC": 25,
+          "xDefault": 64,
+          "yDefault": 64
+        }
+      ]
+    },
+    {
+      "title": "Macro CD",
+      "controls": [
+        {
+          "type": "xy-pad",
+          "label": "Macro C / D",
+          "xCC": 26,
+          "yCC": 27,
+          "xDefault": 64,
+          "yDefault": 64
+        }
+      ]
+    },
+    {
+      "title": "Levels",
+      "controls": [
+        {
+          "type": "knob",
+          "label": "Input",
+          "cc": 92,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Output",
+          "cc": 93,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        },
+        {
+          "type": "knob",
+          "label": "Noise",
+          "cc": 94,
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "type": "knob",
+          "label": "FX Depth",
+          "cc": 95,
+          "min": 0,
+          "max": 127,
+          "default": 64
+        }
+      ]
+    }
+  ]
+}

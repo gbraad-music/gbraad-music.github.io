@@ -7,6 +7,12 @@
       "category": "Audio Interface"
     },
     {
+      "file": "microaudio-722-pad.json",
+      "manufacturer": "KORG",
+      "name": "microAudio 722 [Pad]",
+      "category": "Audio Interface"
+    },
+    {
       "file": "nts1-mkii.json",
       "manufacturer": "KORG",
       "name": "NTS-1 mkII",
@@ -58,6 +64,12 @@
       "file": "filter-ark.json",
       "manufacturer": "KORG",
       "name": "KORG Filter Ark",
+      "category": "Filter"
+    },
+    {
+      "file": "filter-ark-pad.json",
+      "manufacturer": "KORG",
+      "name": "KORG Filter Ark [Pad]",
       "category": "Filter"
     }
   ]

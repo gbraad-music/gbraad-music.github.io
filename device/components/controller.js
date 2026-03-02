@@ -172,6 +172,7 @@ function handleDeviceChange(e) {
         return;
     }
 
+    const previousDevice = deviceLoader.getCurrentDevice();
     deviceLoader.setCurrentDevice(deviceId);
     const device = deviceLoader.getCurrentDevice();
 
@@ -193,11 +194,14 @@ function handleDeviceChange(e) {
         window.parameterManager.setDevice(device);
     }
 
-    // Auto-sync from device if supported
-    if (device.deviceInquiry && selectedOutput) {
+    // Always sync from device if it has bulk dump support
+    if (selectedOutput && device.bulkDumpFormat) {
         setTimeout(() => {
             syncFromDevice();
-            startAutoSync();
+            // Only start auto-sync if device has deviceInquiry
+            if (device.deviceInquiry) {
+                startAutoSync();
+            }
         }, 1000);
     }
 }
@@ -255,6 +259,15 @@ uiSyncChannel.onmessage = (event) => {
         const select = document.querySelector(`select[data-cc="${cc}"]`);
         if (select) {
             select.value = value;
+        }
+        // Update xy-pad (check both x-cc and y-cc)
+        const xyPadX = document.querySelector(`xy-pad[x-cc="${cc}"]`);
+        if (xyPadX) {
+            xyPadX.setAttribute('x-value', value);
+        }
+        const xyPadY = document.querySelector(`xy-pad[y-cc="${cc}"]`);
+        if (xyPadY) {
+            xyPadY.setAttribute('y-value', value);
         }
 
         // Broadcast update to all OTHER windows (popups)
@@ -324,6 +337,15 @@ uiSyncChannel.onmessage = (event) => {
         if (select) {
             select.value = value;
         }
+        // Update xy-pad (check both x-cc and y-cc)
+        const xyPadX = document.querySelector(`xy-pad[x-cc="${cc}"]`);
+        if (xyPadX) {
+            xyPadX.setAttribute('x-value', value);
+        }
+        const xyPadY = document.querySelector(`xy-pad[y-cc="${cc}"]`);
+        if (xyPadY) {
+            xyPadY.setAttribute('y-value', value);
+        }
     }
 };
 
@@ -352,6 +374,7 @@ function popOutSection(mainSection, sectionDef) {
             <link rel="stylesheet" href="style.css">
             <script src="components/pad-knob.js"></script>
             <script src="components/trigger-pad.js"></script>
+            <script src="components/xy-pad.js"></script>
             <script>
                 // Setup BroadcastChannel to receive UI updates
                 const uiSyncChannel = new BroadcastChannel('midi-ui-sync');
@@ -367,6 +390,15 @@ function popOutSection(mainSection, sectionDef) {
                         const select = document.querySelector(\`select[data-cc="\${cc}"]\`);
                         if (select) {
                             select.value = value;
+                        }
+                        // Update xy-pad (check both x-cc and y-cc)
+                        const xyPadX = document.querySelector(\`xy-pad[x-cc="\${cc}"]\`);
+                        if (xyPadX) {
+                            xyPadX.setAttribute('x-value', value);
+                        }
+                        const xyPadY = document.querySelector(\`xy-pad[y-cc="\${cc}"]\`);
+                        if (xyPadY) {
+                            xyPadY.setAttribute('y-value', value);
                         }
                     }
                     if (event.data.type === 'pad-state-update') {
@@ -404,10 +436,11 @@ function popOutSection(mainSection, sectionDef) {
         // Create controls container
         const controlsContainer = popup.document.createElement('div');
 
-        // Separate knobs, pads, and other controls
+        // Separate knobs, pads, xy-pads, and other controls
         const knobs = sectionDef.controls.filter(c => c.type === 'knob' || c.type === 'knob-14bit' || c.type === 'nrpn');
         const pads = sectionDef.controls.filter(c => c.type === 'pad');
-        const others = sectionDef.controls.filter(c => c.type !== 'knob' && c.type !== 'knob-14bit' && c.type !== 'nrpn' && c.type !== 'pad');
+        const xyPads = sectionDef.controls.filter(c => c.type === 'xy-pad');
+        const others = sectionDef.controls.filter(c => c.type !== 'knob' && c.type !== 'knob-14bit' && c.type !== 'nrpn' && c.type !== 'pad' && c.type !== 'xy-pad');
 
         // Add knobs in a grid
         if (knobs.length > 0) {
@@ -500,6 +533,48 @@ function popOutSection(mainSection, sectionDef) {
             });
 
             controlsContainer.appendChild(padGrid);
+        }
+
+        // Add XY pads in a grid
+        if (xyPads.length > 0) {
+            const xyPadGrid = popup.document.createElement('div');
+            xyPadGrid.className = 'knob-grid';
+            xyPadGrid.style.gridTemplateColumns = `repeat(${Math.min(xyPads.length, 2)}, 1fr)`;
+            xyPadGrid.style.marginTop = (knobs.length > 0 || pads.length > 0) ? '15px' : '0';
+
+            xyPads.forEach(controlDef => {
+                const xyPad = popup.document.createElement('xy-pad');
+                xyPad.setAttribute('label', controlDef.label);
+                xyPad.setAttribute('x-cc', controlDef.xCC);
+                xyPad.setAttribute('y-cc', controlDef.yCC);
+
+                // Get current values from main section
+                const mainXYPad = mainSection.querySelector(`xy-pad[x-cc="${controlDef.xCC}"][y-cc="${controlDef.yCC}"]`);
+                if (mainXYPad) {
+                    const xValue = mainXYPad.getAttribute('x-value') || controlDef.xDefault || 64;
+                    const yValue = mainXYPad.getAttribute('y-value') || controlDef.yDefault || 64;
+                    xyPad.setAttribute('x-value', xValue);
+                    xyPad.setAttribute('y-value', yValue);
+                } else {
+                    xyPad.setAttribute('x-value', controlDef.xDefault || 64);
+                    xyPad.setAttribute('y-value', controlDef.yDefault || 64);
+                }
+
+                // Send via BroadcastChannel to trigger MIDI send in main window
+                xyPad.addEventListener('cc-change', (e) => {
+                    const channel = new BroadcastChannel('midi-ui-sync');
+                    channel.postMessage({
+                        type: 'popup-cc-change',
+                        cc: e.detail.cc,
+                        value: e.detail.value
+                    });
+                    channel.close();
+                });
+
+                xyPadGrid.appendChild(xyPad);
+            });
+
+            controlsContainer.appendChild(xyPadGrid);
         }
 
         // Add other controls
@@ -614,10 +689,11 @@ function createSection(sectionDef) {
     // Controls container
     const controlsContainer = document.createElement('div');
 
-    // Separate knobs, pads, and other controls
+    // Separate knobs, pads, xy-pads, and other controls
     const knobs = sectionDef.controls.filter(c => c.type === 'knob' || c.type === 'knob-14bit' || c.type === 'nrpn');
     const pads = sectionDef.controls.filter(c => c.type === 'pad');
-    const others = sectionDef.controls.filter(c => c.type !== 'knob' && c.type !== 'knob-14bit' && c.type !== 'nrpn' && c.type !== 'pad');
+    const xyPads = sectionDef.controls.filter(c => c.type === 'xy-pad');
+    const others = sectionDef.controls.filter(c => c.type !== 'knob' && c.type !== 'knob-14bit' && c.type !== 'nrpn' && c.type !== 'pad' && c.type !== 'xy-pad');
 
     // Add knobs in a grid
     if (knobs.length > 0) {
@@ -648,11 +724,26 @@ function createSection(sectionDef) {
         controlsContainer.appendChild(padGrid);
     }
 
+    // Add XY pads in a grid
+    if (xyPads.length > 0) {
+        const xyPadGrid = document.createElement('div');
+        xyPadGrid.className = 'knob-grid';
+        xyPadGrid.style.gridTemplateColumns = `repeat(${Math.min(xyPads.length, 2)}, 1fr)`;
+        xyPadGrid.style.marginTop = (knobs.length > 0 || pads.length > 0) ? '15px' : '0';
+
+        xyPads.forEach(controlDef => {
+            const control = createControl(controlDef);
+            if (control) xyPadGrid.appendChild(control);
+        });
+
+        controlsContainer.appendChild(xyPadGrid);
+    }
+
     // Add other controls
     if (others.length > 0) {
         const controlRow = document.createElement('div');
         controlRow.className = 'control-row';
-        controlRow.style.marginTop = (knobs.length > 0 || pads.length > 0) ? '15px' : '0';
+        controlRow.style.marginTop = (knobs.length > 0 || pads.length > 0 || xyPads.length > 0) ? '15px' : '0';
 
         others.forEach(controlDef => {
             const control = createControl(controlDef);
@@ -676,6 +767,8 @@ function createControl(controlDef) {
             return createNRPNKnob(controlDef);
         case 'pad':
             return createPad(controlDef);
+        case 'xy-pad':
+            return createXYPad(controlDef);
         case 'select':
             return createSelect(controlDef);
         case 'device-id-select':
@@ -948,6 +1041,18 @@ function createPad(def) {
     return pad;
 }
 
+// Create an XY pad control
+function createXYPad(def) {
+    const xyPad = document.createElement('xy-pad');
+    xyPad.setAttribute('label', def.label);
+    xyPad.setAttribute('x-cc', def.xCC);
+    xyPad.setAttribute('y-cc', def.yCC);
+    xyPad.setAttribute('x-value', def.xDefault !== undefined ? def.xDefault : 64);
+    xyPad.setAttribute('y-value', def.yDefault !== undefined ? def.yDefault : 64);
+
+    return xyPad;
+}
+
 // Clear device UI
 function clearDeviceUI() {
     const container = document.getElementById('deviceControls');
@@ -1062,6 +1167,16 @@ function handleMIDIMessage(event, deviceName = '') {
         const checkbox = document.querySelector(`input[type="checkbox"][data-cc="${cc}"]`);
         if (checkbox) {
             checkbox.checked = value > 63;
+        }
+
+        // Update xy-pad (check both x-cc and y-cc)
+        const xyPadX = document.querySelector(`xy-pad[x-cc="${cc}"]`);
+        if (xyPadX) {
+            xyPadX.setAttribute('x-value', value);
+        }
+        const xyPadY = document.querySelector(`xy-pad[y-cc="${cc}"]`);
+        if (xyPadY) {
+            xyPadY.setAttribute('y-value', value);
         }
 
         // Record to motion sequencer if recording
@@ -1201,6 +1316,16 @@ function applyBulkDumpValues(ccValues) {
         if (checkbox) {
             checkbox.checked = value > 63;
         }
+
+        // Update xy-pad (check both x-cc and y-cc)
+        const xyPadX = document.querySelector(`xy-pad[x-cc="${ccNum}"]`);
+        if (xyPadX) {
+            xyPadX.setAttribute('x-value', value);
+        }
+        const xyPadY = document.querySelector(`xy-pad[y-cc="${ccNum}"]`);
+        if (xyPadY) {
+            xyPadY.setAttribute('y-value', value);
+        }
     });
 
     // Re-enable transitions after updates complete
@@ -1319,6 +1444,16 @@ function handleHardwareCC(cc, value, deviceName) {
             const checkbox = document.querySelector(`input[type="checkbox"][data-cc="${mapping.targetCC}"]`);
             if (checkbox) {
                 checkbox.checked = value > 63;
+            }
+
+            // Update xy-pad (check both x-cc and y-cc)
+            const xyPadX = document.querySelector(`xy-pad[x-cc="${mapping.targetCC}"]`);
+            if (xyPadX) {
+                xyPadX.setAttribute('x-value', value);
+            }
+            const xyPadY = document.querySelector(`xy-pad[y-cc="${mapping.targetCC}"]`);
+            if (xyPadY) {
+                xyPadY.setAttribute('y-value', value);
             }
 
             // Send to device
@@ -1503,7 +1638,16 @@ function syncFromDevice(silent = false) {
 
     // KORG Current Program Data Dump Request
     // Format: F0 42 4g 00 01 75 10 F7 (4g = 0x40 + global channel)
-    const manufacturerId = parseInt(device.deviceInquiry.manufacturerId);
+    // Get manufacturer ID from bulkDumpFormat header or deviceInquiry
+    let manufacturerId;
+    if (device.deviceInquiry && device.deviceInquiry.manufacturerId) {
+        manufacturerId = parseInt(device.deviceInquiry.manufacturerId);
+    } else if (device.bulkDumpFormat.header && device.bulkDumpFormat.header.length > 1) {
+        manufacturerId = parseInt(device.bulkDumpFormat.header[1]);
+    } else {
+        if (!silent) logMIDI('Cannot determine manufacturer ID', 'error');
+        return;
+    }
     const channel = device.globalChannel ? 0 : midiChannel; // Use channel 0 for global channel devices
     const sysex = [
         0xF0,
@@ -2009,6 +2153,16 @@ function setupMotionSequencer(device) {
             const checkbox = document.querySelector(`input[type="checkbox"][data-cc="${id}"]`);
             if (checkbox) {
                 checkbox.checked = value > 63;
+            }
+
+            // Update xy-pad (check both x-cc and y-cc)
+            const xyPadX = document.querySelector(`xy-pad[x-cc="${id}"]`);
+            if (xyPadX) {
+                xyPadX.setAttribute('x-value', value);
+            }
+            const xyPadY = document.querySelector(`xy-pad[y-cc="${id}"]`);
+            if (xyPadY) {
+                xyPadY.setAttribute('y-value', value);
             }
         }
     });
