@@ -88,21 +88,21 @@ class SynthUI extends HTMLElement {
      * Initialize all parameters to their default values
      */
     initializeParameterDefaults(params) {
-        console.log('[SynthUI] Initializing parameters to defaults...');
-
         for (const param of params) {
             let value = param.default;
 
+            // Convert boolean to 0.0 or 1.0
+            if (param.type === 'boolean') {
+                value = value ? 1.0 : 0.0;
+            }
             // Scale normalized parameters
-            if (param.scale === 'normalized' && param.max === 100) {
+            else if (param.scale === 'normalized' && param.max === 100) {
                 value = value / 100.0;
             }
 
             // Send to synth
             this.updateParameter(param.index, value);
         }
-
-        console.log(`[SynthUI] Initialized ${params.length} parameters`);
     }
 
     render() {
@@ -250,7 +250,6 @@ class SynthUI extends HTMLElement {
     }
 
     renderControls(params) {
-        console.log(`[SynthUI] Rendering ${params.length} parameters`);
 
         // Group parameters
         const groups = this.groupParameters(params);
@@ -479,8 +478,6 @@ class SynthUI extends HTMLElement {
      * Update UI controls from parameter values (called when preset loads)
      */
     updateUIFromParameters(parameters, voice = null) {
-        console.log('[SynthUI] Updating UI from', parameters.length, 'parameters:', parameters);
-
         // Set flag to prevent feedback loop (UI updates triggering parameter changes)
         this.isUpdatingFromPreset = true;
 
@@ -491,7 +488,6 @@ class SynthUI extends HTMLElement {
         if (voice !== null && voice >= 0 && voice <= 2) {
             startParam = voice * 8;
             endParam = startParam + 8;
-            console.log(`[SynthUI] Only updating voice ${voice} parameters ${startParam}-${endParam-1}`);
         }
 
         for (let i = 0; i < parameters.length; i++) {
@@ -509,52 +505,37 @@ class SynthUI extends HTMLElement {
 
             const param = this.getParamByIndex(i);
             if (!param) {
-                console.warn(`[SynthUI] No param definition for index ${i}`);
                 continue;
             }
-
-            console.log(`[SynthUI] Param ${i} (${param.name}): value=${value}, type=${param.type}`);
 
             // Update UI control based on type
             if (param.type === 'enum') {
                 const select = this.shadowRoot.querySelector(`select[data-param-index="${i}"]`);
                 if (select) {
-                    console.log(`[SynthUI] Setting select ${i} to ${value}`);
                     select.value = value;
-                } else {
-                    console.warn(`[SynthUI] Select not found for param ${i}`);
                 }
             } else if (param.type === 'boolean') {
                 const checkbox = this.shadowRoot.querySelector(`input[type="checkbox"][data-param-index="${i}"]`);
                 if (checkbox) {
                     const checked = value > 0.5;
-                    console.log(`[SynthUI] Setting checkbox ${i} to ${checked}`);
                     checkbox.checked = checked;
-                } else {
-                    console.warn(`[SynthUI] Checkbox not found for param ${i}`);
                 }
             } else if (param.type === 'float' || param.type === 'int') {
                 // Scale value back to UI range (0-100)
                 const uiValue = param.max === 100 && param.scale === 'normalized' ? value * 100 : value;
 
-                console.log(`[SynthUI] Param ${i}: value=${value}, uiValue=${uiValue}, max=${param.max}, scale=${param.scale}`);
-
                 // Update slider
                 const slider = this.shadowRoot.querySelector(`svg-slider[data-param-index="${i}"]`);
                 if (slider) {
-                    console.log(`[SynthUI] Setting slider ${i} to ${uiValue}`);
                     slider.value = uiValue;
                     // Force attribute update for visibility
                     slider.setAttribute('value', uiValue);
-                } else {
-                    console.warn(`[SynthUI] Slider not found for param ${i}`);
                 }
 
                 // Update value display
                 const valueDisplay = this.shadowRoot.querySelector(`[data-value-for="${i}"]`);
                 if (valueDisplay) {
                     const formatted = this.formatValue(uiValue, param);
-                    console.log(`[SynthUI] Setting value display ${i} to "${formatted}"`);
                     valueDisplay.textContent = formatted;
                 }
             }

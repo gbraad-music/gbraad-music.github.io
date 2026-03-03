@@ -26,6 +26,14 @@
     <div class="menu-panel" id="menuPanel">
         <button class="menu-close" id="menuClose">×</button>
         <div class="menu-items">
+            <!-- Audio Device Settings -->
+            <div style="padding: 15px 0; border-bottom: 1px solid var(--border); margin-bottom: 10px;">
+                <label style="display: block; color: var(--text-secondary); font-size: 0.8em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Audio Output</label>
+                <select id="synthOutputDeviceList" class="menu-item" style="padding: 10px 15px; margin-bottom: 0;">
+                    <option value="">Default Output</option>
+                </select>
+            </div>
+
             <button class="menu-item" id="showCreditsBtn">About / Credits</button>
         </div>
     </div>
@@ -90,13 +98,6 @@
                         <svg-slider id="synthGainFader" value="127" min="0" max="127" width="45" color="#CF1A37" style="height: 280px;"></svg-slider>
                         <div id="synthGainValue" style="text-align: center; color: #ffffff; font-size: 0.75em; font-weight: bold; min-height: 1.2em;">100%</div>
                     </div>
-                </div>
-
-                <!-- Output Device Selector -->
-                <div style="margin-top: 15px; padding: 0 10px;">
-                    <select id="synthOutputDeviceList" style="width: 120px; font-size: 0.6em; padding: 4px 6px; background: #2a2a2a; color: #fff; border: 1px solid #3a3a3a;">
-                        <option value="">Default Output</option>
-                    </select>
                 </div>
             </div>
         </div>
@@ -659,6 +660,37 @@
             function toggleMenu() {
                 menuOverlay.classList.toggle('active');
                 menuPanel.classList.toggle('active');
+
+                // Re-enumerate devices when opening menu to get fresh device labels
+                if (menuPanel.classList.contains('active')) {
+                    // Re-run the synth output enumeration code
+                    const synthOutputDeviceList = document.getElementById('synthOutputDeviceList');
+                    if (synthOutputDeviceList && navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+                        // Request permission first to unlock device labels
+                        navigator.mediaDevices.getUserMedia({ audio: true })
+                            .then((stream) => {
+                                stream.getTracks().forEach(track => track.stop());
+                                return navigator.mediaDevices.enumerateDevices();
+                            })
+                            .catch(() => {
+                                // Permission denied, try anyway
+                                return navigator.mediaDevices.enumerateDevices();
+                            })
+                            .then((devices) => {
+                                const audioOutputs = devices.filter((device) => device.kind === 'audiooutput');
+                                synthOutputDeviceList.innerHTML = '<option value="">Default Output</option>';
+                                audioOutputs.forEach((device) => {
+                                    const option = document.createElement('option');
+                                    option.value = device.deviceId;
+                                    option.textContent = device.label || `Speaker ${synthOutputDeviceList.options.length}`;
+                                    synthOutputDeviceList.appendChild(option);
+                                });
+                            })
+                            .catch((err) => {
+                                console.warn('[Synth] Could not enumerate audio devices:', err);
+                            });
+                    }
+                }
             }
 
             function closeMenu() {

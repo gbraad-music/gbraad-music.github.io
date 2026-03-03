@@ -2362,7 +2362,7 @@ window.addEventListener("load", () => {
           const option = document.createElement("option");
           option.value = device.deviceId;
           option.textContent =
-            device.label || `Output ${device.deviceId.slice(0, 8)}`;
+            device.label || `Speaker ${synthOutputDeviceList.options.length}`;
           synthOutputDeviceList.appendChild(option);
         });
       })

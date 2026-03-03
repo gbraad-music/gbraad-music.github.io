@@ -17,12 +17,11 @@ class RVBassUI extends HTMLElement {
     setSynth(synth) {
         this.synth = synth;
 
-        // Send initial VCO levels (all ON by default)
+        // Send initial VCO levels (0.33 each = volca.js defaultVcoAmp)
         if (synth && synth.setParameter) {
-            this.setParameter(9, 1.0);   // VCO1 Level ON
-            this.setParameter(10, 1.0);  // VCO2 Level ON
-            this.setParameter(11, 1.0);  // VCO3 Level ON
-            console.log('[RV Bass UI] Initialized VCO levels to ON');
+            this.setParameter(9, 0.33);   // VCO1 Level
+            this.setParameter(10, 0.33);  // VCO2 Level
+            this.setParameter(11, 0.33);  // VCO3 Level
         }
     }
 
@@ -217,7 +216,7 @@ class RVBassUI extends HTMLElement {
                 }
             </style>
 
-            <div class="panel-title">🎸 RV Bass (Voltakt Bass)</div>
+            <div class="panel-title">Regroove Voltakt Bass</div>
 
             <div class="controls-grid">
                 <!-- VCF Section -->
@@ -226,13 +225,13 @@ class RVBassUI extends HTMLElement {
 
                     <div class="control">
                         <label class="control-label">Cutoff</label>
-                        <input type="range" id="cutoff" min="0" max="1" step="0.01" value="0.55">
+                        <input type="range" id="cutoff" min="0" max="1" step="0.01" value="1">
                         <span class="control-value" id="cutoffValue">55%</span>
                     </div>
 
                     <div class="control">
                         <label class="control-label">Peak (Resonance)</label>
-                        <input type="range" id="peak" min="0" max="1" step="0.01" value="0.71">
+                        <input type="range" id="peak" min="0" max="1" step="0.01" value="0">
                         <span class="control-value" id="peakValue">71%</span>
                     </div>
                 </div>
@@ -242,15 +241,42 @@ class RVBassUI extends HTMLElement {
                     <div class="section-title">LFO</div>
 
                     <div class="control">
-                        <label class="control-label">Rate</label>
-                        <input type="range" id="lfoRate" min="0" max="1" step="0.01" value="0.31">
-                        <span class="control-value" id="lfoRateValue">31%</span>
+                        <label class="control-label">Wave</label>
+                        <select id="lfoWave">
+                            <option value="0">Triangle</option>
+                            <option value="0.5">Square</option>
+                            <option value="1">Sawtooth</option>
+                        </select>
                     </div>
 
                     <div class="control">
-                        <label class="control-label">Int (Cutoff)</label>
+                        <label class="control-label">Rate</label>
+                        <input type="range" id="lfoRate" min="0" max="1" step="0.01" value="0">
+                        <span class="control-value" id="lfoRateValue">0%</span>
+                    </div>
+
+                    <div class="control">
+                        <label class="control-label">Intensity</label>
                         <input type="range" id="lfoInt" min="0" max="1" step="0.01" value="0">
                         <span class="control-value" id="lfoIntValue">0%</span>
+                    </div>
+
+                    <div class="control">
+                        <label class="control-label">Targets (Modulation)</label>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" id="lfoTargetPitch" style="cursor: pointer;">
+                                <span style="font-size: 11px;">PITCH</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" id="lfoTargetCutoff" style="cursor: pointer;">
+                                <span style="font-size: 11px;">CUTOFF</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" id="lfoTargetAmp" style="cursor: pointer;">
+                                <span style="font-size: 11px;">AMP</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
@@ -260,26 +286,40 @@ class RVBassUI extends HTMLElement {
 
                     <div class="control">
                         <label class="control-label">Attack</label>
-                        <input type="range" id="attack" min="0" max="1" step="0.01" value="0.16">
-                        <span class="control-value" id="attackValue">16%</span>
+                        <input type="range" id="attack" min="0" max="1" step="0.01" value="0">
+                        <span class="control-value" id="attackValue">0%</span>
                     </div>
 
                     <div class="control">
                         <label class="control-label">Decay/Release</label>
-                        <input type="range" id="decayRelease" min="0" max="1" step="0.01" value="0.63">
-                        <span class="control-value" id="decayReleaseValue">63%</span>
+                        <input type="range" id="decayRelease" min="0" max="1" step="0.01" value="0">
+                        <span class="control-value" id="decayReleaseValue">0%</span>
                     </div>
 
                     <div class="control">
                         <label class="control-label">Sustain</label>
-                        <input type="range" id="sustain" min="0" max="1" step="0.01" value="0.71">
-                        <span class="control-value" id="sustainValue">71%</span>
+                        <input type="range" id="sustain" min="0" max="1" step="0.01" value="1">
+                        <span class="control-value" id="sustainValue">100%</span>
                     </div>
 
                     <div class="control">
                         <label class="control-label">Cutoff EG Int</label>
-                        <input type="range" id="vcfEgInt" min="0" max="1" step="0.01" value="0.39">
-                        <span class="control-value" id="vcfEgIntValue">39%</span>
+                        <input type="range" id="vcfEgInt" min="0" max="1" step="0.01" value="0">
+                        <span class="control-value" id="vcfEgIntValue">0%</span>
+                    </div>
+
+                    <div class="control">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="sustainOn" style="cursor: pointer;">
+                            <span style="font-size: 11px;">SUSTAIN ON</span>
+                        </label>
+                    </div>
+
+                    <div class="control">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="ampEgOn" style="cursor: pointer;">
+                            <span style="font-size: 11px;">AMP EG ON</span>
+                        </label>
                     </div>
                 </div>
 
@@ -303,14 +343,15 @@ class RVBassUI extends HTMLElement {
                     <div class="vco-number">VCO 1</div>
                     <div class="vco-controls">
                         <div class="vco-pitch">
-                            <label class="control-label">Pitch</label>
-                            <select id="vco1Pitch">
-                                <option value="0.5" selected>0</option>
-                                <option value="0.42">-1</option>
-                                <option value="0.58">+1</option>
-                                <option value="0.33">-2</option>
-                                <option value="0.67">+2</option>
+                            <label class="control-label">Wave</label>
+                            <select id="vco1Wave">
+                                <option value="0">Sawtooth</option>
+                                <option value="0.5">Square</option>
                             </select>
+                        </div>
+                        <div class="vco-pitch">
+                            <label class="control-label">Pitch<span class="control-value" id="vco1PitchValue">0c</span></label>
+                            <input type="range" id="vco1Pitch" min="0" max="127" value="64" step="1">
                         </div>
                         <button class="mute-btn active" id="vco1Mute" data-vco="1">ON</button>
                     </div>
@@ -320,14 +361,15 @@ class RVBassUI extends HTMLElement {
                     <div class="vco-number">VCO 2</div>
                     <div class="vco-controls">
                         <div class="vco-pitch">
-                            <label class="control-label">Pitch</label>
-                            <select id="vco2Pitch">
-                                <option value="0.5" selected>0</option>
-                                <option value="0.42">-1</option>
-                                <option value="0.58">+1</option>
-                                <option value="0.33">-2</option>
-                                <option value="0.67">+2</option>
+                            <label class="control-label">Wave</label>
+                            <select id="vco2Wave">
+                                <option value="0">Sawtooth</option>
+                                <option value="0.5">Square</option>
                             </select>
+                        </div>
+                        <div class="vco-pitch">
+                            <label class="control-label">Pitch<span class="control-value" id="vco2PitchValue">0c</span></label>
+                            <input type="range" id="vco2Pitch" min="0" max="127" value="64" step="1">
                         </div>
                         <button class="mute-btn active" id="vco2Mute" data-vco="2">ON</button>
                     </div>
@@ -337,14 +379,15 @@ class RVBassUI extends HTMLElement {
                     <div class="vco-number">VCO 3</div>
                     <div class="vco-controls">
                         <div class="vco-pitch">
-                            <label class="control-label">Pitch</label>
-                            <select id="vco3Pitch">
-                                <option value="0.5" selected>0</option>
-                                <option value="0.42">-1</option>
-                                <option value="0.58">+1</option>
-                                <option value="0.33">-2</option>
-                                <option value="0.67">+2</option>
+                            <label class="control-label">Wave</label>
+                            <select id="vco3Wave">
+                                <option value="0">Sawtooth</option>
+                                <option value="0.5">Square</option>
                             </select>
+                        </div>
+                        <div class="vco-pitch">
+                            <label class="control-label">Pitch<span class="control-value" id="vco3PitchValue">0c</span></label>
+                            <input type="range" id="vco3Pitch" min="0" max="127" value="64" step="1">
                         </div>
                         <button class="mute-btn active" id="vco3Mute" data-vco="3">ON</button>
                     </div>
@@ -375,6 +418,12 @@ class RVBassUI extends HTMLElement {
         });
 
         // LFO
+        this.lfoIntensity = 0.5;  // Track current intensity
+
+        root.getElementById('lfoWave').addEventListener('change', (e) => {
+            this.setParameter(19, parseFloat(e.target.value));
+        });
+
         root.getElementById('lfoRate').addEventListener('input', (e) => {
             const value = parseFloat(e.target.value);
             this.setParameter(20, value);
@@ -383,8 +432,43 @@ class RVBassUI extends HTMLElement {
 
         root.getElementById('lfoInt').addEventListener('input', (e) => {
             const value = parseFloat(e.target.value);
-            this.setParameter(22, value);  // LFO Cutoff Int
+            this.lfoIntensity = value;
             root.getElementById('lfoIntValue').textContent = `${Math.round(value * 100)}%`;
+
+            // Update all enabled targets with new intensity
+            if (root.getElementById('lfoTargetPitch').checked) {
+                this.setParameter(21, value);
+            }
+            if (root.getElementById('lfoTargetCutoff').checked) {
+                this.setParameter(22, value);
+            }
+            if (root.getElementById('lfoTargetAmp').checked) {
+                this.setParameter(23, value);
+            }
+        });
+
+        root.getElementById('lfoTargetPitch').addEventListener('change', (e) => {
+            const value = e.target.checked ? this.lfoIntensity : 0;
+            this.setParameter(21, value);
+        });
+
+        root.getElementById('lfoTargetCutoff').addEventListener('change', (e) => {
+            const value = e.target.checked ? this.lfoIntensity : 0;
+            this.setParameter(22, value);
+        });
+
+        root.getElementById('lfoTargetAmp').addEventListener('change', (e) => {
+            const value = e.target.checked ? this.lfoIntensity : 0;
+            this.setParameter(23, value);
+        });
+
+        // EG Switches
+        root.getElementById('sustainOn').addEventListener('change', (e) => {
+            this.setParameter(24, e.target.checked ? 1.0 : 0.0);
+        });
+
+        root.getElementById('ampEgOn').addEventListener('change', (e) => {
+            this.setParameter(25, e.target.checked ? 1.0 : 0.0);
         });
 
         // EG
@@ -415,21 +499,46 @@ class RVBassUI extends HTMLElement {
         // Volume
         root.getElementById('volume').addEventListener('input', (e) => {
             const value = parseFloat(e.target.value);
-            this.setParameter(24, value);  // Bass param 24 = volume
+            this.setParameter(26, value);  // Bass param 26 = volume
             root.getElementById('volumeValue').textContent = `${Math.round(value * 100)}%`;
         });
 
-        // VCO Pitch controls
-        root.getElementById('vco1Pitch').addEventListener('change', (e) => {
-            this.setParameter(3, parseFloat(e.target.value));  // VCO1 Pitch
+        // VCO Wave controls
+        root.getElementById('vco1Wave').addEventListener('change', (e) => {
+            this.setParameter(0, parseFloat(e.target.value));  // VCO1 Wave
         });
 
-        root.getElementById('vco2Pitch').addEventListener('change', (e) => {
-            this.setParameter(4, parseFloat(e.target.value));  // VCO2 Pitch
+        root.getElementById('vco2Wave').addEventListener('change', (e) => {
+            this.setParameter(1, parseFloat(e.target.value));  // VCO2 Wave
         });
 
-        root.getElementById('vco3Pitch').addEventListener('change', (e) => {
-            this.setParameter(5, parseFloat(e.target.value));  // VCO3 Pitch
+        root.getElementById('vco3Wave').addEventListener('change', (e) => {
+            this.setParameter(2, parseFloat(e.target.value));  // VCO3 Wave
+        });
+
+        // VCO Pitch controls (MIDI 0-127 mapped to cents via pitchMap)
+        root.getElementById('vco1Pitch').addEventListener('input', (e) => {
+            const midiValue = parseInt(e.target.value);
+            const normalized = midiValue / 127.0;
+            const cents = this.midiToCents(midiValue);
+            this.setParameter(3, normalized);  // VCO1 Pitch
+            root.getElementById('vco1PitchValue').textContent = cents >= 0 ? `+${cents}c` : `${cents}c`;
+        });
+
+        root.getElementById('vco2Pitch').addEventListener('input', (e) => {
+            const midiValue = parseInt(e.target.value);
+            const normalized = midiValue / 127.0;
+            const cents = this.midiToCents(midiValue);
+            this.setParameter(4, normalized);  // VCO2 Pitch
+            root.getElementById('vco2PitchValue').textContent = cents >= 0 ? `+${cents}c` : `${cents}c`;
+        });
+
+        root.getElementById('vco3Pitch').addEventListener('input', (e) => {
+            const midiValue = parseInt(e.target.value);
+            const normalized = midiValue / 127.0;
+            const cents = this.midiToCents(midiValue);
+            this.setParameter(5, normalized);  // VCO3 Pitch
+            root.getElementById('vco3PitchValue').textContent = cents >= 0 ? `+${cents}c` : `${cents}c`;
         });
 
         // VCO Mute buttons
@@ -446,17 +555,33 @@ class RVBassUI extends HTMLElement {
         });
     }
 
+    midiToCents(midiValue) {
+        // VCO Pitch Map from volca.js (MIDI 0-127 to cents)
+        const pitchMap = [
+            -1200, -1200, -1100, -1000, -900, -800, -700, -600, -500, -400, -300, -200, -100,
+            -96, -92, -88, -84, -80, -78, -76, -74, -72, -70, -68, -66, -64, -62, -60, -58,
+            -56, -54, -52, -50, -48, -46, -44, -42, -40, -38, -36, -34, -32, -30, -28, -26,
+            -24, -22, -20, -18, -16, -14, -12, -10, -8, -6, -4, -2,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32,
+            34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64,
+            66, 68, 70, 72, 74, 76, 78, 80, 84, 88, 92, 96, 100,
+            200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1200
+        ];
+        return pitchMap[Math.min(127, Math.max(0, midiValue))];
+    }
+
     toggleMute(button, paramIndex) {
         const isMuted = button.classList.contains('muted');
 
         if (isMuted) {
-            // Unmute - set level to 100%
+            // Unmute - set level to 0.33 (volca.js defaultVcoAmp)
             button.classList.remove('muted');
             button.classList.add('active');
             button.textContent = 'ON';
-            this.setParameter(paramIndex, 1.0);
+            this.setParameter(paramIndex, 0.33);
         } else {
-            // Mute - set level to 0%
+            // Mute - set level to 0
             button.classList.remove('active');
             button.classList.add('muted');
             button.textContent = 'MUTE';

@@ -16,6 +16,8 @@ class RVKeysUI extends HTMLElement {
 
     setSynth(synth) {
         this.synth = synth;
+        // Initialize LFO Sync to ON by default
+        this.setParameter(23, 1.0);
     }
 
     setSequencer(sequencer) {
@@ -181,7 +183,7 @@ class RVKeysUI extends HTMLElement {
                 }
             </style>
 
-            <div class="panel-title">🎹 RV Keys (Voltakt Keys)</div>
+            <div class="panel-title">Regroove Voltakt Keys</div>
 
             <!-- Top Row: Voicing & Octave -->
             <div class="top-row">
@@ -292,6 +294,14 @@ class RVKeysUI extends HTMLElement {
                         <label class="control-label">Cutoff Int</label>
                         <input type="range" id="lfoCutoffInt" min="0" max="1" step="0.01" value="0">
                         <span class="control-value" id="lfoCutoffIntValue">0%</span>
+                    </div>
+
+                    <div class="control">
+                        <label class="control-label">Sync (Trigger on Note)</label>
+                        <select id="lfoSync">
+                            <option value="0">Off</option>
+                            <option value="1" selected>On</option>
+                        </select>
                     </div>
                 </div>
 
@@ -437,6 +447,10 @@ class RVKeysUI extends HTMLElement {
             const value = parseFloat(e.target.value);
             this.setParameter(22, value);
             root.getElementById('lfoCutoffIntValue').textContent = `${Math.round(value * 100)}%`;
+        });
+
+        root.getElementById('lfoSync').addEventListener('change', (e) => {
+            this.setParameter(23, parseFloat(e.target.value));
         });
 
         // EG

@@ -171,6 +171,14 @@ class AudioEffectsProcessor {
 
   async enumerateDevices() {
     try {
+      // Request permission to unlock device labels
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+      } catch (permErr) {
+        console.warn('Could not get audio permission for device labels:', permErr);
+      }
+
       const devices = await navigator.mediaDevices.enumerateDevices();
       const audioInputs = devices.filter((d) => d.kind === "audioinput");
       const audioOutputs = devices.filter((d) => d.kind === "audiooutput");
@@ -894,15 +902,20 @@ class AudioEffectsProcessor {
     }
 
     // Request stereo audio input
+    // Check audio processing settings from checkboxes
+    const echoCancelCheckbox = document.getElementById('echoCancellationCheckbox');
+    const noiseSuppressionCheckbox = document.getElementById('noiseSuppressionCheckbox');
+    const autoGainCheckbox = document.getElementById('autoGainControlCheckbox');
+
     const constraints = {
       audio: {
         deviceId: this.selectedMicDeviceId
           ? { exact: this.selectedMicDeviceId }
           : undefined,
         channelCount: 2, // Request stereo
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false,
+        echoCancellation: echoCancelCheckbox ? echoCancelCheckbox.checked : false,
+        noiseSuppression: noiseSuppressionCheckbox ? noiseSuppressionCheckbox.checked : false,
+        autoGainControl: autoGainCheckbox ? autoGainCheckbox.checked : false,
       },
     };
 

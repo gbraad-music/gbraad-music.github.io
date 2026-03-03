@@ -26,6 +26,33 @@
     <div class="menu-panel" id="menuPanel">
         <button class="menu-close" id="menuClose">×</button>
         <div class="menu-items">
+            <!-- Audio Device Settings -->
+            <div style="padding: 15px 0; border-bottom: 1px solid var(--border); margin-bottom: 10px;">
+                <label style="display: block; color: var(--text-secondary); font-size: 0.8em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Audio Output</label>
+                <select id="outputDeviceList" class="menu-item" style="padding: 10px 15px; margin-bottom: 12px;">
+                    <option value="">Default Output</option>
+                </select>
+
+                <div style="padding: 0 15px;">
+                    <div style="color: var(--text-secondary); font-size: 0.75em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Audio Processing</div>
+
+                    <label style="display: flex; align-items: center; gap: 10px; padding: 8px 0; cursor: pointer; user-select: none; color: var(--text-secondary); font-size: 0.85em;">
+                        <input type="checkbox" id="echoCancellationCheckbox" style="margin: 0; width: 16px; height: 16px; cursor: pointer;">
+                        <span>Echo Cancellation</span>
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 10px; padding: 8px 0; cursor: pointer; user-select: none; color: var(--text-secondary); font-size: 0.85em;">
+                        <input type="checkbox" id="noiseSuppressionCheckbox" style="margin: 0; width: 16px; height: 16px; cursor: pointer;">
+                        <span>Noise Suppression</span>
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 10px; padding: 8px 0; cursor: pointer; user-select: none; color: var(--text-secondary); font-size: 0.85em;">
+                        <input type="checkbox" id="autoGainControlCheckbox" style="margin: 0; width: 16px; height: 16px; cursor: pointer;">
+                        <span>Auto Gain Control</span>
+                    </label>
+                </div>
+            </div>
+
             <button class="menu-item" id="showCreditsBtn">About / Credits</button>
         </div>
     </div>
@@ -135,13 +162,6 @@
                         <svg-slider id="gainFader" value="127" min="0" max="127" width="45" color="#CF1A37" style="height: 280px;"></svg-slider>
                         <div id="gainValue" style="text-align: center; color: var(--text-primary); font-size: 0.75em; font-weight: bold; min-height: 1.2em;">100%</div>
                     </div>
-                </div>
-
-                <!-- Output Device Selector -->
-                <div style="margin-top: 15px; padding: 0 10px;">
-                    <select id="outputDeviceList" style="width: 120px; font-size: 0.6em; padding: 4px 6px;">
-                        <option value="">Default Output</option>
-                    </select>
                 </div>
             </div>
         </div>
@@ -612,6 +632,11 @@
             function toggleMenu() {
                 menuOverlay.classList.toggle('active');
                 menuPanel.classList.toggle('active');
+
+                // Re-enumerate devices when opening menu to get fresh device labels
+                if (menuPanel.classList.contains('active') && window.player) {
+                    window.player.enumerateDevices();
+                }
             }
 
             function closeMenu() {
@@ -636,6 +661,29 @@
             if (showCreditsBtn) showCreditsBtn.addEventListener('click', showCredits);
             if (creditsClose) creditsClose.addEventListener('click', closeCredits);
             if (creditsOverlay) creditsOverlay.addEventListener('click', closeCredits);
+
+            // Audio processing checkbox handlers
+            const audioProcessingCheckboxes = [
+                { id: 'echoCancellationCheckbox', name: 'Echo cancellation' },
+                { id: 'noiseSuppressionCheckbox', name: 'Noise suppression' },
+                { id: 'autoGainControlCheckbox', name: 'Auto gain control' }
+            ];
+
+            audioProcessingCheckboxes.forEach(({id, name}) => {
+                const checkbox = document.getElementById(id);
+                if (checkbox) {
+                    checkbox.addEventListener('change', async function() {
+                        // If microphone is currently active, restart it with new settings
+                        if (window.player && window.player.micStream) {
+                            console.log(`${name} ${this.checked ? 'enabled' : 'disabled'}, restarting microphone...`);
+                            await window.player.stopMicrophone();
+                            await window.player.startMicrophone();
+                        } else {
+                            console.log(`${name} ${this.checked ? 'enabled' : 'disabled'} (will apply on next mic start)`);
+                        }
+                    });
+                }
+            });
         })();
     </script>
 </body>

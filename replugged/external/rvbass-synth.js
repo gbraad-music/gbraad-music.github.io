@@ -36,34 +36,10 @@ class RVBassSynth {
               options: [{value: 0, label: "Sawtooth"}, {value: 0.5, label: "Square"}]
             },
 
-            // VCO Pitches (3-5)
-            { index: 3, name: "VCO1 Pitch", type: "enum", group: "VCO", default: 0.5,
-              options: [
-                {value: 0.33, label: "-2"},
-                {value: 0.42, label: "-1"},
-                {value: 0.5, label: "0"},
-                {value: 0.58, label: "+1"},
-                {value: 0.67, label: "+2"}
-              ]
-            },
-            { index: 4, name: "VCO2 Pitch", type: "enum", group: "VCO", default: 0.5,
-              options: [
-                {value: 0.33, label: "-2"},
-                {value: 0.42, label: "-1"},
-                {value: 0.5, label: "0"},
-                {value: 0.58, label: "+1"},
-                {value: 0.67, label: "+2"}
-              ]
-            },
-            { index: 5, name: "VCO3 Pitch", type: "enum", group: "VCO", default: 0.5,
-              options: [
-                {value: 0.33, label: "-2"},
-                {value: 0.42, label: "-1"},
-                {value: 0.5, label: "0"},
-                {value: 0.58, label: "+1"},
-                {value: 0.67, label: "+2"}
-              ]
-            },
+            // VCO Pitches (3-5) - Range: 0-127 MIDI value (-12 to +12 semitones)
+            { index: 3, name: "VCO1 Pitch", type: "float", min: 0, max: 1, default: 0.5, group: "VCO", scale: "normalized" },
+            { index: 4, name: "VCO2 Pitch", type: "float", min: 0, max: 1, default: 0.5, group: "VCO", scale: "normalized" },
+            { index: 5, name: "VCO3 Pitch", type: "float", min: 0, max: 1, default: 0.5, group: "VCO", scale: "normalized" },
 
             // VCO Detunes (6-8) - not exposed in UI
             { index: 6, name: "VCO1 Detune", type: "float", min: 0, max: 1, default: 0.5, group: "VCO", scale: "normalized" },
@@ -88,18 +64,22 @@ class RVBassSynth {
             { index: 17, name: "Decay/Release", type: "float", min: 0, max: 1, default: 0.63, group: "EG", scale: "normalized", width: 40 },
             { index: 18, name: "Sustain", type: "float", min: 0, max: 1, default: 0.71, group: "EG", scale: "normalized", width: 40 },
 
-            // LFO (19-23) - only rate and cutoff int exposed
+            // LFO (19-22)
             { index: 19, name: "LFO Wave", type: "enum", group: "LFO", default: 0,
               options: [{value: 0, label: "Triangle"}, {value: 0.5, label: "Square"}, {value: 1, label: "Sawtooth"}]
             },
             { index: 20, name: "LFO Rate", type: "float", min: 0, max: 1, default: 0, group: "LFO", scale: "normalized", width: 45 },
             { index: 21, name: "LFO Pitch Int", type: "float", min: 0, max: 1, default: 0, group: "LFO", scale: "normalized" },
             { index: 22, name: "LFO Cutoff Int", type: "float", min: 0, max: 1, default: 0, group: "LFO", scale: "normalized", width: 40 },
-            { index: 23, name: "LFO Sync", type: "boolean", default: true, group: "LFO" },
+            { index: 23, name: "LFO Amp Int", type: "float", min: 0, max: 1, default: 0, group: "LFO", scale: "normalized" },
 
-            // Global (24-26) - no Voice Mode for Bass
-            { index: 24, name: "Volume", type: "float", min: 0, max: 1, default: 0.7, group: "Global", scale: "normalized", width: 50, height: 150 },
-            { index: 25, name: "Octave", type: "enum", group: "Global", default: 0.3,
+            // EG (24-25)
+            { index: 24, name: "Sustain ON", type: "boolean", default: false, group: "EG" },
+            { index: 25, name: "AMP EG ON", type: "boolean", default: false, group: "EG" },
+
+            // Global (26-28)
+            { index: 26, name: "Volume", type: "float", min: 0, max: 1, default: 0.7, group: "Global", scale: "normalized", width: 50, height: 150 },
+            { index: 27, name: "Octave", type: "enum", group: "Global", default: 0.3,
               options: [
                 {value: 0.1, label: "-2"},
                 {value: 0.3, label: "-1"},
@@ -108,12 +88,12 @@ class RVBassSynth {
                 {value: 0.9, label: "+2"}
               ]
             },
-            { index: 26, name: "Portamento", type: "float", min: 0, max: 1, default: 0, group: "Global", scale: "normalized" },
+            { index: 28, name: "Portamento", type: "float", min: 0, max: 1, default: 0, group: "Global", scale: "normalized" },
 
-            // Delay (27-29)
-            { index: 27, name: "Delay Enable", type: "boolean", default: false, group: "Delay" },
-            { index: 28, name: "Delay Time", type: "float", min: 0, max: 1, default: 0.5, group: "Delay", scale: "normalized" },
-            { index: 29, name: "Delay Feedback", type: "float", min: 0, max: 1, default: 0.47, group: "Delay", scale: "normalized" }
+            // Delay (29-31)
+            { index: 29, name: "Delay Enable", type: "boolean", default: false, group: "Delay" },
+            { index: 30, name: "Delay Time", type: "float", min: 0, max: 1, default: 0.5, group: "Delay", scale: "normalized" },
+            { index: 31, name: "Delay Feedback", type: "float", min: 0, max: 1, default: 0.47, group: "Delay", scale: "normalized" }
         ];
     }
 

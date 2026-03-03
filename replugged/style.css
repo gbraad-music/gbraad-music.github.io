@@ -276,12 +276,12 @@ button, select {
     transition: all 0.2s;
 }
 
-button:hover:not(.hamburger-button), select:hover {
+button:hover, select:hover {
     border-color: #4a4a4a;
     background: #3a3a3a;
 }
 
-button:active:not(.hamburger-button) {
+button:active {
     background: #0066FF;
     color: #fff;
 }
@@ -1163,10 +1163,6 @@ pad-knob {
     transition: opacity 0.2s;
     line-height: 1;
     width: auto !important;
-}
-
-.hamburger-button:hover {
-    opacity: 0.8;
 }
 
 .hamburger-button:active,
