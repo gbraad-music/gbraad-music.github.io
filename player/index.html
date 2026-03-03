@@ -51,6 +51,17 @@
                 </label>
             </div>
 
+            <!-- Debug Log -->
+            <div style="padding: 15px 0; border-bottom: 1px solid var(--border); margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="color: var(--text-secondary); font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px;">Debug Log</label>
+                    <button id="clearLog" style="padding: 5px 10px; font-size: 0.7em; background: #1a1a1a; border: 1px solid #2a2a2a; color: #aaa; cursor: pointer; border-radius: 3px;">Clear</button>
+                </div>
+                <div id="debugLog" style="padding: 10px; background: #0a0a0a; border: 1px solid #333; border-radius: 4px; font-family: monospace; font-size: 10px; max-height: 200px; overflow-y: auto; color: #aaa;">
+                    <div style="color: #555;">No log messages</div>
+                </div>
+            </div>
+
             <button class="menu-item" id="showCreditsBtn">About / Credits</button>
         </div>
     </div>
@@ -682,6 +693,77 @@
                     });
                 }
             });
+
+            // Debug log functionality
+            const debugLog = document.getElementById('debugLog');
+            const clearLogBtn = document.getElementById('clearLog');
+
+            function addToLog(message, type = 'info') {
+                if (!debugLog) return;
+
+                // Show the log if it was empty
+                const emptyMessage = debugLog.querySelector('div[style*="color: #555"]');
+                if (emptyMessage) {
+                    debugLog.innerHTML = '';
+                }
+
+                const timestamp = new Date().toLocaleTimeString();
+                const color = {
+                    'log': '#aaa',
+                    'info': '#0099ff',
+                    'warn': '#ffaa00',
+                    'error': '#ff4444',
+                    'success': '#00ff00'
+                }[type] || '#aaa';
+
+                const line = document.createElement('div');
+                line.style.color = color;
+                line.textContent = `[${timestamp}] ${message}`;
+                debugLog.appendChild(line);
+
+                debugLog.scrollTop = debugLog.scrollHeight;
+
+                // Limit to 100 lines
+                while (debugLog.children.length > 100) {
+                    debugLog.removeChild(debugLog.firstChild);
+                }
+            }
+
+            function clearLog() {
+                if (debugLog) {
+                    debugLog.innerHTML = '<div style="color: #555;">No log messages</div>';
+                }
+            }
+
+            if (clearLogBtn) {
+                clearLogBtn.addEventListener('click', clearLog);
+            }
+
+            // Intercept console methods
+            const originalLog = console.log;
+            const originalWarn = console.warn;
+            const originalError = console.error;
+            const originalInfo = console.info;
+
+            console.log = function(...args) {
+                originalLog.apply(console, args);
+                addToLog(args.join(' '), 'log');
+            };
+
+            console.warn = function(...args) {
+                originalWarn.apply(console, args);
+                addToLog(args.join(' '), 'warn');
+            };
+
+            console.error = function(...args) {
+                originalError.apply(console, args);
+                addToLog(args.join(' '), 'error');
+            };
+
+            console.info = function(...args) {
+                originalInfo.apply(console, args);
+                addToLog(args.join(' '), 'info');
+            };
         })();
     </script>
 </body>

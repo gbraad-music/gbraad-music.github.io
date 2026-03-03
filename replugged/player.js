@@ -920,14 +920,25 @@ class AudioEffectsProcessor {
     };
 
     console.log("🎤 Starting microphone...");
+    console.log("   Requested device ID:", this.selectedMicDeviceId || "default");
+    console.log("   Echo cancellation:", constraints.audio.echoCancellation);
+    console.log("   Noise suppression:", constraints.audio.noiseSuppression);
+    console.log("   Auto gain control:", constraints.audio.autoGainControl);
+
     this.micStream = await navigator.mediaDevices.getUserMedia(constraints);
 
     // Log actual track settings
     const track = this.micStream.getAudioTracks()[0];
     const settings = track.getSettings();
+    console.log("✅ Microphone stream granted");
+    console.log("   Actual device ID:", settings.deviceId || "unknown");
+    console.log("   Actual device label:", track.label || "unknown");
     console.log(
       `   Track settings: ${settings.channelCount} channels @ ${settings.sampleRate}Hz`,
     );
+    console.log("   Echo cancellation:", settings.echoCancellation);
+    console.log("   Noise suppression:", settings.noiseSuppression);
+    console.log("   Auto gain control:", settings.autoGainControl);
 
     const source = this.audioContext.createMediaStreamSource(this.micStream);
 
