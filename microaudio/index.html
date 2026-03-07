@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>microAudio 722 Controller</title>
+    <title>microAUDIO 22/722 Controller</title>
     <link rel="manifest" href="./manifest.json">
     <link rel="icon" type="image/svg+xml" href="./favicon.svg">
     <link rel="icon" type="image/png" sizes="96x96" href="./favicon-96x96.png">
@@ -14,7 +14,7 @@
 <body>
     <div class="top-banner">
         <button class="hamburger-button" id="menu-btn">☰</button>
-        <div class="banner-title">microAudio 722 Controller</div>
+        <div class="banner-title">microAUDIO 22/722 Controller</div>
         <div class="connection-indicator" id="connectionIndicator">
             <span class="indicator-dot"></span>
             <span class="indicator-text">Disconnected</span>
@@ -35,9 +35,19 @@
                         MIDI: <span>Initializing...</span>
                     </div>
                 </div>
+                <label style="font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 5px;">
+                    MIDI Output (Send):
+                </label>
                 <select id="midiOutput" style="margin-bottom: 10px;">
                     <option value="">Select MIDI Output...</option>
                 </select>
+                <label style="font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 5px;">
+                    MIDI Input (Listen):
+                </label>
+                <select id="midiInput" style="margin-bottom: 10px;">
+                    <option value="">Select MIDI Input...</option>
+                </select>
+
                 <label style="font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 15px;">
                     MIDI Channel:
                     <select id="midiChannel" style="margin-left: 5px; width: 80px;">
@@ -78,27 +88,29 @@
 
                 <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
                     <label style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px; flex: 1;">
+                        <input type="checkbox" id="enableLogging" style="margin: 0;">
+                        Enable Logging
+                    </label>
+                    <label style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px; flex: 1;">
                         <input type="checkbox" id="filterRepeat" checked style="margin: 0;">
                         Filter Repetitive
                     </label>
                     <button id="clearLog" style="padding: 5px 10px; font-size: 0.75em;">Clear Log</button>
                 </div>
 
-                <div id="midiLog" style="padding: 10px; background: #0a0a0a; border: 1px solid #333; border-radius: 4px; font-family: monospace; font-size: 10px; max-height: 200px; overflow-y: auto; display: none;">
+                <div id="midiLog" style="padding: 10px; background: #0a0a0a; border: 1px solid #333; border-radius: 4px; font-family: monospace; font-size: 10px; max-height: 200px; overflow-y: auto;">
+                    <div style="color: #555;">Logging disabled</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="container">
+    <div class="container" id="main-controls" style="display: none;">
 
         <!-- Filter Section -->
-        <div class="section">
+        <div class="section" id="filter-section">
             <div class="section-title">Filter</div>
-            <div class="knob-grid">
-                <pad-knob cc="21" value="64" min="0" max="127" label="Cutoff" default="64"></pad-knob>
-                <pad-knob cc="25" value="0" min="0" max="127" label="Resonance" default="0"></pad-knob>
-            </div>
+            <xy-pad label="Filter" x-cc="21" y-cc="25" x-value="64" y-value="0"></xy-pad>
 
             <div class="control-row">
                 <label>
@@ -139,11 +151,11 @@
         </div>
 
         <!-- LFO Section -->
-        <div class="section">
-            <div class="section-title">LFO</div>
+        <div class="section" id="lfo-section">
+            <div class="section-title">LFO / Envelope</div>
             <div class="knob-grid">
-                <pad-knob cc="27" value="64" min="0" max="127" label="LFO Rate" default="64"></pad-knob>
-                <pad-knob cc="29" value="0" min="0" max="127" label="Intensity" default="0"></pad-knob>
+                <pad-knob cc="27" cc2="58" value="64" min="0" max="127" label="Rate" default="64"></pad-knob>
+                <pad-knob cc="29" cc2="33" value="0" min="0" max="127" label="Intensity" default="0"></pad-knob>
             </div>
 
             <div class="control-row">
@@ -184,36 +196,7 @@
             </div>
         </div>
 
-        <!-- Envelope Section -->
-        <div class="section">
-            <div class="section-title">Envelope</div>
-            <div class="knob-grid">
-                <pad-knob cc="33" value="64" min="0" max="127" label="Input Gain" default="64"></pad-knob>
-                <pad-knob cc="58" value="64" min="0" max="127" label="ENV Rate" default="64"></pad-knob>
-            </div>
-        </div>
-
         <!-- FX Routing & Link -->
-        <div class="section">
-            <div class="section-title">FX & Routing</div>
-            <div class="control-row">
-                <label>
-                    FX Routing
-                    <select id="fxRouting" data-cc="34">
-                        <option value="0">Pre</option>
-                        <option value="127">Post</option>
-                    </select>
-                </label>
-                <label>
-                    Stereo Link
-                    <select id="stereoLink" data-cc="57">
-                        <option value="0">Off</option>
-                        <option value="127">On</option>
-                    </select>
-                </label>
-            </div>
-        </div>
-
         <!-- Channel 1 Noise Gate -->
         <div class="section">
             <div class="section-title">Channel 1 - Noise Gate</div>
@@ -327,9 +310,31 @@
                 </label>
             </div>
         </div>
+
+        <!-- FX & Routing -->
+        <div class="section">
+            <div class="section-title">FX & Routing</div>
+            <div class="control-row">
+                <label>
+                    FX Routing
+                    <select id="fxRouting" data-cc="34">
+                        <option value="0">Pre</option>
+                        <option value="127">Post</option>
+                    </select>
+                </label>
+                <label>
+                    Stereo Link
+                    <select id="stereoLink" data-cc="57">
+                        <option value="0">Off</option>
+                        <option value="127">On</option>
+                    </select>
+                </label>
+            </div>
+        </div>
     </div>
 
     <script src="pad-knob.js"></script>
+    <script src="xy-pad.js"></script>
     <script src="controller.js"></script>
     <script>
         // Register service worker for PWA

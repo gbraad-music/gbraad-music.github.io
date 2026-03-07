@@ -13,7 +13,7 @@ class PadKnob extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ['cc', 'value', 'min', 'max', 'label', 'sublabel', 'default'];
+        return ['cc', 'cc2', 'value', 'min', 'max', 'label', 'sublabel', 'default'];
     }
 
     connectedCallback() {
@@ -210,6 +210,16 @@ class PadKnob extends HTMLElement {
                 composed: true
             }));
 
+            // Also send cc2 if defined (for dual-CC knobs)
+            const cc2 = this.getAttribute('cc2');
+            if (cc2) {
+                this.dispatchEvent(new CustomEvent('cc-change', {
+                    detail: { cc: parseInt(cc2), value: newValue },
+                    bubbles: true,
+                    composed: true
+                }));
+            }
+
             e.preventDefault();
         };
 
@@ -252,6 +262,16 @@ class PadKnob extends HTMLElement {
                     bubbles: true,
                     composed: true
                 }));
+
+                // Also send cc2 if defined (for dual-CC knobs)
+                const cc2 = this.getAttribute('cc2');
+                if (cc2) {
+                    this.dispatchEvent(new CustomEvent('cc-change', {
+                        detail: { cc: parseInt(cc2), value: clampedValue },
+                        bubbles: true,
+                        composed: true
+                    }));
+                }
 
                 console.log(`[PadKnob] Reset CC${cc} to default: ${clampedValue}`);
             }

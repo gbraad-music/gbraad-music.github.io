@@ -1,7 +1,7 @@
 {
-  "name": "microAudio 722 Controller",
-  "short_name": "microAudio",
-  "description": "WebMIDI controller for KORG microAudio 722",
+  "name": "microAUDIO 22/722 Controller",
+  "short_name": "microAUDIO",
+  "description": "WebMIDI controller for KORG microAUDIO 22/722",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

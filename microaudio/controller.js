@@ -5,10 +5,15 @@
 
 let midiAccess = null;
 let selectedOutput = null;
+let selectedInputPort = null; // Track which input PORT we're connected to (not name, as all devices may have same name)
 let midiChannel = 0; // Default channel 1 (0-indexed)
 let lastLogMessage = '';
 let lastLogCount = 0;
 let lastDataDump = null; // Store the last received data dump
+let deviceModel = null; // 'microAudio 22' or 'microAudio 722'
+let autoConnected = false; // Prevent multiple auto-connections
+let dataDumpRequested = false; // Prevent multiple simultaneous data dump requests
+let deviceDetected = false; // Prevent multiple detection logs
 
 // Initialize WebMIDI
 async function initMIDI() {
@@ -52,6 +57,12 @@ function setupMIDIInputs() {
 
 // Handle incoming MIDI messages
 function handleMIDIMessage(event, deviceName = '') {
+    // Only process messages from the connected PORT (ignore other devices)
+    // This prevents cross-talk when multiple microAudio devices are connected
+    if (selectedInputPort && event.target !== selectedInputPort) {
+        return; // Ignore messages from other devices
+    }
+
     const data = Array.from(event.data);
     const hex = data.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
 
@@ -63,6 +74,35 @@ function handleMIDIMessage(event, deviceName = '') {
     } else {
         const devicePrefix = deviceName ? `[${deviceName}] ` : '';
         logMIDI(`${devicePrefix}RX: ${hex}`, 'receive');
+    }
+
+    // Handle Control Change messages (0xB0-0xBF)
+    if ((data[0] & 0xF0) === 0xB0) {
+        const cc = data[1];
+        const value = data[2];
+
+        // Update pad-knob controls - ONLY by primary CC, not cc2
+        // This prevents dual-CC knobs from competing when both CCs arrive
+        const knob = document.querySelector(`pad-knob[cc="${cc}"]`);
+        if (knob && knob.getAttribute('value') !== String(value)) {
+            knob.setAttribute('value', value);
+        }
+
+        // Update xy-pad controls (check both x-cc and y-cc)
+        const xyPadX = document.querySelector(`xy-pad[x-cc="${cc}"]`);
+        if (xyPadX) {
+            xyPadX.setAttribute('x-value', value);
+        }
+        const xyPadY = document.querySelector(`xy-pad[y-cc="${cc}"]`);
+        if (xyPadY) {
+            xyPadY.setAttribute('y-value', value);
+        }
+
+        // Update select controls (switches)
+        const select = document.querySelector(`select[data-cc="${cc}"]`);
+        if (select) {
+            select.value = value;
+        }
     }
 
     // Parse SysEx messages
@@ -77,17 +117,28 @@ function handleMIDIMessage(event, deviceName = '') {
             const familyMSB = data[7]; // Should be 0x01
             const memberLSB = data[8]; // 00 or 08
 
+            // Only process first detection
+            if (deviceDetected) {
+                return;
+            }
+
             logMIDI('✓ Device Inquiry Reply received!', 'success');
 
             if (manufacturerId === 0x42 && familyLSB === 0x75) {
                 if (memberLSB === 0x08) {
+                    deviceDetected = true;
+                    deviceModel = 'microAudio 722';
                     logMIDI('✅ Detected: KORG microAudio 722', 'success');
-                    // Auto-connect to this device
-                    autoConnectDevice(deviceName);
+                    updateUIForModel('722');
+                    // Auto-connect to this device (pass the input port)
+                    autoConnectDevice(deviceName, event.target);
                 } else if (memberLSB === 0x00) {
+                    deviceDetected = true;
+                    deviceModel = 'microAudio 22';
                     logMIDI('✅ Detected: KORG microAudio 22', 'success');
-                    // Auto-connect to this device
-                    autoConnectDevice(deviceName);
+                    updateUIForModel('22');
+                    // Auto-connect to this device (pass the input port)
+                    autoConnectDevice(deviceName, event.target);
                 } else {
                     logMIDI(`Detected: KORG microAudio (Member ID: ${memberLSB.toString(16)})`, 'info');
                 }
@@ -193,8 +244,17 @@ function handleMIDIMessage(event, deviceName = '') {
 
 // Log MIDI messages to UI
 function logMIDI(message, type = 'info') {
+    // Check if logging is enabled
+    const enableLogging = document.getElementById('enableLogging')?.checked ?? false;
+    if (!enableLogging) return;
+
     const logEl = document.getElementById('midiLog');
     if (!logEl) return;
+
+    // Clear "Logging disabled" message on first log
+    if (logEl.innerHTML.includes('Logging disabled')) {
+        logEl.innerHTML = '';
+    }
 
     const filterRepeat = document.getElementById('filterRepeat')?.checked ?? true;
 
@@ -222,8 +282,6 @@ function logMIDI(message, type = 'info') {
         lastLogMessage = message;
         lastLogCount = 0;
     }
-
-    logEl.style.display = 'block';
 
     const timestamp = new Date().toLocaleTimeString();
     const color = {
@@ -263,23 +321,41 @@ function updateMIDIStatus(status, connected) {
 
 // Populate MIDI output dropdown
 function populateMIDIOutputs() {
-    const select = document.getElementById('midiOutput');
-    const currentValue = select.value;
+    const outputSelect = document.getElementById('midiOutput');
+    const inputSelect = document.getElementById('midiInput');
+    const currentOutputValue = outputSelect.value;
+    const currentInputValue = inputSelect.value;
 
-    select.innerHTML = '<option value="">Select MIDI Output...</option>';
+    outputSelect.innerHTML = '<option value="">Select MIDI Output...</option>';
+    inputSelect.innerHTML = '<option value="">Select MIDI Input...</option>';
 
     if (midiAccess) {
+        // Populate outputs
         const outputs = Array.from(midiAccess.outputs.values());
-        outputs.forEach(output => {
+        outputs.forEach((output) => {
             const option = document.createElement('option');
             option.value = output.id;
-            option.textContent = output.name;
-            select.appendChild(option);
+            // Show port ID to distinguish devices with same name
+            option.textContent = `${output.name} [${output.id}]`;
+            outputSelect.appendChild(option);
         });
 
-        // Restore previous selection if still available
-        if (currentValue && outputs.find(o => o.id === currentValue)) {
-            select.value = currentValue;
+        // Populate inputs
+        const inputs = Array.from(midiAccess.inputs.values());
+        inputs.forEach((input) => {
+            const option = document.createElement('option');
+            option.value = input.id;
+            // Show port ID to distinguish devices with same name
+            option.textContent = `${input.name} [${input.id}]`;
+            inputSelect.appendChild(option);
+        });
+
+        // Restore previous selections if still available
+        if (currentOutputValue && outputs.find(o => o.id === currentOutputValue)) {
+            outputSelect.value = currentOutputValue;
+        }
+        if (currentInputValue && inputs.find(i => i.id === currentInputValue)) {
+            inputSelect.value = currentInputValue;
         }
     }
 }
@@ -327,6 +403,18 @@ function updateConnectionIndicator(connected, deviceName = '') {
     }
 }
 
+// Handle MIDI input selection
+document.getElementById('midiInput').addEventListener('change', (e) => {
+    const inputId = e.target.value;
+    if (inputId && midiAccess) {
+        selectedInputPort = midiAccess.inputs.get(inputId);
+        console.log(`[MIDI] Listening to input port: ${selectedInputPort.id} (${selectedInputPort.name})`);
+    } else {
+        selectedInputPort = null;
+        console.log('[MIDI] No input selected - listening to all');
+    }
+});
+
 // Handle MIDI output selection
 document.getElementById('midiOutput').addEventListener('change', (e) => {
     const outputId = e.target.value;
@@ -335,8 +423,12 @@ document.getElementById('midiOutput').addEventListener('change', (e) => {
         console.log('[MIDI] Selected output:', selectedOutput.name);
         updateMIDIStatus(`Connected: ${selectedOutput.name}`, true);
         updateConnectionIndicator(true, selectedOutput.name);
+
+        // User must manually select matching input
+        console.log('[MIDI] Please select the corresponding input device');
     } else {
         selectedOutput = null;
+        selectedInputPort = null;
         updateMIDIStatus('Ready', false);
         updateConnectionIndicator(false);
     }
@@ -464,6 +556,14 @@ function requestDataDump() {
         return;
     }
 
+    // Prevent multiple simultaneous requests
+    if (dataDumpRequested) {
+        console.log('[MIDI] Data dump request already in progress, skipping...');
+        return;
+    }
+
+    dataDumpRequested = true;
+
     // Data Dump Request: F0 42 4g 00 01 75 10 F7
     const dataDumpReq = [0xF0, 0x42, 0x40, 0x00, 0x01, 0x75, 0x10, 0xF7];
 
@@ -472,9 +572,15 @@ function requestDataDump() {
         const hex = dataDumpReq.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
         logMIDI(`TX: ${hex} (Data Dump Request)`, 'send');
         console.log('[MIDI] Sent Data Dump Request');
+
+        // Reset flag after response or timeout
+        setTimeout(() => {
+            dataDumpRequested = false;
+        }, 2000);
     } catch (error) {
         console.error('[MIDI] Failed to send Data Dump Request:', error);
         logMIDI(`Error: ${error.message}`, 'error');
+        dataDumpRequested = false;
     }
 }
 
@@ -485,14 +591,14 @@ function syncUIFromDump(decodedData) {
     let silentMode = true;
 
     // Filter Section
-    if (decodedData[0] !== undefined) {
-        const cutoffKnob = document.querySelector('pad-knob[cc="21"]');
-        if (cutoffKnob) cutoffKnob.setAttribute('value', decodedData[0]);
-    }
-
-    if (decodedData[4] !== undefined) {
-        const resonanceKnob = document.querySelector('pad-knob[cc="25"]');
-        if (resonanceKnob) resonanceKnob.setAttribute('value', decodedData[4]);
+    const xyPad = document.querySelector('xy-pad[x-cc="21"]');
+    if (xyPad) {
+        if (decodedData[0] !== undefined) {
+            xyPad.setAttribute('x-value', decodedData[0]);
+        }
+        if (decodedData[4] !== undefined) {
+            xyPad.setAttribute('y-value', decodedData[4]);
+        }
     }
 
     if (decodedData[5] !== undefined) {
@@ -517,15 +623,17 @@ function syncUIFromDump(decodedData) {
         if (usbChannel) usbChannel.value = decodedData[3];
     }
 
-    // LFO Section
+    // LFO/Envelope Section (dual-CC knobs)
+    // Rate knob controls both CC27 (LFO) and CC58 (ENV)
     if (decodedData[6] !== undefined) {
-        const lfoRateKnob = document.querySelector('pad-knob[cc="27"]');
-        if (lfoRateKnob) lfoRateKnob.setAttribute('value', decodedData[6]);
+        const rateKnob = document.querySelector('pad-knob[cc="27"]');
+        if (rateKnob) rateKnob.setAttribute('value', decodedData[6]);
     }
 
+    // Intensity knob controls both CC29 (LFO) and CC33 (ENV)
     if (decodedData[8] !== undefined) {
-        const lfoIntensityKnob = document.querySelector('pad-knob[cc="29"]');
-        if (lfoIntensityKnob) lfoIntensityKnob.setAttribute('value', decodedData[8]);
+        const intensityKnob = document.querySelector('pad-knob[cc="29"]');
+        if (intensityKnob) intensityKnob.setAttribute('value', decodedData[8]);
     }
 
     if (decodedData[10] !== undefined) {
@@ -548,16 +656,9 @@ function syncUIFromDump(decodedData) {
         if (lfoEnvSelect) lfoEnvSelect.value = decodedData[9] === 0 ? '0' : '127';
     }
 
-    // Envelope Section
-    if (decodedData[11] !== undefined) {
-        const envInputGainKnob = document.querySelector('pad-knob[cc="33"]');
-        if (envInputGainKnob) envInputGainKnob.setAttribute('value', decodedData[11]);
-    }
-
-    if (decodedData[12] !== undefined) {
-        const envRateKnob = document.querySelector('pad-knob[cc="58"]');
-        if (envRateKnob) envRateKnob.setAttribute('value', decodedData[12]);
-    }
+    // Envelope values (decodedData[11]=ENV Intensity, decodedData[12]=ENV Rate)
+    // are stored separately but controlled by same knobs as LFO
+    // The knobs are already set above from LFO values
 
     // FX Routing & Link
     if (decodedData[16] !== undefined) {
@@ -751,6 +852,11 @@ async function autoDetectDevice() {
         return;
     }
 
+    // Skip if already detected and connected
+    if (deviceDetected && autoConnected) {
+        return;
+    }
+
     const outputs = Array.from(midiAccess.outputs.values());
     if (outputs.length === 0) {
         return;
@@ -771,8 +877,14 @@ async function autoDetectDevice() {
 }
 
 // Auto-connect to the detected device
-function autoConnectDevice(inputDeviceName) {
+function autoConnectDevice(inputDeviceName, inputPort) {
     if (!midiAccess) return;
+
+    // Prevent multiple auto-connections
+    if (autoConnected) {
+        console.log('[MIDI] Already auto-connected, skipping...');
+        return;
+    }
 
     // Find matching output by name (input and output usually have same/similar names)
     const outputs = Array.from(midiAccess.outputs.values());
@@ -789,22 +901,72 @@ function autoConnectDevice(inputDeviceName) {
     }
 
     if (matchingOutput) {
-        // Select in dropdown
-        const select = document.getElementById('midiOutput');
-        if (select) {
-            select.value = matchingOutput.id;
+        autoConnected = true;
+
+        // Set the selected input PORT (only listen to this specific port, not name)
+        selectedInputPort = inputPort;
+
+        // Select BOTH input and output in dropdowns
+        const outputSelect = document.getElementById('midiOutput');
+        const inputSelect = document.getElementById('midiInput');
+
+        if (outputSelect) {
+            outputSelect.value = matchingOutput.id;
             selectedOutput = matchingOutput;
             updateMIDIStatus(`Connected: ${matchingOutput.name}`, true);
             updateConnectionIndicator(true, matchingOutput.name);
         }
 
+        if (inputSelect && inputPort) {
+            inputSelect.value = inputPort.id;
+        }
+
         logMIDI(`✅ Auto-connected to: ${matchingOutput.name}`, 'success');
         console.log('[MIDI] Auto-connected to:', matchingOutput.name);
+        console.log(`[MIDI] Listening only to input port: ${inputPort.id} (${inputPort.name})`);
 
         // Auto-request settings dump to sync UI
         setTimeout(() => {
             requestDataDump();
         }, 1000);
+    }
+}
+
+// Update UI sections based on device model
+function updateUIForModel(model) {
+    console.log(`[UI] Updating UI for model: ${model}`);
+    const mainControls = document.getElementById('main-controls');
+    const filterSection = document.getElementById('filter-section');
+    const lfoSection = document.getElementById('lfo-section');
+
+    console.log(`[UI] Filter section found: ${!!filterSection}, LFO/Envelope section found: ${!!lfoSection}`);
+
+    if (model === '22') {
+        // microAudio 22 doesn't have Filter, LFO, or Envelope
+        if (filterSection) {
+            filterSection.style.setProperty('display', 'none', 'important');
+            console.log('[UI] Filter section hidden');
+        }
+        if (lfoSection) {
+            lfoSection.style.setProperty('display', 'none', 'important');
+            console.log('[UI] LFO/Envelope section hidden');
+        }
+    } else if (model === '722') {
+        // microAudio 722 has all features
+        if (filterSection) {
+            filterSection.style.setProperty('display', 'block', 'important');
+            console.log('[UI] Filter section shown');
+        }
+        if (lfoSection) {
+            lfoSection.style.setProperty('display', 'block', 'important');
+            console.log('[UI] LFO/Envelope section shown');
+        }
+    }
+
+    // Show main controls after device detection
+    if (mainControls) {
+        mainControls.style.display = 'grid';
+        console.log('[UI] Main controls displayed');
     }
 }
 
@@ -870,6 +1032,36 @@ function setupMenu() {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     console.log('[Controller] Initializing microAudio 722 Controller');
+
+    // Load logging preference from localStorage (default: DISABLED)
+    const enableLogging = document.getElementById('enableLogging');
+    if (enableLogging) {
+        // Default to false (disabled) - explicitly set
+        enableLogging.checked = false;
+
+        // Load saved preference if exists
+        const saved = localStorage.getItem('microaudioLoggingEnabled');
+        if (saved === 'true') {
+            enableLogging.checked = true;
+        }
+
+        // Save preference when changed
+        enableLogging.addEventListener('change', () => {
+            localStorage.setItem('microaudioLoggingEnabled', enableLogging.checked);
+
+            const logEl = document.getElementById('midiLog');
+            if (logEl) {
+                if (enableLogging.checked) {
+                    // Clear the "Logging disabled" message
+                    logEl.innerHTML = '';
+                } else {
+                    // Show disabled message and clear log
+                    logEl.innerHTML = '<div style="color: #555;">Logging disabled</div>';
+                }
+            }
+        });
+    }
+
     setupMenu();
     initMIDI();
 
