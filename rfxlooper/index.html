@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="RFXLooper - 6-Track Loop Station">
+    <meta name="theme-color" content="#CF1A37">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RFXLooper">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/svg+xml" href="../replugged/favicon.svg">
+    <title>REgrooveFX Looper</title>
+    <link rel="stylesheet" href="../replugged/style.css">
+    <style>
+        body {
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        .transport-section {
+            flex-shrink: 0;
+        }
+
+        .tracks-grid {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            padding: 10px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            justify-content: flex-start;
+            width: 100%;
+            flex: 1;
+        }
+
+        .track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            border: 2px solid rgba(207, 26, 55, 0.3);
+            min-width: 150px;
+            flex-shrink: 0;
+            flex-grow: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .track svg-slider {
+            height: 100%;
+            min-height: 120px !important;
+        }
+
+        .track-timeline {
+            width: 100%;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin: 8px 0;
+            position: relative;
+        }
+
+        .track-waveform {
+            width: 100%;
+            height: 100%;
+        }
+
+        .rec-progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background: #ff0000;
+            width: 0%;
+            transition: none;
+            border-radius: 0 0 4px 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .track.recording {
+            border-color: #ff0000;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .track.playing {
+            border-color: #00ff00;
+        }
+
+        .track-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .track-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .track-state {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .track-controls {
+            display: flex;
+            gap: 5px;
+            margin: 8px 0;
+        }
+
+        .track-btn-wrapper {
+            flex: 1;
+        }
+
+        .track-btn {
+            width: 100%;
+            padding: 8px 4px;
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .track-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .track-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .transport-section {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            margin: 10px;
+            border-radius: 8px;
+            width: calc(100% - 20px);
+            box-sizing: border-box;
+        }
+
+        .transport-btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .transport-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .transport-btn.active {
+            background: #ff0000;
+            border-color: #ff0000;
+            color: white;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .bpm-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bpm-input {
+            width: 60px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .input-hotkey, .btn-pass {
+            min-width: 60px;
+            height: 40px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .input-hotkey.active {
+            background: #00ff00;
+            border-color: #00ff00;
+            color: #000;
+        }
+
+        .btn-pass.active {
+            background: #ffff00;
+            border-color: #ffff00;
+            color: #000;
+        }
+    </style>
+</head>
+<body class="index-page">
+    <div class="top-banner">
+        <button class="hamburger-button" id="hamburgerBtn">☰</button>
+        <div class="banner-title">RegrooveFX Looper</div>
+    </div>
+
+    <!-- Hamburger Menu -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+    <div class="menu-panel" id="menuPanel">
+        <button class="menu-close" id="menuClose">×</button>
+        <div class="menu-items">
+            <button class="menu-item" id="btnAudioOutput">Audio Output</button>
+            <button class="menu-item" id="btnInputSetup">Input Setup</button>
+            <button class="menu-item" id="btnAbout">About / Credits</button>
+
+            <div style="margin-top: 20px; padding: 10px; border-top: 1px solid #333;">
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <label style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" id="enableLogging" style="margin: 0;">
+                        Enable Debug
+                    </label>
+                    <button id="clearLog" style="padding: 5px 10px; font-size: 0.75em;">Clear</button>
+                </div>
+                <div id="debugLog" style="padding: 10px; background: #0a0a0a; border: 1px solid #333; border-radius: 4px; font-family: monospace; font-size: 10px; max-height: 300px; overflow-y: auto; display: none;">
+                    <div style="color: #555;">Debug log</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Output Modal -->
+    <div class="modal-overlay" id="audioOutputOverlay"></div>
+    <div class="modal" id="audioOutputModal">
+        <div class="modal-header">
+            <h2>Audio Output</h2>
+            <button class="modal-close" id="audioOutputClose">×</button>
+        </div>
+        <div class="modal-body">
+            <label style="display: block; color: var(--text-secondary); font-size: 0.8em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Output Device</label>
+            <select id="outputDeviceList" style="width: 100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; margin-bottom: 20px;">
+                <option value="">Default Output</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Input Setup Modal -->
+    <div class="modal-overlay" id="inputSetupOverlay"></div>
+    <div class="modal" id="inputSetupModal">
+        <div class="modal-header">
+            <h2>Input Setup</h2>
+            <button class="modal-close" id="inputSetupClose">×</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom: 20px; color: var(--text-secondary);">Configure input devices for hotkeys 1-4</p>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div>
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">Hotkey 1</label>
+                    <select id="inputHotkey1" class="input-setup-select" style="width: 100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px;">
+                        <option value="">None</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">Hotkey 2</label>
+                    <select id="inputHotkey2" class="input-setup-select" style="width: 100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px;">
+                        <option value="">None</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">Hotkey 3</label>
+                    <select id="inputHotkey3" class="input-setup-select" style="width: 100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px;">
+                        <option value="">None</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">Hotkey 4</label>
+                    <select id="inputHotkey4" class="input-setup-select" style="width: 100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px;">
+                        <option value="">None</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- About / Credits Modal -->
+    <div class="modal-overlay" id="aboutOverlay"></div>
+    <div class="modal" id="aboutModal">
+        <div class="modal-header">
+            <h2>About / Credits</h2>
+            <button class="modal-close" id="aboutClose">×</button>
+        </div>
+        <div class="modal-body">
+            <h3 style="margin-top: 0; color: var(--brand-primary);">RFXLooper</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">6-Track Loop Station</p>
+
+            <h4 style="margin-top: 20px; margin-bottom: 10px;">Credits</h4>
+            <p style="color: var(--text-secondary); line-height: 1.6;">
+                Developed by Gerard Braad<br>
+            </p>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- TRANSPORT CONTROLS AT TOP -->
+        <div class="transport-section">
+            <div style="display: flex; gap: 15px; align-items: stretch; width: 100%; justify-content: space-between;">
+                <!-- Left side: controls in 2 rows -->
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Row 1: Main controls -->
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="transport-btn" id="btnStart">▶ Start</button>
+                        <button class="transport-btn" id="btnStop">◼ Stop</button>
+                        <button class="transport-btn" id="btnClearAll">✖ Clear All</button>
+
+                        <div class="bpm-control">
+                            <label>BPM:</label>
+                            <input type="number" class="bpm-input" id="bpmInput" min="60" max="200" value="120" step="1">
+                            <button class="transport-btn" id="btnTapTempo">TAP</button>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Input hotkeys -->
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="input-hotkey" id="inputHotkey1Btn">IN1</button>
+                        <button class="input-hotkey" id="inputHotkey2Btn">IN2</button>
+                        <button class="input-hotkey" id="inputHotkey3Btn">IN3</button>
+                        <button class="input-hotkey" id="inputHotkey4Btn">IN4</button>
+                        <button class="btn-pass" id="btnPass">PASS</button>
+                    </div>
+                </div>
+
+                <!-- Right side: knobs spanning both rows -->
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <!-- INPUT knob with LED -->
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <pad-knob id="inputGainKnob" label="INPUT" value="127" min="0" max="127" size="50"></pad-knob>
+                        <div id="inputLevelLED" style="width: 18px; height: 18px; min-width: 18px; min-height: 18px; background: #030; border: 2px solid #666; border-radius: 50%; box-shadow: inset 0 1px 2px rgba(0,0,0,0.5); transition: background-color 0.05s, box-shadow 0.05s; flex-shrink: 0;"></div>
+                    </div>
+                    <!-- MASTER knob -->
+                    <pad-knob id="masterGainKnob" label="MASTER" value="127" min="0" max="127" size="50"></pad-knob>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6 TRACKS BELOW - HORIZONTAL -->
+        <div class="tracks-grid">
+            <div class="track" data-track="0">
+                <div class="track-header">
+                    <span class="track-number">Track 1</span>
+                    <span class="track-state">Empty</span>
+                </div>
+                <div class="track-timeline">
+                    <canvas class="track-waveform" data-track="0"></canvas>
+                    <div class="rec-progress-bar" data-track="0"></div>
+                </div>
+                <div class="track-controls">
+                    <div class="track-btn-wrapper">
+                        <button class="track-btn btn-rec" data-track="0">⏺ REC</button>
+                    </div>
+                    <button class="track-btn btn-play" data-track="0">▶ PLAY</button>
+                    <button class="track-btn btn-clear" data-track="0">✖</button>
+                </div>
+                <div style="display: flex; gap: 5px; margin: 8px 0;">
+                    <button class="track-btn btn-export" data-track="0" title="Export Track">💾</button>
+                    <button class="track-btn btn-import" data-track="0" title="Import Track">📂</button>
+                </div>
+                <div style="display: flex; justify-content: center; margin-top: 10px; flex: 1; min-height: 0;">
+                    <svg-slider class="track-volume" data-track="0" value="127" min="0" max="127" width="40" color="#CF1A37"></svg-slider>
+                </div>
+            </div>
+
+            <div class="track" data-track="1">
+                <div class="track-header">
+                    <span class="track-number">Track 2</span>
+                    <span class="track-state">Empty</span>
+                </div>
+                <div class="track-timeline">
+                    <canvas class="track-waveform" data-track="1"></canvas>
+                    <div class="rec-progress-bar" data-track="1"></div>
+                </div>
+                <div class="track-controls">
+                    <div class="track-btn-wrapper">
+                        <button class="track-btn btn-rec" data-track="1">⏺ REC</button>
+                    </div>
+                    <button class="track-btn btn-play" data-track="1">▶ PLAY</button>
+                    <button class="track-btn btn-clear" data-track="1">✖</button>
+                </div>
+                <div style="display: flex; gap: 5px; margin: 8px 0;">
+                    <button class="track-btn btn-export" data-track="1" title="Export Track">💾</button>
+                    <button class="track-btn btn-import" data-track="1" title="Import Track">📂</button>
+                </div>
+                <div style="display: flex; justify-content: center; margin-top: 10px; flex: 1; min-height: 0;">
+                    <svg-slider class="track-volume" data-track="1" value="127" min="0" max="127" width="40" color="#CF1A37"></svg-slider>
+                </div>
+            </div>
+
+            <div class="track" data-track="2">
+                <div class="track-header">
+                    <span class="track-number">Track 3</span>
+                    <span class="track-state">Empty</span>
+                </div>
+                <div class="track-timeline">
+                    <canvas class="track-waveform" data-track="2"></canvas>
+                    <div class="rec-progress-bar" data-track="2"></div>
+                </div>
+                <div class="track-controls">
+                    <div class="track-btn-wrapper">
+                        <button class="track-btn btn-rec" data-track="2">⏺ REC</button>
+                    </div>
+                    <button class="track-btn btn-play" data-track="2">▶ PLAY</button>
+                    <button class="track-btn btn-clear" data-track="2">✖</button>
+                </div>
+                <div style="display: flex; gap: 5px; margin: 8px 0;">
+                    <button class="track-btn btn-export" data-track="2" title="Export Track">💾</button>
+                    <button class="track-btn btn-import" data-track="2" title="Import Track">📂</button>
+                </div>
+                <div style="display: flex; justify-content: center; margin-top: 10px; flex: 1; min-height: 0;">
+                    <svg-slider class="track-volume" data-track="2" value="127" min="0" max="127" width="40" color="#CF1A37"></svg-slider>
+                </div>
+            </div>
+
+            <div class="track" data-track="3">
+                <div class="track-header">
+                    <span class="track-number">Track 4</span>
+                    <span class="track-state">Empty</span>
+                </div>
+                <div class="track-timeline">
+                    <canvas class="track-waveform" data-track="3"></canvas>
+                    <div class="rec-progress-bar" data-track="3"></div>
+                </div>
+                <div class="track-controls">
+                    <div class="track-btn-wrapper">
+                        <button class="track-btn btn-rec" data-track="3">⏺ REC</button>
+                    </div>
+                    <button class="track-btn btn-play" data-track="3">▶ PLAY</button>
+                    <button class="track-btn btn-clear" data-track="3">✖</button>
+                </div>
+                <div style="display: flex; gap: 5px; margin: 8px 0;">
+                    <button class="track-btn btn-export" data-track="3" title="Export Track">💾</button>
+                    <button class="track-btn btn-import" data-track="3" title="Import Track">📂</button>
+                </div>
+                <div style="display: flex; justify-content: center; margin-top: 10px; flex: 1; min-height: 0;">
+                    <svg-slider class="track-volume" data-track="3" value="127" min="0" max="127" width="40" color="#CF1A37"></svg-slider>
+                </div>
+            </div>
+
+            <div class="track" data-track="4">
+                <div class="track-header">
+                    <span class="track-number">Track 5</span>
+                    <span class="track-state">Empty</span>
+                </div>
+                <div class="track-timeline">
+                    <canvas class="track-waveform" data-track="4"></canvas>
+                    <div class="rec-progress-bar" data-track="4"></div>
+                </div>
+                <div class="track-controls">
+                    <div class="track-btn-wrapper">
+                        <button class="track-btn btn-rec" data-track="4">⏺ REC</button>
+                    </div>
+                    <button class="track-btn btn-play" data-track="4">▶ PLAY</button>
+                    <button class="track-btn btn-clear" data-track="4">✖</button>
+                </div>
+                <div style="display: flex; gap: 5px; margin: 8px 0;">
+                    <button class="track-btn btn-export" data-track="4" title="Export Track">💾</button>
+                    <button class="track-btn btn-import" data-track="4" title="Import Track">📂</button>
+                </div>
+                <div style="display: flex; justify-content: center; margin-top: 10px; flex: 1; min-height: 0;">
+                    <svg-slider class="track-volume" data-track="4" value="127" min="0" max="127" width="40" color="#CF1A37"></svg-slider>
+                </div>
+            </div>
+
+            <div class="track" data-track="5">
+                <div class="track-header">
+                    <span class="track-number">Track 6</span>
+                    <span class="track-state">Empty</span>
+                </div>
+                <div class="track-timeline">
+                    <canvas class="track-waveform" data-track="5"></canvas>
+                    <div class="rec-progress-bar" data-track="5"></div>
+                </div>
+                <div class="track-controls">
+                    <div class="track-btn-wrapper">
+                        <button class="track-btn btn-rec" data-track="5">⏺ REC</button>
+                    </div>
+                    <button class="track-btn btn-play" data-track="5">▶ PLAY</button>
+                    <button class="track-btn btn-clear" data-track="5">✖</button>
+                </div>
+                <div style="display: flex; gap: 5px; margin: 8px 0;">
+                    <button class="track-btn btn-export" data-track="5" title="Export Track">💾</button>
+                    <button class="track-btn btn-import" data-track="5" title="Import Track">📂</button>
+                </div>
+                <div style="display: flex; justify-content: center; margin-top: 10px; flex: 1; min-height: 0;">
+                    <svg-slider class="track-volume" data-track="5" value="127" min="0" max="127" width="40" color="#CF1A37"></svg-slider>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../replugged/components/svg-slider.js"></script>
+    <script type="module" src="../replugged/components/pad-knob.js"></script>
+    <script type="module" src="./app.js"></script>
+</body>
+</html>
