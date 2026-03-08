@@ -1,6 +1,6 @@
 {
-  "name": "MIDI Device Controller",
-  "short_name": "MIDI Ctrl",
+  "name": "Device Controller",
+  "short_name": "Device",
   "description": "Generic WebMIDI controller for KORG and other MIDI devices",
   "start_url": "./index.html",
   "scope": "./",

@@ -1,11 +1,10 @@
 {
-  "name": "Regroove MIDI Controller",
-  "short_name": "MIDI",
+  "name": "Gamepad Controller",
+  "short_name": "Gamepad",
   "description": "Web-based MIDI controller with gamepad and touch support",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#CF1A37",
+  "background_color": "#000000",
   "orientation": "any",
   "icons": [
     {

@@ -1,11 +1,10 @@
 {
   "name": "Regroove Meister",
   "short_name": "Meister",
-  "description": "Regroove Meister - MIDI Controller Suite for Live/DJ Performance",
+  "description": "MIDI Controller Suite for Live/DJ Performance",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#000000",
-  "theme_color": "#000000",
   "orientation": "any",
   "icons": [
     {
