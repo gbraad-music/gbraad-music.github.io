@@ -88,8 +88,8 @@ class RG1PianoSynth {
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rg1piano.js`),
-                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rg1piano.wasm`)
+                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rg1piano.js`),
+                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rg1piano.wasm`)
             ]);
 
             const jsCode = await jsResponse.text();

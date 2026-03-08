@@ -90,8 +90,8 @@ class RGResonate1Synth {
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rgresonate1.js`),
-                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rgresonate1.wasm`)
+                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rgresonate1.js`),
+                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rgresonate1.wasm`)
             ]);
 
             const jsCode = await jsResponse.text();

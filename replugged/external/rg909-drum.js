@@ -77,8 +77,8 @@ class RG909Drum {
             // Fetch both JS glue code and WASM binary (cache-busting with timestamp)
             const timestamp = Date.now();
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rg909-drum.js?t=${timestamp}`),
-                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rg909-drum.wasm?t=${timestamp}`)
+                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rg909-drum.js?t=${timestamp}`),
+                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rg909-drum.wasm?t=${timestamp}`)
             ]);
 
             const jsCode = await jsResponse.text();

@@ -205,8 +205,8 @@ class RVKeysSynth {
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rvkeys.js`),
-                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rvkeys.wasm`)
+                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rvkeys.js`),
+                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rvkeys.wasm`)
             ]);
 
             // Check if responses are OK

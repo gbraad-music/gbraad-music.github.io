@@ -154,8 +154,8 @@ class RGAHXSynth {
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rgahxsynth.js?v=242`),
-                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rgahxsynth.wasm?v=242`)
+                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rgahxsynth.js?v=242`),
+                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rgahxsynth.wasm?v=242`)
             ]);
 
             const jsCode = await jsResponse.text();

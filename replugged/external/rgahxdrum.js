@@ -75,8 +75,8 @@ class RGAHXDrum {
             // Fetch both JS glue code and WASM binary (cache-busting with timestamp)
             const timestamp = Date.now();
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rgahxdrum.js?t=${timestamp}`),
-                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rgahxdrum.wasm?t=${timestamp}`)
+                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rgahxdrum.js?t=${timestamp}`),
+                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rgahxdrum.wasm?t=${timestamp}`)
             ]);
 
             const jsCode = await jsResponse.text();

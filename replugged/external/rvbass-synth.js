@@ -197,8 +197,8 @@ class RVBassSynth {
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rvbass.js`),
-                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rvbass.wasm`)
+                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rvbass.js`),
+                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rvbass.wasm`)
             ]);
 
             // Check if responses are OK

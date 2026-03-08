@@ -91,8 +91,8 @@ class RGSlicerSynth {
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rgslicer.js`),
-                fetch(`${window.location.pathname.includes('/synths/') ? '' : 'synths/'}rgslicer.wasm`)
+                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rgslicer.js`),
+                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rgslicer.wasm`)
             ]);
 
             const jsCode = await jsResponse.text();
