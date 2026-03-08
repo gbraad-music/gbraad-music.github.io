@@ -1083,9 +1083,9 @@ async function renderDrumSound(note, drumName, duration = 2.0) {
   const totalFrames = Math.floor(duration * sampleRate);
 
   // Load and patch WASM module to expose memory (same as worklet processor)
-  const jsResponse = await fetch("synths/rg909-drum.js");
+  const jsResponse = await fetch("rfxsynths/rg909-drum.js");
   const jsCode = await jsResponse.text();
-  const wasmResponse = await fetch("synths/rg909-drum.wasm");
+  const wasmResponse = await fetch("rfxsynths/rg909-drum.wasm");
   const wasmBytes = await wasmResponse.arrayBuffer();
 
   // Patch to expose wasmMemory

@@ -73,8 +73,8 @@ class AudioEffectsProcessor {
 
     // Load both the JS and WASM files from main thread
     const [jsResponse, wasmResponse] = await Promise.all([
-      fetch((window.location.pathname.includes('/player/') ? '' : 'player/') + "regroove-effects.js"),
-      fetch((window.location.pathname.includes('/player/') ? '' : 'player/') + "regroove-effects.wasm"),
+      fetch((window.location.pathname.includes('/rfxplayer/') ? '' : 'rfxplayer/') + "regroove-effects.js"),
+      fetch((window.location.pathname.includes('/rfxplayer/') ? '' : 'rfxplayer/') + "regroove-effects.wasm"),
     ]);
 
     if (!jsResponse.ok || !wasmResponse.ok) {
@@ -87,7 +87,7 @@ class AudioEffectsProcessor {
 
     console.log("🎛️ Registering AudioWorklet...");
     await this.audioContext.audioWorklet.addModule(
-      (window.location.pathname.includes('/player/') ? '../replugged/' : '') + "worklets/audio-worklet-processor.js",
+      (window.location.pathname.includes('/rfxplayer/') ? '../replugged/' : '') + "worklets/audio-worklet-processor.js",
     );
 
     console.log("🔧 Creating worklet...");
@@ -144,7 +144,7 @@ class AudioEffectsProcessor {
     console.log("📡 Loading Deck Player WASM (MOD/MED/AHX/SID)...");
 
     try {
-      const deckPlayerPath = window.location.origin + '/player/deck-player.js';
+      const deckPlayerPath = window.location.origin + '/rfxplayer/deck-player.js';
       const createDeckPlayerModule =
         await import(deckPlayerPath).then((m) => m.default);
       this.modMedModule = await createDeckPlayerModule();
@@ -1364,8 +1364,8 @@ class AudioEffectsProcessor {
 
       // Send WASM to offline worklet
       const [jsResponse, wasmResponse] = await Promise.all([
-        fetch((window.location.pathname.includes('/player/') ? '' : 'player/') + "regroove-effects.js"),
-        fetch((window.location.pathname.includes('/player/') ? '' : 'player/') + "regroove-effects.wasm"),
+        fetch((window.location.pathname.includes('/rfxplayer/') ? '' : 'rfxplayer/') + "regroove-effects.js"),
+        fetch((window.location.pathname.includes('/rfxplayer/') ? '' : 'rfxplayer/') + "regroove-effects.wasm"),
       ]);
       const jsCode = await jsResponse.text();
       const wasmBytes = await wasmResponse.arrayBuffer();
