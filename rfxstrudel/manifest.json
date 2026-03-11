@@ -1,0 +1,21 @@
+{
+  "name": "RegrooveFX Strudel",
+  "short_name": "RFXStrudel",
+  "description": "Live Coding with Integrated Effects & Synths",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "../replugged/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "../replugged/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

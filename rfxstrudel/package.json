@@ -1,0 +1,14 @@
+{
+  "name": "rfxstrudel",
+  "version": "1.0.0",
+  "description": "Live coding environment built on Strudel with integrated RFX effects, synths, and MIDI control.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+  }
+}

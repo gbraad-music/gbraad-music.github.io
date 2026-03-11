@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="RFXStrudel - Live Coding with Effects">
+    <meta name="theme-color" content="#CF1A37">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RFXStrudel">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/svg+xml" href="../replugged/favicon.svg">
+    <title>RegrooveFX Strudel</title>
+    <link rel="stylesheet" href="../replugged/style.css">
+    <link rel="stylesheet" href="./codemirror/codemirror.css">
+    <link rel="stylesheet" href="./codemirror/tomorrow-night-bright.css">
+
+    <style>
+        body {
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 10px;
+            width: 100%;
+        }
+
+        .CodeMirror {
+            height: 100%;
+            width: 100% !important;
+            font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+        }
+
+        .controls-panel {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .control-btn {
+            padding: 8px 16px;
+            background: var(--brand-primary);
+            border: 1px solid var(--brand-accent);
+            color: var(--text-primary);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: var(--brand-accent);
+        }
+
+        .control-btn.active {
+            background: #00ff00;
+            border-color: #00ff00;
+            color: #000;
+        }
+
+        .effects-panel {
+            display: flex;
+            gap: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-x: auto;
+            flex-shrink: 0;
+            width: 100%;
+        }
+
+        .effect-module {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(207, 26, 55, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            min-width: 120px;
+            flex-shrink: 0;
+        }
+
+        .effect-title {
+            font-size: 10px;
+            font-weight: bold;
+            color: var(--brand-accent);
+            margin-bottom: 10px;
+            text-align: center;
+            word-break: break-all;
+        }
+
+        .knob-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .knob-label {
+            font-size: 9px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        #dynamicKnobs {
+            min-height: 80px;
+        }
+    </style>
+</head>
+<body class="index-page">
+    <div class="top-banner">
+        <button class="hamburger-button" id="hamburgerBtn">☰</button>
+        <div class="banner-title">RegrooveFX Strudel</div>
+    </div>
+
+    <!-- Hamburger Menu -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+    <div class="menu-panel" id="menuPanel">
+        <button class="menu-close" id="menuClose">×</button>
+        <div class="menu-items">
+            <button class="menu-item" id="btnAudioOutput">Audio Output</button>
+            <button class="menu-item" id="btnMIDISetup">MIDI Setup</button>
+            <button class="menu-item" id="btnExamples">Load Example</button>
+            <button class="menu-item" id="btnAbout">About / Credits</button>
+
+            <div style="margin-top: 20px; padding: 10px; border-top: 1px solid #333;">
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <label style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" id="enableLogging" style="margin: 0;">
+                        Enable Debug
+                    </label>
+                    <button id="clearLog" style="padding: 5px 10px; font-size: 0.75em;">Clear</button>
+                </div>
+                <div id="debugLog" style="padding: 10px; background: #0a0a0a; border: 1px solid #333; border-radius: 4px; font-family: monospace; font-size: 10px; max-height: 300px; overflow-y: auto; display: none;">
+                    <div style="color: #555;">Debug log</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Output Modal -->
+    <div class="modal-overlay" id="audioOutputOverlay"></div>
+    <div class="modal" id="audioOutputModal">
+        <div class="modal-header">
+            <h2>Audio Output</h2>
+            <button class="modal-close" id="audioOutputClose">×</button>
+        </div>
+        <div class="modal-body">
+            <label style="display: block; color: var(--text-secondary); font-size: 0.8em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Output Device</label>
+            <select id="outputDeviceList" style="width: 100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; margin-bottom: 20px;">
+                <option value="">Default Output</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- MIDI Setup Modal -->
+    <div class="modal-overlay" id="midiSetupOverlay"></div>
+    <div class="modal" id="midiSetupModal">
+        <div class="modal-header">
+            <h2>MIDI Setup</h2>
+            <button class="modal-close" id="midiSetupClose">×</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom: 20px; color: var(--text-secondary);">Configure MIDI inputs for controller mapping</p>
+            <label style="display: block; font-weight: bold; margin-bottom: 5px;">MIDI Input</label>
+            <select id="midiInput" style="width: 100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; margin-bottom: 15px;">
+                <option value="">None</option>
+            </select>
+            <button id="btnMIDILearn" class="control-btn" style="width: 100%;">Start MIDI Learn</button>
+            <div id="midiLearnStatus" style="margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 4px; display: none;">
+                <p style="color: var(--text-secondary); font-size: 0.9em;">Waiting for MIDI input...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div class="modal-overlay" id="aboutOverlay"></div>
+    <div class="modal" id="aboutModal">
+        <div class="modal-header">
+            <h2>About / Credits</h2>
+            <button class="modal-close" id="aboutClose">×</button>
+        </div>
+        <div class="modal-body">
+            <h3 style="margin-top: 0; color: var(--brand-primary);">RFXStrudel</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">Live Coding with Integrated Effects & Synths</p>
+
+            <h4 style="margin-top: 20px; margin-bottom: 10px;">Credits</h4>
+            <p style="color: var(--text-secondary); line-height: 1.6;">
+                Developed by Gerard Braad<br>
+                Built on Strudel by Felix Roos<br>
+            </p>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- Control Panel -->
+        <div class="controls-panel">
+            <button class="control-btn" id="btnPlay">▶ Play</button>
+            <button class="control-btn" id="btnStop">◼ Stop</button>
+            <button class="control-btn" id="btnEvaluate">⚡ Evaluate (Ctrl+Enter)</button>
+            <button class="control-btn" id="btnClear">✖ Clear</button>
+        </div>
+
+        <!-- Code Editor -->
+        <div class="editor-container">
+            <textarea id="codeEditor">// RFXStrudel - Live Coding Testbed
+// Drums: rg909, rgahxdrum
+// Synths: rgahxsynth, rgsidsynth, rgresonate1, rvbass, rvkeys, rg1piano
+
+stack(
+  note("36 ~ ~ ~").s("rgahxdrum"),    // Kick
+  note("~ 38 ~ 38").s("rgahxdrum")    // Snare
+).cpm(140)
+</textarea>
+        </div>
+
+        <!-- Presets & Dynamic Parameters Panel -->
+        <div class="effects-panel">
+            <div style="display: flex; gap: 10px; align-items: center; padding: 10px; flex: 1;">
+                <label style="color: var(--text-secondary); font-size: 12px;">PRESET:</label>
+                <select id="presetSelect" style="padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; flex: 1;">
+                    <option value="">None</option>
+                    <option value="preset1">909 Techno</option>
+                    <option value="preset2">AHX Drums</option>
+                    <option value="preset3">AHX Melody</option>
+                    <option value="preset4">SID Bass</option>
+                    <option value="preset5">Piano Lead</option>
+                </select>
+                <button id="btnSavePreset" class="control-btn" style="padding: 8px 16px;">Save Preset</button>
+            </div>
+
+            <!-- Dynamic knobs will be added here by JavaScript -->
+            <div id="dynamicKnobs" style="display: flex; gap: 15px; padding: 10px; overflow-x: auto; flex: 1;">
+                <div style="color: var(--text-secondary); font-size: 12px; padding: 10px;">
+                    Parameters will appear here as you code...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load libraries -->
+    <script src="./codemirror/codemirror.js"></script>
+    <script src="./codemirror/mode/javascript/javascript.js"></script>
+    <script src="./strudel-web.js"></script>
+    <script type="module" src="../replugged/components/pad-knob.js"></script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
