@@ -337,3 +337,21 @@ class RGSFZSynth {
 
 // Export for use in other scripts
 window.RGSFZSynth = RGSFZSynth;
+
+// Register synth in registry (auto-discovery)
+if (typeof window !== "undefined" && window.SynthRegistry) {
+    window.SynthRegistry.register({
+        id: 'rgsfz',
+        name: 'RGSFZ',
+        displayName: 'RGSFZ - SFZ Sampler',
+        description: 'SFZ format sampler',
+        engineId: 5,
+        class: RGSFZSynth,
+        wasmFiles: {
+            js: 'synths/rgsfz.js',
+            wasm: 'synths/rgsfz.wasm'
+        },
+        category: 'sampler',
+        getParameterInfo: () => []
+    });
+}

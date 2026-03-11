@@ -406,35 +406,14 @@
     <!-- Piano keyboard component -->
     <script src="../replugged/components/piano-keyboard.js"></script>
 
-    <!-- Load MIDI stack (ES6 modules not needed for standalone scripts) -->
+    <!-- Load MIDI stack (core only - synths loaded dynamically via synth-registry) -->
     <script src="../replugged/external/midi-manager.js"></script>
     <script src="../replugged/external/frequency-analyzer.js"></script>
     <script src="../replugged/external/midi-audio-synth.js"></script>
-    <script src="../replugged/external/rgresonate1-synth.js"></script>
-    <script src="../replugged/external/rgahxsynth-synth.js"></script>
-    <script src="../replugged/external/rgsid-synth.js"></script>
-    <script src="../replugged/external/rg1piano-synth.js"></script>
-    <script src="../replugged/external/rg909-drum.js"></script>
-    <script src="../replugged/external/rgahxdrum.js"></script>
-    <script src="../replugged/external/rgslicer-synth.js"></script>
-    <script src="../replugged/external/rgsfz-synth.js"></script>
-    <script src="../replugged/external/rvkeys-synth.js"></script>
-    <script src="../replugged/external/rvbass-synth.js"></script>
 
     <!-- RV Keys & RV Bass UI Components -->
     <script src="../replugged/components/rvkeys-ui.js"></script>
     <script src="../replugged/components/rvbass-ui.js"></script>
-
-    <!-- Load WASM modules -->
-    <script src="rgresonate1.js"></script>
-    <script src="rgahxsynth.js"></script>
-    <script src="rgsidsynth.js"></script>
-    <script src="rg1piano.js"></script>
-    <script src="rg909-drum.js"></script>
-    <script src="rgahxdrum.js"></script>
-    <script src="rgslicer.js"></script>
-    <script src="rvkeys.js"></script>
-    <script src="rvbass.js"></script>
 
     <!-- WebRTC MIDI (loaded as module) -->
     <script type="module" src="../replugged/external/midi-rtc-bridge.js"></script>

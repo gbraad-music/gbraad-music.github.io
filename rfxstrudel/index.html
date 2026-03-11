@@ -19,6 +19,7 @@
         body {
             overflow: hidden;
             height: 100vh;
+            background: black;
         }
 
         .content-wrapper {
@@ -43,6 +44,27 @@
             width: 100% !important;
             font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
             font-size: 14px;
+        }
+
+        /* Hide CodeMirror until initialized to prevent white flash */
+        .editor-container {
+            background: #000;
+            min-height: 200px;
+        }
+
+        .editor-container.loading .CodeMirror,
+        .editor-container.loading textarea {
+            visibility: hidden !important;
+        }
+
+        .editor-container .CodeMirror {
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .editor-container.initialized .CodeMirror {
+            opacity: 1;
+            visibility: visible !important;
         }
 
         .controls-panel {
@@ -92,7 +114,7 @@
             border: 1px solid rgba(207, 26, 55, 0.3);
             border-radius: 8px;
             padding: 10px;
-            min-width: 120px;
+            width: 120px;
             flex-shrink: 0;
         }
 
@@ -121,12 +143,219 @@
         #dynamicKnobs {
             min-height: 80px;
         }
+
+        /* Override top-banner to allow absolute positioning */
+        .top-banner {
+            position: relative !important;
+        }
+
+        /* Synth Shelf Button */
+        .synth-shelf-button {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(207, 26, 55, 0.2);
+            border: 1px solid var(--brand-accent);
+            color: var(--text-primary);
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .synth-shelf-button:hover {
+            background: rgba(207, 26, 55, 0.4);
+        }
+
+        /* Synth Shelf Panel (dropdown from top-right) */
+        .synth-shelf-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 999;
+        }
+
+        .synth-shelf-overlay.active {
+            display: block;
+        }
+
+        .synth-shelf-panel {
+            position: fixed;
+            top: 60px;
+            right: -350px;
+            width: 320px;
+            height: auto;
+            max-height: calc(100vh - 80px);
+            background: var(--bg-primary);
+            border: 1px solid var(--brand-accent);
+            border-radius: 8px;
+            padding: 20px;
+            transition: right 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .synth-shelf-panel.active {
+            right: 15px;
+        }
+
+        .synth-shelf-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 28px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .synth-shelf-close:hover {
+            color: var(--brand-accent);
+        }
+
+        .synth-item {
+            background: rgba(207, 26, 55, 0.1);
+            border: 1px solid rgba(207, 26, 55, 0.3);
+            border-radius: 4px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .synth-item:hover {
+            background: rgba(207, 26, 55, 0.2);
+            border-color: var(--brand-accent);
+        }
+
+        .synth-item-name {
+            font-weight: bold;
+            color: var(--brand-primary);
+            margin-bottom: 4px;
+        }
+
+        .synth-item-id {
+            font-size: 10px;
+            color: var(--text-secondary);
+            font-family: monospace;
+        }
+
+        /* Synth Detail Panel (right sidebar) */
+        .synth-detail-overlay {
+            display: none;
+        }
+
+        .synth-detail-panel {
+            position: fixed;
+            top: 60px;
+            right: -550px;
+            width: 500px;
+            height: calc(100vh - 60px);
+            background: var(--bg-primary);
+            border-left: 1px solid var(--brand-accent);
+            padding: 0;
+            transition: right 0.3s ease;
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .synth-detail-panel.active {
+            right: 0;
+        }
+
+        /* Adjust content wrapper when synth panel is open */
+        .content-wrapper.synth-open {
+            width: calc(100% - 500px);
+        }
+
+        .synth-param-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .synth-param-label {
+            flex: 0 0 180px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .synth-param-slider {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .synth-param-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--brand-accent);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .synth-param-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: var(--brand-accent);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .synth-param-value {
+            flex: 0 0 50px;
+            text-align: right;
+            font-size: 11px;
+            font-family: monospace;
+            color: var(--brand-primary);
+        }
+
+        /* Modal header in sidebar */
+        .synth-detail-panel .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--brand-accent);
+            background: rgba(207, 26, 55, 0.1);
+            flex-shrink: 0;
+        }
+
+        .synth-detail-panel .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0;
+            max-height: none !important;
+            height: 100%;
+        }
     </style>
 </head>
 <body class="index-page">
     <div class="top-banner">
         <button class="hamburger-button" id="hamburgerBtn">☰</button>
         <div class="banner-title">RegrooveFX Strudel</div>
+        <button class="synth-shelf-button" id="synthShelfBtn">
+            🎹 <span id="synthCount">0</span>
+        </button>
     </div>
 
     <!-- Hamburger Menu -->
@@ -136,7 +365,6 @@
         <div class="menu-items">
             <button class="menu-item" id="btnAudioOutput">Audio Output</button>
             <button class="menu-item" id="btnMIDISetup">MIDI Setup</button>
-            <button class="menu-item" id="btnExamples">Load Example</button>
             <button class="menu-item" id="btnAbout">About / Credits</button>
 
             <div style="margin-top: 20px; padding: 10px; border-top: 1px solid #333;">
@@ -151,6 +379,32 @@
                     <div style="color: #555;">Debug log</div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Synth Shelf Panel -->
+    <div class="synth-shelf-overlay" id="synthShelfOverlay"></div>
+    <div class="synth-shelf-panel" id="synthShelfPanel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0; color: var(--brand-primary); font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Loaded Synths</h3>
+            <button id="btnClearSynths" style="padding: 4px 10px; font-size: 10px; background: rgba(255,0,0,0.2); border: 1px solid rgba(255,0,0,0.3); color: #ff6666; border-radius: 3px; cursor: pointer;">Clear All</button>
+        </div>
+        <div id="synthList" style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="color: var(--text-secondary); font-size: 12px; padding: 20px; text-align: center;">
+                No synths loaded yet.<br>Play a pattern to load synths.
+            </div>
+        </div>
+    </div>
+
+    <!-- Synth Detail Panel -->
+    <div class="synth-detail-overlay" id="synthDetailOverlay"></div>
+    <div class="synth-detail-panel" id="synthDetailPanel">
+        <div class="modal-header">
+            <h2 id="synthDetailName">Synth</h2>
+            <button class="modal-close" id="synthDetailClose">×</button>
+        </div>
+        <div class="modal-body" id="synthDetailParams" style="overflow-y: auto;">
+            <!-- Parameters will be populated here -->
         </div>
     </div>
 
@@ -208,6 +462,20 @@
         </div>
     </div>
 
+    <!-- Save Preset Modal -->
+    <div class="modal-overlay" id="savePresetOverlay"></div>
+    <div class="modal" id="savePresetModal">
+        <div class="modal-header">
+            <h2>Save Preset</h2>
+            <button class="modal-close" id="savePresetClose">×</button>
+        </div>
+        <div class="modal-body">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Preset Name</label>
+            <input type="text" id="presetNameInput" style="width: 100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; margin-bottom: 15px;">
+            <button id="btnConfirmSavePreset" class="control-btn" style="width: 100%;">Save</button>
+        </div>
+    </div>
+
     <div class="content-wrapper">
         <!-- Control Panel -->
         <div class="controls-panel">
@@ -215,37 +483,23 @@
             <button class="control-btn" id="btnStop">◼ Stop</button>
             <button class="control-btn" id="btnEvaluate">⚡ Evaluate (Ctrl+Enter)</button>
             <button class="control-btn" id="btnClear">✖ Clear</button>
+            <select id="presetSelect" style="padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px;">
+                <option value="">Preset</option>
+                <option value="preset2">AHX Drums</option>
+                <option value="preset3">AHX Melody</option>
+                <option value="preset4">RV Bass</option>
+                <option value="preset5">Piano Lead</option>
+            </select>
+            <button id="btnSavePreset" class="control-btn">Save Preset</button>
         </div>
 
         <!-- Code Editor -->
-        <div class="editor-container">
-            <textarea id="codeEditor">// RFXStrudel - Live Coding Testbed
-// Drums: rg909, rgahxdrum
-// Synths: rgahxsynth, rgsidsynth, rgresonate1, rvbass, rvkeys, rg1piano
-
-stack(
-  note("36 ~ ~ ~").s("rgahxdrum"),    // Kick
-  note("~ 38 ~ 38").s("rgahxdrum")    // Snare
-).cpm(140)
-</textarea>
+        <div class="editor-container loading">
+            <textarea id="codeEditor"></textarea>
         </div>
 
-        <!-- Presets & Dynamic Parameters Panel -->
+        <!-- Dynamic Parameters Panel -->
         <div class="effects-panel">
-            <div style="display: flex; gap: 10px; align-items: center; padding: 10px; flex: 1;">
-                <label style="color: var(--text-secondary); font-size: 12px;">PRESET:</label>
-                <select id="presetSelect" style="padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; flex: 1;">
-                    <option value="">None</option>
-                    <option value="preset1">909 Techno</option>
-                    <option value="preset2">AHX Drums</option>
-                    <option value="preset3">AHX Melody</option>
-                    <option value="preset4">SID Bass</option>
-                    <option value="preset5">Piano Lead</option>
-                </select>
-                <button id="btnSavePreset" class="control-btn" style="padding: 8px 16px;">Save Preset</button>
-            </div>
-
-            <!-- Dynamic knobs will be added here by JavaScript -->
             <div id="dynamicKnobs" style="display: flex; gap: 15px; padding: 10px; overflow-x: auto; flex: 1;">
                 <div style="color: var(--text-secondary); font-size: 12px; padding: 10px;">
                     Parameters will appear here as you code...
@@ -258,7 +512,12 @@ stack(
     <script src="./codemirror/codemirror.js"></script>
     <script src="./codemirror/mode/javascript/javascript.js"></script>
     <script src="./strudel-web.js"></script>
+    <script src="../replugged/synth-registry.js"></script>
     <script type="module" src="../replugged/components/pad-knob.js"></script>
+    <!-- Synth UI Components -->
+    <script type="module" src="../replugged/components/synth-ui-base.js"></script>
+    <script type="module" src="../replugged/components/rvbass-ui.js"></script>
+    <script type="module" src="../replugged/components/rvkeys-ui.js"></script>
     <script type="module" src="app.js"></script>
 </body>
 </html>

@@ -124,7 +124,7 @@ class RVBassSynth {
             // Load and register AudioWorklet processor (only once per AudioContext)
             if (!this.audioContext._synthWorkletLoaded) {
                 await this.audioContext.audioWorklet.addModule(
-                    window.location.pathname.includes('/synths/')
+                    window.location.pathname.includes('/rfxsynths')
                         ? '../replugged/worklets/synth-worklet-processor.js?v=203'
                         : 'replugged/worklets/synth-worklet-processor.js?v=203'
                 );
@@ -197,8 +197,8 @@ class RVBassSynth {
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rvbass.js`),
-                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rvbass.wasm`)
+                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rvbass.js`),
+                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rvbass.wasm`)
             ]);
 
             // Check if responses are OK
@@ -339,7 +339,7 @@ if (typeof SynthRegistry !== 'undefined') {
     SynthRegistry.register({
         id: 'rvbass',
         name: 'RV Bass',
-        displayName: 'RV Bass - Voltakt Bass',
+        displayName: 'Regroove Voltakt Bass',
         description: 'Monophonic bass synthesizer with 3 stacked VCOs, resonant filter, and individual oscillator pitch control',
         engineId: 101,  // Unique engine ID for RV Bass
         class: RVBassSynth,

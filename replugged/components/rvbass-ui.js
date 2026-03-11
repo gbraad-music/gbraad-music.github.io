@@ -1,6 +1,8 @@
 // RV Bass UI Component - Simplified Bass Synth Controls
 // Sections: VCF, LFO, EG, VCO (3 oscillators with pitch and mute), Volume
 
+import { setupParameterSync, cleanupParameterSync, emitParameterChange } from './synth-ui-base.js';
+
 class RVBassUI extends HTMLElement {
     constructor() {
         super();
@@ -12,6 +14,42 @@ class RVBassUI extends HTMLElement {
     connectedCallback() {
         this.render();
         this.setupEventListeners();
+
+        // Setup generic parameter sync
+        setupParameterSync(this, {
+            13: 'cutoff',
+            14: 'resonance',
+            16: 'attack',
+            17: 'decayrelease',
+            18: 'sustain',
+            20: 'lforate'
+        });
+    }
+
+    disconnectedCallback() {
+        cleanupParameterSync(this);
+    }
+
+    // Called by setupParameterSync when external knob changes
+    updateParameter(index, value) {
+        const root = this.shadowRoot;
+
+        switch(index) {
+            case 13: // Cutoff
+                const cutoff = root.getElementById('cutoff');
+                if (cutoff) {
+                    cutoff.value = value;
+                    root.getElementById('cutoffValue').textContent = `${Math.round(value * 100)}%`;
+                }
+                break;
+            case 14: // Resonance
+                const peak = root.getElementById('peak');
+                if (peak) {
+                    peak.value = value;
+                    root.getElementById('peakValue').textContent = `${Math.round(value * 100)}%`;
+                }
+                break;
+        }
     }
 
     setSynth(synth) {
@@ -596,6 +634,20 @@ class RVBassUI extends HTMLElement {
             // Record motion if sequencer is in recording mode
             if (this.sequencer && this.sequencer.pattern.recordingMotion) {
                 this.sequencer.recordMotion(index, value);
+            }
+
+            // Emit parameter change event for knob sync (generic)
+            const paramNames = {
+                13: 'cutoff',
+                14: 'resonance',
+                16: 'attack',
+                17: 'decayrelease',
+                18: 'sustain',
+                20: 'lforate'
+            };
+            const paramName = paramNames[index];
+            if (paramName) {
+                emitParameterChange(index, paramName, value);
             }
         }
     }

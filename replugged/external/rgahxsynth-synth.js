@@ -96,7 +96,7 @@ class RGAHXSynth {
 
             // Load and register AudioWorklet processor (only once per AudioContext)
             if (!this.audioContext._synthWorkletLoaded) {
-                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/synths/') ? '../replugged/worklets/synth-worklet-processor.js?v=242' : 'replugged/worklets/synth-worklet-processor.js?v=242');
+                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/synth-worklet-processor.js?v=242' : 'replugged/worklets/synth-worklet-processor.js?v=242');
                 this.audioContext._synthWorkletLoaded = true;
             }
 
@@ -154,8 +154,8 @@ class RGAHXSynth {
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rgahxsynth.js?v=242`),
-                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rgahxsynth.wasm?v=242`)
+                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rgahxsynth.js?v=242`),
+                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rgahxsynth.wasm?v=242`)
             ]);
 
             const jsCode = await jsResponse.text();

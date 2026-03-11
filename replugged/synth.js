@@ -289,24 +289,21 @@ async function initializeSynth(engine) {
     });
   }
 
-  // Create synth based on engine parameter
-  if (engine === "rgresonate1") {
-    currentSynth = new RGResonate1Synth(audioContext);
-  } else if (engine === "rgahx") {
-    currentSynth = new RGAHXSynth(audioContext);
-  } else if (engine === "rgsid") {
-    currentSynth = new RGSIDSynth(audioContext);
-  } else if (engine === "rg1piano") {
-    currentSynth = new RG1PianoSynth(audioContext);
-  } else if (engine === "rgslicer") {
-    currentSynth = new RGSlicerSynth(audioContext);
-    slicerSynth = currentSynth; // Keep reference for WAV loading
-  } else if (engine === "rvkeys") {
-    currentSynth = new RVKeysSynth(audioContext);
-  } else if (engine === "rvbass") {
-    currentSynth = new RVBassSynth(audioContext);
-  } else {
+  // Dynamically load and create synth based on engine parameter
+  if (engine === "simple" || !engine) {
     currentSynth = new MIDIAudioSynth(audioContext);
+  } else {
+    try {
+      const SynthClass = await SynthRegistry.getSynthClass(engine);
+      currentSynth = new SynthClass(audioContext);
+      if (engine === "rgslicer") {
+        slicerSynth = currentSynth; // Keep reference for WAV loading
+      }
+    } catch (error) {
+      console.error(`[Synth Test] FATAL ERROR loading ${engine}:`, error);
+      synthStatus.innerHTML = `Synth: <span style="color: #ff3333;">ERROR</span><br><span style="color: #ff6666; font-size: 11px;">${error.message}</span>`;
+      return;
+    }
   }
 
   const initSuccess = await currentSynth.initialize();
@@ -476,7 +473,15 @@ async function initializeDrum() {
     ahxDrumSynth = null;
   }
 
-  drumSynth = new RG909Drum(audioContext);
+  try {
+    const RG909Drum = await SynthRegistry.getSynthClass('rg909');
+    drumSynth = new RG909Drum(audioContext);
+  } catch (error) {
+    synthStatus.innerHTML = `Drum: <span style="color: #ff3333;">ERROR</span><br><span style="color: #ff6666; font-size: 11px;">${error.message}</span>`;
+    console.error("[Synth Test] Failed to load RG909Drum:", error);
+    return;
+  }
+
   const initSuccess = await drumSynth.initialize();
 
   if (!initSuccess) {
@@ -542,7 +547,15 @@ async function initializeAHXDrum() {
     ahxDrumSynth = null;
   }
 
-  ahxDrumSynth = new RGAHXDrum(audioContext);
+  try {
+    const RGAHXDrum = await SynthRegistry.getSynthClass('rgahxdrum');
+    ahxDrumSynth = new RGAHXDrum(audioContext);
+  } catch (error) {
+    synthStatus.innerHTML = `Drum: <span style="color: #ff3333;">ERROR</span><br><span style="color: #ff6666; font-size: 11px;">${error.message}</span>`;
+    console.error("[Synth Test] Failed to load RGAHXDrum:", error);
+    return;
+  }
+
   const initSuccess = await ahxDrumSynth.initialize();
 
   if (!initSuccess) {
@@ -1083,9 +1096,9 @@ async function renderDrumSound(note, drumName, duration = 2.0) {
   const totalFrames = Math.floor(duration * sampleRate);
 
   // Load and patch WASM module to expose memory (same as worklet processor)
-  const jsResponse = await fetch("rfxsynths/rg909-drum.js");
+  const jsResponse = await fetch("synths/rg909-drum.js");
   const jsCode = await jsResponse.text();
-  const wasmResponse = await fetch("rfxsynths/rg909-drum.wasm");
+  const wasmResponse = await fetch("synths/rg909-drum.wasm");
   const wasmBytes = await wasmResponse.arrayBuffer();
 
   // Patch to expose wasmMemory
@@ -1603,6 +1616,7 @@ async function initializeRGSFZ() {
   }
 
   try {
+    const RGSFZSynth = await SynthRegistry.getSynthClass('rgsfz');
     sfzPlayer = new RGSFZSynth(audioContext);
     const initSuccess = await sfzPlayer.initialize();
 

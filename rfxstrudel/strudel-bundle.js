@@ -36,10 +36,82 @@ export async function initStrudel() {
 
     return {
         evaluate: async (code) => {
-            // Use eval to run Strudel code in global context
+            // Transpile labeled patterns (r:, a:, $:) to stack()
+            // This regex matches lines like "r: note(...)" or "$: s(...)"
+            const hasLabels = /^\s*[\w$]+\s*:/m.test(code);
+
+            if (hasLabels) {
+                // Convert labeled patterns to stack() syntax
+                const lines = code.split('\n');
+                const patterns = [];
+                const patternLabels = [];
+                let currentPattern = '';
+                let currentLabel = '';
+                let stackModifiers = ''; // For .bpm(), .cpm(), etc. to apply to whole stack
+
+                for (const line of lines) {
+                    const labelMatch = line.match(/^\s*([\w$]+)\s*:\s*(.+)/);
+                    if (labelMatch) {
+                        // Save previous pattern
+                        if (currentPattern) {
+                            patterns.push(currentPattern);
+                            patternLabels.push(currentLabel);
+                        }
+                        // Start new pattern
+                        currentLabel = labelMatch[1];
+                        currentPattern = labelMatch[2];
+                    } else if (currentPattern && line.trim() && !line.trim().startsWith('//')) {
+                        // Continuation of current pattern (skip comment lines)
+                        currentPattern += '\n' + line;
+                    }
+                }
+                // Save last pattern
+                if (currentPattern) {
+                    patterns.push(currentPattern);
+                    patternLabels.push(currentLabel);
+                }
+
+                // Extract tempo modifiers (.bpm, .cpm) from patterns and apply to stack
+                // Also inject pattern labels as metadata
+                const modifiedPatterns = patterns.map((p, i) => {
+                    // Check for .bpm() or .cpm() at the end
+                    const bpmMatch = p.match(/\.bpm\((\d+)\)\s*$/);
+                    const cpmMatch = p.match(/\.cpm\((\d+)\)\s*$/);
+
+                    if (bpmMatch && !stackModifiers) {
+                        stackModifiers = `.bpm(${bpmMatch[1]})`;
+                        p = p.replace(/\.bpm\(\d+\)\s*$/, ''); // Remove from pattern
+                    } else if (cpmMatch && !stackModifiers) {
+                        stackModifiers = `.cpm(${cpmMatch[1]})`;
+                        p = p.replace(/\.cpm\(\d+\)\s*$/, ''); // Remove from pattern
+                    }
+
+                    // Inject label metadata
+                    const label = patternLabels[i];
+                    if (label) {
+                        p = `(${p}).fmap(hap => ({...hap, _label: '${label}'}))`;
+                    }
+
+                    return p;
+                });
+
+                // Wrap in stack()
+                if (modifiedPatterns.length > 0) {
+                    code = `stack(\n${modifiedPatterns.join(',\n')}\n)${stackModifiers}`;
+                }
+            }
+
+            console.log('📜 Transpiled code:', code);
+
+            // Evaluate the code
             const pattern = eval(code);
+            console.log('📝 Pattern evaluated:', pattern);
             if (pattern && typeof pattern.play === 'function') {
+                console.log('▶️ Calling pattern.play()...');
                 await pattern.play();
+                console.log('✅ pattern.play() completed');
+            } else {
+                console.warn('⚠️ No pattern or no play method:', pattern);
             }
         },
         start: () => {

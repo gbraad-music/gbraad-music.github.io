@@ -42,7 +42,7 @@ class RGResonate1Synth {
 
             // Load and register AudioWorklet processor (with cache-busting)
             if (!this.audioContext._synthWorkletLoaded) {
-                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/synths/') ? '../replugged/worklets/synth-worklet-processor.js?v=184' : 'replugged/worklets/synth-worklet-processor.js?v=184');
+                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/synth-worklet-processor.js?v=184' : 'replugged/worklets/synth-worklet-processor.js?v=184');
                 this.audioContext._synthWorkletLoaded = true;
             }
 
@@ -90,8 +90,8 @@ class RGResonate1Synth {
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rgresonate1.js`),
-                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rgresonate1.wasm`)
+                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rgresonate1.js`),
+                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rgresonate1.wasm`)
             ]);
 
             const jsCode = await jsResponse.text();
@@ -313,4 +313,22 @@ class RGResonate1Synth {
             }
         }
     }
+}
+
+// Register synth in registry (auto-discovery)
+if (typeof window !== "undefined" && window.SynthRegistry) {
+    window.SynthRegistry.register({
+        id: 'rgresonate1',
+        name: 'RGResonate1',
+        displayName: 'RGResonate1 - Resonance Synthesizer',
+        description: 'Resonance-based synthesizer',
+        engineId: 0,
+        class: RGResonate1Synth,
+        wasmFiles: {
+            js: 'synths/rgresonate1-synth.js',
+            wasm: 'synths/rgresonate1-synth.wasm'
+        },
+        category: 'synthesizer',
+        getParameterInfo: RGResonate1Synth.getParameterInfo
+    });
 }

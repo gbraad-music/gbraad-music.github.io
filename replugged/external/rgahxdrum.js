@@ -38,7 +38,7 @@ class RGAHXDrum {
             console.log('[RGAHXDrum] Audio graph connected: worklet → masterGain → speakerGain → destination');
 
             // Load and register AudioWorklet processor (reuse drum worklet)
-            await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/synths/') ? '../replugged/worklets/drum-worklet-processor.js' : 'replugged/worklets/drum-worklet-processor.js');
+            await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/drum-worklet-processor.js' : 'replugged/worklets/drum-worklet-processor.js');
 
             // Create worklet node with custom name
             this.workletNode = new AudioWorkletNode(this.audioContext, 'drum-worklet-processor');
@@ -75,8 +75,8 @@ class RGAHXDrum {
             // Fetch both JS glue code and WASM binary (cache-busting with timestamp)
             const timestamp = Date.now();
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rgahxdrum.js?t=${timestamp}`),
-                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rgahxdrum.wasm?t=${timestamp}`)
+                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rgahxdrum.js?t=${timestamp}`),
+                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rgahxdrum.wasm?t=${timestamp}`)
             ]);
 
             const jsCode = await jsResponse.text();
@@ -189,4 +189,27 @@ class RGAHXDrum {
             }
         }
     }
+}
+
+// Register synth in registry (auto-discovery)
+console.log('[RGAHXDrum] Script executing, SynthRegistry:', typeof SynthRegistry, 'window.SynthRegistry:', typeof window.SynthRegistry);
+if (typeof window !== 'undefined' && window.SynthRegistry) {
+    console.log('[RGAHXDrum] Registering with SynthRegistry');
+    window.SynthRegistry.register({
+        id: 'rgahxdrum',
+        name: 'RGAHXDrum',
+        displayName: 'RGAHX Drum - Amiga AHX Drums',
+        description: 'Amiga AHX-style drum machine',
+        engineId: 11,
+        class: RGAHXDrum,
+        wasmFiles: {
+            js: 'synths/rgahxdrum.js',
+            wasm: 'synths/rgahxdrum.wasm'
+        },
+        category: 'drum',
+        getParameterInfo: () => []
+    });
+    console.log('[RGAHXDrum] Registration complete');
+} else {
+    console.error('[RGAHXDrum] Cannot register - window.SynthRegistry not available');
 }

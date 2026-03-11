@@ -66,6 +66,10 @@ class PadKnob extends HTMLElement {
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
                     text-align: center;
+                    max-width: 100%;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
                 }
 
                 /* Larger labels in fullscreen */

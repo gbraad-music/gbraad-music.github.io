@@ -12,7 +12,7 @@ class SynthUI extends HTMLElement {
         this.isUpdatingFromPreset = false; // Flag to prevent feedback loops
     }
 
-    connectedCallback() {
+    async connectedCallback() {
         const synthId = this.getAttribute('synth');
         if (!synthId) {
             console.error('[SynthUI] Missing "synth" attribute');
@@ -21,9 +21,24 @@ class SynthUI extends HTMLElement {
 
         console.log(`[SynthUI] Component connected for synth: ${synthId}`);
 
+        // Check if synth is already in registry
         this.synth = SynthRegistry.get(synthId);
+
+        // If not found, try to load it dynamically
         if (!this.synth) {
-            console.error(`[SynthUI] Synth '${synthId}' not found in registry`);
+            try {
+                console.log(`[SynthUI] Loading synth class for: ${synthId}`);
+                await SynthRegistry.getSynthClass(synthId);
+                // After loading, the synth should auto-register itself
+                this.synth = SynthRegistry.get(synthId);
+            } catch (error) {
+                console.error(`[SynthUI] Failed to load synth '${synthId}':`, error);
+                return;
+            }
+        }
+
+        if (!this.synth) {
+            console.error(`[SynthUI] Synth '${synthId}' not found in registry after loading`);
             console.log('[SynthUI] Available synths:', SynthRegistry.getIds());
             return;
         }

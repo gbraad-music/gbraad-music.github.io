@@ -132,7 +132,7 @@ class RVKeysSynth {
             // Load and register AudioWorklet processor (only once per AudioContext)
             if (!this.audioContext._synthWorkletLoaded) {
                 await this.audioContext.audioWorklet.addModule(
-                    window.location.pathname.includes('/synths/')
+                    window.location.pathname.includes('/rfxsynths')
                         ? '../replugged/worklets/synth-worklet-processor.js?v=203'
                         : 'replugged/worklets/synth-worklet-processor.js?v=203'
                 );
@@ -205,8 +205,8 @@ class RVKeysSynth {
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rvkeys.js`),
-                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rvkeys.wasm`)
+                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rvkeys.js`),
+                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rvkeys.wasm`)
             ]);
 
             // Check if responses are OK
@@ -347,7 +347,7 @@ if (typeof SynthRegistry !== 'undefined') {
     SynthRegistry.register({
         id: 'rvkeys',
         name: 'RV Keys',
-        displayName: 'RV Keys - Voltakt Keys',
+        displayName: 'Regroove Voltakt Keys',
         description: 'Polyphonic analog modeling synthesizer with 3 VCOs, resonant filter, LFO, and voice modes',
         engineId: 100,  // Unique engine ID for RV Keys
         class: RVKeysSynth,

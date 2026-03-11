@@ -1,0 +1,64 @@
+{
+  "synths": [
+    {
+      "id": "rgresonate1",
+      "className": "RGResonate1Synth",
+      "script": "../replugged/external/rgresonate1-synth.js",
+      "category": "synthesizer"
+    },
+    {
+      "id": "rgahx",
+      "className": "RGAHXSynth",
+      "script": "../replugged/external/rgahxsynth-synth.js",
+      "category": "synthesizer"
+    },
+    {
+      "id": "rgsid",
+      "className": "RGSIDSynth",
+      "script": "../replugged/external/rgsid-synth.js",
+      "category": "synthesizer"
+    },
+    {
+      "id": "rg1piano",
+      "className": "RG1PianoSynth",
+      "script": "../replugged/external/rg1piano-synth.js",
+      "category": "synthesizer"
+    },
+    {
+      "id": "rgslicer",
+      "className": "RGSlicerSynth",
+      "script": "../replugged/external/rgslicer-synth.js",
+      "category": "sampler"
+    },
+    {
+      "id": "rgsfz",
+      "className": "RGSFZSynth",
+      "script": "../replugged/external/rgsfz-synth.js",
+      "category": "sampler"
+    },
+    {
+      "id": "rvkeys",
+      "className": "RVKeysSynth",
+      "script": "../replugged/external/rvkeys-synth.js",
+      "category": "synthesizer"
+    },
+    {
+      "id": "rvbass",
+      "className": "RVBassSynth",
+      "script": "../replugged/external/rvbass-synth.js",
+      "category": "synthesizer"
+    },
+    {
+      "id": "rg909",
+      "className": "RG909Drum",
+      "script": "../replugged/external/rg909-drum.js",
+      "category": "drum"
+    },
+    {
+      "id": "rgahxdrum",
+      "className": "RGAHXDrum",
+      "script": "../replugged/external/rgahxdrum.js",
+      "category": "drum"
+    }
+  ]
+}

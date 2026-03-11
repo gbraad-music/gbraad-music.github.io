@@ -40,7 +40,7 @@ class RG909Drum {
             console.log('[RG909Drum] Audio graph connected: worklet → masterGain → speakerGain → destination');
 
             // Load and register AudioWorklet processor
-            await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/synths/') ? '../replugged/worklets/drum-worklet-processor.js' : 'replugged/worklets/drum-worklet-processor.js');
+            await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/drum-worklet-processor.js' : 'replugged/worklets/drum-worklet-processor.js');
 
             // Create worklet node
             this.workletNode = new AudioWorkletNode(this.audioContext, 'drum-worklet-processor');
@@ -77,8 +77,8 @@ class RG909Drum {
             // Fetch both JS glue code and WASM binary (cache-busting with timestamp)
             const timestamp = Date.now();
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rg909-drum.js?t=${timestamp}`),
-                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rg909-drum.wasm?t=${timestamp}`)
+                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rg909-drum.js?t=${timestamp}`),
+                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rg909-drum.wasm?t=${timestamp}`)
             ]);
 
             const jsCode = await jsResponse.text();
@@ -206,4 +206,27 @@ class RG909Drum {
             }
         }
     }
+}
+
+// Register synth in registry (auto-discovery)
+console.log('[RG909Drum] Script executing, window.SynthRegistry:', typeof window.SynthRegistry);
+if (typeof window !== "undefined" && window.SynthRegistry) {
+    console.log('[RG909Drum] Registering with SynthRegistry');
+    window.SynthRegistry.register({
+        id: 'rg909',
+        name: 'RG909',
+        displayName: 'RG909 - TR-909 Drum Machine',
+        description: 'Classic TR-909 drum sounds',
+        engineId: 10,
+        class: RG909Drum,
+        wasmFiles: {
+            js: 'synths/rg909-drum.js',
+            wasm: 'synths/rg909-drum.wasm'
+        },
+        category: 'drum',
+        getParameterInfo: () => []
+    });
+    console.log('[RG909Drum] Registration complete');
+} else {
+    console.error('[RG909Drum] Cannot register - window.SynthRegistry not available');
 }

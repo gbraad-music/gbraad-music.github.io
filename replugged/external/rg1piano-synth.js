@@ -40,7 +40,7 @@ class RG1PianoSynth {
 
             // Load and register AudioWorklet processor (reuse synth-worklet, with cache-busting)
             if (!this.audioContext._synthWorkletLoaded) {
-                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/synths/') ? '../replugged/worklets/synth-worklet-processor.js?v=184' : 'replugged/worklets/synth-worklet-processor.js?v=184');
+                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/synth-worklet-processor.js?v=184' : 'replugged/worklets/synth-worklet-processor.js?v=184');
                 this.audioContext._synthWorkletLoaded = true;
             }
 
@@ -88,8 +88,8 @@ class RG1PianoSynth {
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rg1piano.js`),
-                fetch(`${window.location.pathname.includes('/synths/') || window.location.pathname.includes('/rfxsynths/') ? '' : 'synths/'}rg1piano.wasm`)
+                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rg1piano.js`),
+                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rg1piano.wasm`)
             ]);
 
             const jsCode = await jsResponse.text();
@@ -190,4 +190,22 @@ class RG1PianoSynth {
             allCallbacks.forEach(cb => cb({ type: eventType, data }));
         }
     }
+}
+
+// Register synth in registry (auto-discovery)
+if (typeof window !== "undefined" && window.SynthRegistry) {
+    window.SynthRegistry.register({
+        id: 'rg1piano',
+        name: 'RG1Piano',
+        displayName: 'RG1Piano - Acoustic Piano',
+        description: 'Acoustic piano synthesizer',
+        engineId: 3,
+        class: RG1PianoSynth,
+        wasmFiles: {
+            js: 'synths/rg1piano.js',
+            wasm: 'synths/rg1piano.wasm'
+        },
+        category: 'synthesizer',
+        getParameterInfo: RG1PianoSynth.getParameterInfo
+    });
 }
