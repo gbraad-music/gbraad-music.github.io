@@ -17,6 +17,8 @@ class RFXStrudel {
         this.lastEvaluatedCode = null; // Track last evaluated code to detect changes
         this.midiInputListenerAttached = false; // Prevent duplicate event listeners
         this.midiInputConnected = false; // Track if MIDI input is connected
+        this.audioOutputListenerAttached = false; // Prevent duplicate audio output listeners
+        this.audioDevicePermissionGranted = false; // Track if we have mic permission for device enumeration
     }
 
     async init() {
@@ -466,6 +468,12 @@ class RFXStrudel {
             console.log('✅ RFX integration complete!');
             console.log('📦 Available synths:', rfx.getSynthList().join(', '));
 
+            // Restore saved audio output device
+            const savedOutputDevice = localStorage.getItem('rfxstrudel_audio_output');
+            if (savedOutputDevice) {
+                await this.setAudioOutputDevice(savedOutputDevice);
+            }
+
         } catch (error) {
             console.error('❌ Failed to initialize Strudel:', error);
             console.error(error.stack);
@@ -873,10 +881,108 @@ class RFXStrudel {
         document.getElementById('menuPanel')?.classList.remove('active');
     }
 
-    openAudioOutput() {
+    async openAudioOutput() {
         this.closeMenu();
         document.getElementById('audioOutputOverlay')?.classList.add('active');
         document.getElementById('audioOutputModal')?.classList.add('active');
+
+        // Enumerate and populate audio output devices
+        await this.updateAudioOutputDevices();
+    }
+
+    async updateAudioOutputDevices() {
+        const outputDeviceList = document.getElementById('outputDeviceList');
+        if (!outputDeviceList) return;
+
+        try {
+            // First, enumerate without permission (will show device IDs but no labels)
+            let devices = await navigator.mediaDevices.enumerateDevices();
+            let audioOutputs = devices.filter(device => device.kind === 'audiooutput');
+
+            // Check if we have labels - if first device has no label, we need permission
+            const needsPermission = audioOutputs.length > 0 && !audioOutputs[0].label;
+
+            if (needsPermission && !this.audioDevicePermissionGranted) {
+                console.log('Requesting microphone permission to access device labels...');
+                try {
+                    // Request audio permission (needed to see device labels)
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    // Stop the stream immediately, we just needed permission
+                    stream.getTracks().forEach(track => track.stop());
+                    this.audioDevicePermissionGranted = true;
+
+                    // Re-enumerate now that we have permission
+                    devices = await navigator.mediaDevices.enumerateDevices();
+                    audioOutputs = devices.filter(device => device.kind === 'audiooutput');
+                    console.log('✅ Device labels now available');
+                } catch (error) {
+                    console.warn('⚠️ Microphone permission denied - device labels will not be available:', error);
+                }
+            }
+
+            // Get saved device
+            const savedDeviceId = localStorage.getItem('rfxstrudel_audio_output');
+
+            // Clear and populate dropdown
+            outputDeviceList.innerHTML = '<option value="">Default Output</option>';
+
+            audioOutputs.forEach((device, index) => {
+                const option = document.createElement('option');
+                option.value = device.deviceId;
+                // Use label if available, otherwise use generic name
+                option.textContent = device.label || `Audio Output ${index + 1}`;
+                outputDeviceList.appendChild(option);
+            });
+
+            // Set up change listener (only once)
+            if (!this.audioOutputListenerAttached) {
+                outputDeviceList.addEventListener('change', async (e) => {
+                    const deviceId = e.target.value;
+                    await this.setAudioOutputDevice(deviceId);
+
+                    // Save selection
+                    if (deviceId) {
+                        localStorage.setItem('rfxstrudel_audio_output', deviceId);
+                    } else {
+                        localStorage.removeItem('rfxstrudel_audio_output');
+                    }
+                });
+                this.audioOutputListenerAttached = true;
+            }
+
+            // Restore saved selection
+            if (savedDeviceId && outputDeviceList.querySelector(`option[value="${savedDeviceId}"]`)) {
+                outputDeviceList.value = savedDeviceId;
+            }
+
+            console.log(`Found ${audioOutputs.length} audio output devices`);
+        } catch (error) {
+            console.error('Failed to enumerate audio devices:', error);
+            outputDeviceList.innerHTML = '<option value="">Default Output (Error)</option>';
+        }
+    }
+
+    async setAudioOutputDevice(deviceId) {
+        if (!this.audioContext) {
+            console.warn('AudioContext not available');
+            return;
+        }
+
+        try {
+            // Get the audio destination (we need to reconnect all audio nodes)
+            // Unfortunately, Web Audio API doesn't support switching output devices directly
+            // This requires using setSinkId on audio elements, but we're using AudioContext
+
+            // For AudioContext, we need to check if setSinkId is available
+            if (this.audioContext.setSinkId) {
+                await this.audioContext.setSinkId(deviceId || '');
+                console.log(`Audio output set to: ${deviceId || 'default'}`);
+            } else {
+                console.warn('setSinkId not supported - audio output switching not available in this browser');
+            }
+        } catch (error) {
+            console.error('Failed to set audio output device:', error);
+        }
     }
 
     closeAudioOutput() {
