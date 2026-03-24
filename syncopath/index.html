@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Sync pulse and MIDI Clock Synchronization Tool">
+    <meta name="theme-color" content="#CF1A37">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Syncopath">
+    <title>Regroove Syncopath</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="96x96" href="favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512x512.png">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="top-banner">
+        <button class="hamburger-button" id="hamburgerBtn">☰</button>
+        <div class="banner-title">Regroove Syncopath</div>
+    </div>
+
+    <!-- Content area with canvas -->
+    <div class="content">
+        <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+    </div>
+
+    <!-- Hamburger Menu -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+    <div class="menu-panel" id="menuPanel">
+        <button class="menu-close" id="menuClose">×</button>
+        <div class="menu-items">
+            <!-- Audio Device Selector -->
+            <div style="padding: 15px 0; margin-bottom: 10px;">
+                <label style="display: block; color: var(--text-secondary); font-size: 0.8em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Audio Output</label>
+                <select id="audioOutputDevice" class="menu-item" style="padding: 10px 15px; margin-bottom: 0; width: 100%;">
+                    <option value="">Default Output</option>
+                </select>
+            </div>
+
+            <div style="border-top: 1px solid var(--border); padding-top: 10px;">
+                <button class="menu-item" id="mainBtn">Main</button>
+                <button class="menu-item" id="fxBtn">BPM FX</button>
+                <button class="menu-item" id="settingsBtn">Settings</button>
+                <button class="menu-item" id="aboutBtn">About / Credits</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- About/Credits Modal -->
+    <div class="modal-overlay" id="aboutOverlay"></div>
+    <div class="modal" id="aboutModal">
+        <div class="modal-header">
+            <h2>About Regroove Syncopath</h2>
+            <button class="modal-close" id="aboutClose">×</button>
+        </div>
+        <div class="modal-body">
+            <h3>Regroove Syncopath</h3>
+            <p>MIDI Clock Synchronization Tool</p>
+            <p style="margin-top: 20px; font-size: 0.9em; color: #999;">
+                Created by Gerard Braad &lt;me@gbraad.nl&gt;
+            </p>
+        </div>
+    </div>
+
+    <script type='text/javascript'>
+        // Menu functionality
+        var menuApp = {
+            toggleMenu: function() {
+                var overlay = document.getElementById('menuOverlay');
+                var panel = document.getElementById('menuPanel');
+                overlay.classList.toggle('active');
+                panel.classList.toggle('active');
+            },
+            closeMenu: function() {
+                var overlay = document.getElementById('menuOverlay');
+                var panel = document.getElementById('menuPanel');
+                overlay.classList.remove('active');
+                panel.classList.remove('active');
+            },
+            switchView: function(viewMode) {
+                // Call C++ function to switch view
+                if (Module && Module.ccall) {
+                    try {
+                        // VIEW_MAIN = 0, VIEW_FX = 1, VIEW_SETTINGS = 2
+                        var viewModeInt = viewMode;
+                        Module.ccall('syncopath_set_view_mode', null, ['number'], [viewModeInt]);
+                    } catch(e) {
+                        console.log('View mode switch not yet available:', e);
+                    }
+                }
+                this.closeMenu();
+            },
+            showAbout: function() {
+                var overlay = document.getElementById('aboutOverlay');
+                var modal = document.getElementById('aboutModal');
+                overlay.classList.add('active');
+                modal.classList.add('active');
+                this.closeMenu();
+            },
+            closeAbout: function() {
+                var overlay = document.getElementById('aboutOverlay');
+                var modal = document.getElementById('aboutModal');
+                overlay.classList.remove('active');
+                modal.classList.remove('active');
+            }
+        };
+
+        // Store selected device ID
+        var selectedAudioDeviceId = '';
+        var micPermissionGranted = false;
+        var audioDevicesEnumerated = false;
+
+        // Request microphone permission ONCE on app load
+        function requestMicPermissionOnce() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                console.log('getUserMedia not supported');
+                return;
+            }
+
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function(stream) {
+                    // Got permission! Stop the stream immediately
+                    stream.getTracks().forEach(track => track.stop());
+                    micPermissionGranted = true;
+                    console.log('Microphone permission granted');
+                })
+                .catch(function(err) {
+                    console.log('Microphone permission denied:', err);
+                    micPermissionGranted = false;
+                });
+        }
+
+        // Enumerate audio devices (only if permission already granted)
+        function enumerateAudioDevices() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                console.log('Audio device enumeration not supported');
+                return;
+            }
+
+            // Only enumerate once
+            if (audioDevicesEnumerated) {
+                return;
+            }
+
+            // Check if we have permission before enumerating
+            if (!micPermissionGranted) {
+                console.log('No mic permission - skipping device enumeration');
+                return;
+            }
+
+            audioDevicesEnumerated = true;
+
+            navigator.mediaDevices.enumerateDevices()
+                .then(function(devices) {
+                    var audioOutputs = devices.filter(d => d.kind === 'audiooutput');
+                    var selector = document.getElementById('audioOutputDevice');
+
+                    selector.innerHTML = '<option value="">Default Output</option>';
+
+                    audioOutputs.forEach(function(device) {
+                        var option = document.createElement('option');
+                        option.value = device.deviceId;
+                        option.textContent = device.label || 'Audio Output ' + selector.options.length;
+                        selector.appendChild(option);
+                    });
+
+                    // Restore previously selected device
+                    if (selectedAudioDeviceId) {
+                        selector.value = selectedAudioDeviceId;
+                    }
+
+                    console.log('Found ' + audioOutputs.length + ' audio output devices');
+                })
+                .catch(function(err) {
+                    console.error('Failed to enumerate devices:', err);
+                });
+        }
+
+        // Set up menu event listeners
+        document.getElementById('hamburgerBtn').addEventListener('click', function() {
+            menuApp.toggleMenu();
+            enumerateAudioDevices();
+        });
+
+        document.getElementById('menuClose').addEventListener('click', function() {
+            menuApp.closeMenu();
+        });
+
+        document.getElementById('menuOverlay').addEventListener('click', function() {
+            menuApp.closeMenu();
+        });
+
+        // View buttons
+        document.getElementById('mainBtn').addEventListener('click', function() {
+            menuApp.switchView(0); // VIEW_MAIN
+        });
+
+        document.getElementById('fxBtn').addEventListener('click', function() {
+            menuApp.switchView(1); // VIEW_FX
+        });
+
+        document.getElementById('settingsBtn').addEventListener('click', function() {
+            menuApp.switchView(2); // VIEW_SETTINGS
+        });
+
+        document.getElementById('aboutBtn').addEventListener('click', function() {
+            menuApp.showAbout();
+        });
+
+        // About modal close handlers
+        document.getElementById('aboutClose').addEventListener('click', function() {
+            menuApp.closeAbout();
+        });
+
+        document.getElementById('aboutOverlay').addEventListener('click', function() {
+            menuApp.closeAbout();
+        });
+
+        // Intercept AudioContext creation to capture it for device switching
+        var originalAudioContext = window.AudioContext || window.webkitAudioContext;
+        window.syncopathAudioContext = null;
+
+        window.AudioContext = function() {
+            var ctx = new originalAudioContext();
+            window.syncopathAudioContext = ctx;
+            console.log('Captured AudioContext:', ctx);
+            return ctx;
+        };
+        window.AudioContext.prototype = originalAudioContext.prototype;
+
+        if (window.webkitAudioContext) {
+            window.webkitAudioContext = window.AudioContext;
+        }
+
+        // Handle audio output device selection
+        document.getElementById('audioOutputDevice').addEventListener('change', async function(e) {
+            const deviceId = e.target.value || '';
+            selectedAudioDeviceId = deviceId;  // Save selection
+
+            try {
+                var audioCtx = window.syncopathAudioContext;
+
+                if (!audioCtx) {
+                    console.warn('AudioContext not found - audio may not be initialized yet');
+                    return;
+                }
+
+                if (typeof audioCtx.setSinkId === 'function') {
+                    await audioCtx.setSinkId(deviceId);
+                    console.log('Audio output changed to:', e.target.options[e.target.selectedIndex].text);
+                } else {
+                    console.warn('setSinkId not supported in this browser');
+                }
+            } catch (error) {
+                console.error('Failed to change audio output device:', error);
+            }
+        });
+
+        var Module = {
+            canvas: document.getElementById('canvas'),
+            setStatus: function(text) {},
+            monitorRunDependencies: function(left) {}
+        };
+
+        // Force canvas resize on load + request mic permission ONCE
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                window.dispatchEvent(new Event('resize'));
+            }, 100);
+
+            // Request microphone permission ONCE on app load
+            requestMicPermissionOnce();
+        });
+
+        // Register service worker for PWA support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('./service-worker.js').then(
+                    function(registration) {
+                        console.log('ServiceWorker registered:', registration.scope);
+                    },
+                    function(err) {
+                        console.log('ServiceWorker registration failed:', err);
+                    }
+                );
+            });
+        }
+    </script>
+    <script async type="text/javascript" src="syncopath.js"></script>
+</body>
+</html>
