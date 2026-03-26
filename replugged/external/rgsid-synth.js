@@ -407,7 +407,7 @@ class RGSIDSynth {
 
     async loadUserPresets() {
         try {
-            const response = await fetch('data/sid_user_presets.txt');
+            const response = await fetch('../data/sid_user_presets.txt');
             if (!response.ok) {
                 console.log('[RGSIDSynth] No user presets found (data/sid_user_presets.txt)');
                 return;
