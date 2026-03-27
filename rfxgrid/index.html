@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RegrooveFX Grid</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="top-banner">
+        <button class="hamburger-button" id="hamburgerBtn">☰</button>
+        <div class="banner-title">RegrooveFX Grid</div>
+    </div>
+
+    <!-- Hamburger Menu -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+    <div class="menu-panel" id="menuPanel">
+        <button class="menu-close" id="menuClose">×</button>
+        <div class="menu-items">
+            <div class="menu-section-title">File</div>
+            <button class="menu-item" id="loadJsonBtn">📁 Load Grid JSON</button>
+            <button class="menu-item" id="loadPresetBtn">📁 Load .bwpreset (WASM)</button>
+            <input type="file" id="jsonFile" accept=".json" style="display: none;">
+            <input type="file" id="presetFile" accept=".bwpreset" style="display: none;">
+            <div id="fileLabel" style="color: var(--text-secondary); font-size: 0.85em; padding: 10px 15px;">No file loaded</div>
+        </div>
+    </div>
+
+    <div class="grid-container">
+        <svg class="connections-svg" id="connectionsSvg">
+            <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <polygon points="0 0, 10 3, 0 6" class="connection-marker" />
+                </marker>
+            </defs>
+        </svg>
+        <div class="grid-canvas" id="gridCanvas"></div>
+    </div>
+
+    <script type="module" src="grid-viz.js"></script>
+</body>
+</html>
