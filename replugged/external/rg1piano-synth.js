@@ -30,17 +30,15 @@ class RG1PianoSynth {
             this.masterGain.gain.value = 1.0;
 
             // Speaker output (can be toggled on/off)
+            // Note: Don't auto-connect to destination - let external code route via connect()
             this.speakerGain = this.audioContext.createGain();
-            this.speakerGain.gain.value = 0; // Start muted
-            this.speakerGain.connect(this.audioContext.destination);
+            this.speakerGain.gain.value = 1.0; // Default enabled for direct usage
 
-            // Audio graph: worklet → masterGain → speakerGain → destination
-            this.masterGain.connect(this.speakerGain);
-            console.log('[RG1Piano] Audio graph connected: worklet → masterGain → speakerGain → destination');
+            // Audio graph will be: worklet → masterGain → (external via connect())
 
             // Load and register AudioWorklet processor (reuse synth-worklet, with cache-busting)
             if (!this.audioContext._synthWorkletLoaded) {
-                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/synth-worklet-processor.js?v=184' : 'replugged/worklets/synth-worklet-processor.js?v=184');
+                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/synth-worklet-processor.js?v=210' : '../replugged/worklets/synth-worklet-processor.js?v=210');
                 this.audioContext._synthWorkletLoaded = true;
             }
 
@@ -61,9 +59,9 @@ class RG1PianoSynth {
                     // Process any pending notes
                     for (const note of this.pendingNotes) {
                         if (note.type === 'on') {
-                            this.handleNoteOn(note.note, note.velocity);
+                            this.noteOn(note.note, note.velocity);
                         } else {
-                            this.handleNoteOff(note.note);
+                            this.noteOff(note.note);
                         }
                     }
                     this.pendingNotes = [];
@@ -86,10 +84,13 @@ class RG1PianoSynth {
         try {
             console.log('[RG1Piano] Loading WASM...');
 
+            // Determine WASM path: either in /rfxsynths/ or accessing ../rfxsynths/
+            const wasmPath = window.location.pathname.includes('/rfxsynths/') ? '' : '../rfxsynths/';
+
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rg1piano.js`),
-                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rg1piano.wasm`)
+                fetch(`${wasmPath}rg1piano.js`),
+                fetch(`${wasmPath}rg1piano.wasm`)
             ]);
 
             const jsCode = await jsResponse.text();
@@ -111,7 +112,7 @@ class RG1PianoSynth {
         }
     }
 
-    handleNoteOn(note, velocity) {
+    noteOn(note, velocity) {
         if (!this.wasmReady) {
             this.pendingNotes.push({ type: 'on', note, velocity });
             return;
@@ -123,7 +124,7 @@ class RG1PianoSynth {
         });
     }
 
-    handleNoteOff(note) {
+    noteOff(note) {
         if (!this.wasmReady) {
             this.pendingNotes.push({ type: 'off', note });
             return;
@@ -149,6 +150,26 @@ class RG1PianoSynth {
         this.isAudible = audible;
         this.speakerGain.gain.setValueAtTime(audible ? 1.0 : 0.0, this.audioContext.currentTime);
         console.log(`[RG1Piano] Audio ${audible ? 'enabled' : 'muted'}`);
+    }
+
+    /**
+     * Connect this synth to a destination node (Web Audio API standard)
+     */
+    connect(destination) {
+        if (!this.masterGain) {
+            console.warn('[RG1Piano] Cannot connect - not initialized');
+            return destination;
+        }
+        return this.masterGain.connect(destination);
+    }
+
+    /**
+     * Disconnect this synth from all destinations
+     */
+    disconnect() {
+        if (this.masterGain) {
+            this.masterGain.disconnect();
+        }
     }
 
     destroy() {

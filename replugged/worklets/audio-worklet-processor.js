@@ -6,12 +6,14 @@ class WasmEffectsProcessor extends AudioWorkletProcessor {
         super();
         this.wasmModule = null;
         this.effects = new Map();
+        this.specialFilters = new Map(); // MS-20 and 700S loaded separately
         this.audioBufferPtr = null;
         this.bufferSize = 8192;
         this.lastFrame = [0, 0]; // Store last frame to prevent clicks
         this.dcBlockerX = [0, 0]; // Previous input for DC blocker
         this.dcBlockerY = [0, 0]; // Previous output for DC blocker
         this.peakLevelFrameCounter = 0; // Counter for peak level polling
+        this.processCallCount = 0; // Debug: count process() calls
 
         this.port.onmessage = this.handleMessage.bind(this);
 
@@ -24,6 +26,8 @@ class WasmEffectsProcessor extends AudioWorkletProcessor {
 
         if (type === 'wasmBytes') {
             this.initWasm(data);  // Just the bytes, not JS code
+        } else if (type === 'specialFilterBytes') {
+            this.initSpecialFilter(data);  // MS-20 or 700S filter module
         } else if (type === 'toggle') {
             this.toggleEffect(data.name, data.enabled);
         } else if (type === 'setParam') {
@@ -39,6 +43,7 @@ class WasmEffectsProcessor extends AudioWorkletProcessor {
     async initWasm(wasmData) {
         try {
             console.log('[Worklet] Loading Emscripten module...');
+            console.log('[Worklet] WASM size:', (wasmData.wasmBytes.byteLength / 1024).toFixed(1), 'KB');
 
             const moduleCode = wasmData.jsCode;
             const wasmBytes = wasmData.wasmBytes;
@@ -74,6 +79,90 @@ class WasmEffectsProcessor extends AudioWorkletProcessor {
             console.log('[Worklet] ✅ Ready!');
         } catch (error) {
             console.error('[Worklet] ❌ Failed:', error);
+            this.port.postMessage({ type: 'error', error: error.message });
+        }
+    }
+
+    async initSpecialFilter(wasmData) {
+        try {
+            const { name, jsCode, wasmBytes } = wasmData;
+            console.log(`[Worklet] Loading special filter: ${name}...`);
+
+            // Eval the Emscripten loader
+            const modifiedCode = jsCode.replace(
+                ';return moduleRtn',
+                ';globalThis.__wasmMemory_' + name + '=wasmMemory;return moduleRtn'
+            );
+
+            eval(modifiedCode + '\nglobalThis.__filterModule_' + name + ' = ' + wasmData.moduleName + ';');
+
+            // Call the factory with WASM bytes
+            const moduleFactory = globalThis['__filterModule_' + name];
+            delete globalThis['__filterModule_' + name];
+
+            const module = await moduleFactory({
+                wasmBinary: wasmBytes
+            });
+
+            // Create filter instance based on type
+            let filterPtr, filterConfig;
+            if (name === 'ms20_hp_filter') {
+                filterPtr = module._ms20_create();
+                module._ms20_set_sample_rate(filterPtr, globalThis.sampleRate || 48000);
+                // Set safe defaults (wide open HP filter)
+                module._ms20_set_mode(filterPtr, 1); // HP mode (MS-20 HP Filter)
+                module._ms20_set_cutoff(filterPtr, 20.0); // Low cutoff (pass everything for HPF)
+                module._ms20_set_resonance(filterPtr, 0.5); // Minimal resonance
+                module._ms20_set_drive(filterPtr, 1.0); // Unity drive
+                filterConfig = {
+                    ptr: filterPtr,
+                    module: module,
+                    name: 'ms20_hp_filter',
+                    prefix: '_ms20',
+                    enabled: false,
+                    memory: globalThis['__wasmMemory_' + name]
+                };
+            } else if (name === 'ms20_lp_filter') {
+                filterPtr = module._ms20_create();
+                module._ms20_set_sample_rate(filterPtr, globalThis.sampleRate || 48000);
+                // Set safe defaults (wide open LP filter)
+                module._ms20_set_mode(filterPtr, 0); // LP mode (MS-20 LP Filter)
+                module._ms20_set_cutoff(filterPtr, 20000.0); // High cutoff (pass everything for LPF)
+                module._ms20_set_resonance(filterPtr, 0.5); // Minimal resonance
+                module._ms20_set_drive(filterPtr, 1.0); // Unity drive
+                filterConfig = {
+                    ptr: filterPtr,
+                    module: module,
+                    name: 'ms20_lp_filter',
+                    prefix: '_ms20',
+                    enabled: false,
+                    memory: globalThis['__wasmMemory_' + name]
+                };
+            } else if (name === '700s_filter') {
+                filterPtr = module._filter700s_create();
+                module._filter700s_set_sample_rate(filterPtr, globalThis.sampleRate || 48000);
+                // Set safe defaults (wide open filter)
+                module._filter700s_set_hp_cutoff(filterPtr, 20.0); // Low HP cutoff (pass everything)
+                module._filter700s_set_lp_cutoff(filterPtr, 20000.0); // High LP cutoff (pass everything)
+                module._filter700s_set_resonance(filterPtr, 0.5); // Minimal resonance
+                module._filter700s_set_brightness(filterPtr, 0.5); // Mid brightness
+                filterConfig = {
+                    ptr: filterPtr,
+                    module: module,
+                    name: '700s_filter',
+                    prefix: '_filter700s',
+                    enabled: false,
+                    memory: globalThis['__wasmMemory_' + name]
+                };
+            }
+
+            this.specialFilters.set(name, filterConfig);
+            delete globalThis['__wasmMemory_' + name];
+
+            console.log(`[Worklet] ${name}: 0x${filterPtr.toString(16)} (disabled)`);
+            this.port.postMessage({ type: 'specialFilterReady', name: name });
+        } catch (error) {
+            console.error(`[Worklet] Special filter ${wasmData.name} failed:`, error);
             this.port.postMessage({ type: 'error', error: error.message });
         }
     }
@@ -123,25 +212,51 @@ class WasmEffectsProcessor extends AudioWorkletProcessor {
                 }
 
                 console.log(`[Worklet] ${config.name}: 0x${ptr.toString(16)} (${config.defaultEnabled ? 'enabled' : 'disabled'})`);
+            } else {
+                console.error(`[Worklet] ${config.name}: CREATE FUNCTION NOT FOUND! (${config.prefix}_create)`);
             }
         }
     }
 
     toggleEffect(name, enabled) {
-        const effect = this.effects.get(name);
-        if (!effect || !this.wasmModule) return;
+        // Check both regular effects and special filters
+        let effect = this.effects.get(name);
+        let isSpecial = false;
+        let module = this.wasmModule;
+
+        if (!effect) {
+            effect = this.specialFilters.get(name);
+            if (effect) {
+                isSpecial = true;
+                module = effect.module;
+            }
+        }
+
+        if (!effect || !module) {
+            console.error(`[Worklet] Effect not found: ${name}`);
+            return;
+        }
 
         // Reset filter state BEFORE changing enabled state to clear any artifacts
-        const resetFn = this.wasmModule[effect.prefix + '_reset'];
+        const resetFn = module[effect.prefix + '_reset'];
         if (resetFn) {
             resetFn(effect.ptr);
         }
 
         // Set enabled/disabled state
-        const setEnabledFn = this.wasmModule[effect.prefix + '_set_enabled'];
-        if (setEnabledFn) {
-            setEnabledFn(effect.ptr, enabled ? 1 : 0);
-            effect.enabled = enabled;
+        effect.enabled = enabled;
+
+        // IMPORTANT: Call the WASM set_enabled function for regular effects
+        if (!isSpecial) {
+            const setEnabledFn = module[effect.prefix + '_set_enabled'];
+            if (setEnabledFn) {
+                setEnabledFn(effect.ptr, enabled ? 1 : 0);
+                console.log(`[Worklet] ${name} ${enabled ? 'ENABLED' : 'DISABLED'} (called WASM function)`);
+            } else {
+                console.warn(`[Worklet] ${name} set_enabled function not found: ${effect.prefix}_set_enabled`);
+            }
+        } else {
+            console.log(`[Worklet] ${name} ${enabled ? 'ENABLED' : 'DISABLED'} (special filter)`);
         }
 
         // Reset DC blocker state when toggling to prevent clicks
@@ -150,14 +265,59 @@ class WasmEffectsProcessor extends AudioWorkletProcessor {
     }
 
     setParameter(effectName, paramName, value) {
-        const effect = this.effects.get(effectName);
-        if (!effect || !this.wasmModule) return;
+        // Check both regular effects and special filters
+        let effect = this.effects.get(effectName);
+        let module = this.wasmModule;
+        let isSpecial = false;
 
-        // Use direct function name: _fx_effectname_set_parametername
+        if (!effect) {
+            effect = this.specialFilters.get(effectName);
+            if (effect) {
+                module = effect.module;
+                isSpecial = true;
+            }
+        }
+
+        if (!effect || !module) return;
+
+        // Map UI values (0-1) to actual parameter ranges for special filters
+        let mappedValue = value;
+        if (isSpecial) {
+            if (effectName === 'ms20_hp_filter' || effectName === 'ms20_lp_filter') {
+                if (paramName === 'cutoff') {
+                    // Cutoff: 20 Hz - 20 kHz (logarithmic)
+                    mappedValue = 20.0 * Math.pow(1000.0, value);
+                } else if (paramName === 'resonance') {
+                    // Resonance: 0% = 0.5, 50% = 5.0, 100% = 10.0
+                    mappedValue = Math.max(0.5, value * 10.0);
+                } else if (paramName === 'drive') {
+                    // Drive: 0.1 - 10.0 (LINEAR)
+                    mappedValue = 0.1 + value * 9.9;
+                }
+            } else if (effectName === '700s_filter') {
+                if (paramName === 'hp_cutoff' || paramName === 'lp_cutoff') {
+                    // Cutoff: 20 Hz - 20 kHz (logarithmic)
+                    mappedValue = 20.0 * Math.pow(1000.0, value);
+                } else if (paramName === 'resonance') {
+                    // Resonance: 0.5 - 15.0 (logarithmic)
+                    mappedValue = 0.5 + (value * value) * 14.5;
+                } else if (paramName === 'brightness') {
+                    // Brightness: 0.0 - 1.0 (linear)
+                    mappedValue = value;
+                }
+            }
+        }
+
+        // Use direct function name: _prefix_set_parametername
         const funcName = effect.prefix + '_set_' + paramName;
-        const setFn = this.wasmModule[funcName];
+        const setFn = module[funcName];
         if (setFn) {
-            setFn(effect.ptr, value);
+            setFn(effect.ptr, mappedValue);
+            if (isSpecial) {
+                console.log(`[Worklet] ${funcName}(${effect.ptr}, ${mappedValue.toFixed(2)}) [UI: ${value.toFixed(3)}]`);
+            }
+        } else {
+            console.error(`[Worklet] ${funcName} NOT FOUND!`);
         }
     }
 
@@ -181,9 +341,13 @@ class WasmEffectsProcessor extends AudioWorkletProcessor {
             'stereo_widen': ['width', 'mix'],
             'ring_mod': ['frequency', 'mix'],
             'pitchshift': ['pitch', 'mix'],
-            'lofi': ['bit_depth', 'sample_rate_ratio', 'filter_cutoff', 'saturation', 'noise_level', 'wow_flutter_depth', 'wow_flutter_rate']
+            'lofi': ['bit_depth', 'sample_rate_ratio', 'filter_cutoff', 'saturation', 'noise_level', 'wow_flutter_depth', 'wow_flutter_rate'],
+            'ms20_hp_filter': ['cutoff', 'resonance', 'drive'],
+            'ms20_lp_filter': ['cutoff', 'resonance', 'drive'],
+            '700s_filter': ['hp_cutoff', 'lp_cutoff', 'resonance', 'brightness']
         };
 
+        // Get state from regular effects
         for (const [name, effect] of this.effects) {
             const params = {};
 
@@ -205,6 +369,23 @@ class WasmEffectsProcessor extends AudioWorkletProcessor {
             state.effects[name] = params;
         }
 
+        // Get state from special filters
+        for (const [name, effect] of this.specialFilters) {
+            const params = {};
+            params.enabled = effect.enabled ? 1 : 0;
+
+            // Get all parameters for this filter
+            const paramNames = effectParams[name] || [];
+            for (const paramName of paramNames) {
+                const getFn = effect.module[effect.prefix + '_get_' + paramName];
+                if (getFn) {
+                    params[paramName] = getFn(effect.ptr);
+                }
+            }
+
+            state.effects[name] = params;
+        }
+
         return state;
     }
 
@@ -217,7 +398,16 @@ class WasmEffectsProcessor extends AudioWorkletProcessor {
         console.log('[Worklet] Setting state for', Object.keys(state.effects).length, 'effects');
 
         for (const [name, params] of Object.entries(state.effects)) {
-            const effect = this.effects.get(name);
+            let effect = this.effects.get(name);
+            let isSpecial = false;
+
+            if (!effect) {
+                effect = this.specialFilters.get(name);
+                if (effect) {
+                    isSpecial = true;
+                }
+            }
+
             if (!effect) {
                 console.log('[Worklet] Effect not found:', name);
                 continue;
@@ -225,11 +415,16 @@ class WasmEffectsProcessor extends AudioWorkletProcessor {
 
             // Set enabled state
             if (params.enabled !== undefined) {
-                const setEnabledFn = this.wasmModule[effect.prefix + '_set_enabled'];
-                if (setEnabledFn) {
-                    setEnabledFn(effect.ptr, params.enabled);
-                    effect.enabled = params.enabled !== 0;  // CRITICAL: Update JS property too!
-                    console.log('[Worklet]', name, 'enabled:', params.enabled);
+                if (isSpecial) {
+                    effect.enabled = params.enabled !== 0;
+                    console.log('[Worklet]', name, 'enabled:', params.enabled, '(special)');
+                } else {
+                    const setEnabledFn = this.wasmModule[effect.prefix + '_set_enabled'];
+                    if (setEnabledFn) {
+                        setEnabledFn(effect.ptr, params.enabled);
+                        effect.enabled = params.enabled !== 0;
+                        console.log('[Worklet]', name, 'enabled:', params.enabled);
+                    }
                 }
             }
 
@@ -258,7 +453,41 @@ class WasmEffectsProcessor extends AudioWorkletProcessor {
             return true;
         }
 
+        // Debug: Log first few process() calls
+        this.processCallCount++;
+        if (this.processCallCount <= 3) {
+            console.log(`[Worklet] process() called #${this.processCallCount}, frames:`, input[0].length);
+        }
+
         const frames = input[0].length;
+        const inputL = input[0];
+        const inputR = input[1] || input[0];
+
+        // Check if any effects are actually enabled
+        let hasEnabledEffects = false;
+        for (const [name, effect] of this.effects) {
+            if (effect.enabled) {
+                hasEnabledEffects = true;
+                break;
+            }
+        }
+        for (const [name, filter] of this.specialFilters) {
+            if (filter.enabled) {
+                hasEnabledEffects = true;
+                break;
+            }
+        }
+
+        // If no effects enabled, pass through directly (bypass WASM)
+        if (!hasEnabledEffects) {
+            const outputL = output[0];
+            const outputR = output[1] || output[0];
+            for (let i = 0; i < frames; i++) {
+                outputL[i] = inputL[i];
+                outputR[i] = inputR[i];
+            }
+            return true;
+        }
 
         // Update heap view - access memory through captured wasmMemory
         const heapF32 = new Float32Array(
@@ -267,10 +496,7 @@ class WasmEffectsProcessor extends AudioWorkletProcessor {
             frames * 2
         );
 
-        // Interleave input with DC blocker
-        const inputL = input[0];
-        const inputR = input[1] || input[0];
-
+        // Interleave input
         for (let i = 0; i < frames; i++) {
             heapF32[i * 2] = inputL[i];
             heapF32[i * 2 + 1] = inputR[i];
@@ -293,57 +519,53 @@ class WasmEffectsProcessor extends AudioWorkletProcessor {
             }
         }
 
-        // De-interleave output with soft clipping and DC removal
+        // Process through enabled special filters
+        for (const [name, filter] of this.specialFilters) {
+            if (filter.enabled) {
+                // Special filters use stereo processing with separate L/R buffers
+                if (!filter.leftBufferPtr) {
+                    filter.leftBufferPtr = filter.module._malloc(this.bufferSize * 4);
+                    filter.rightBufferPtr = filter.module._malloc(this.bufferSize * 4);
+                    console.log(`[Worklet] ${name} allocated buffers: L=0x${filter.leftBufferPtr.toString(16)} R=0x${filter.rightBufferPtr.toString(16)}`);
+                }
+
+                // IMPORTANT: Recreate views each time to handle potential memory growth
+                const filterMemory = filter.module.memory || filter.memory;
+                const leftHeap = new Float32Array(filterMemory.buffer, filter.leftBufferPtr, frames);
+                const rightHeap = new Float32Array(filterMemory.buffer, filter.rightBufferPtr, frames);
+
+                // De-interleave to separate buffers
+                for (let i = 0; i < frames; i++) {
+                    leftHeap[i] = heapF32[i * 2];
+                    rightHeap[i] = heapF32[i * 2 + 1];
+                }
+
+                // Process stereo
+                const processFn = filter.module[filter.prefix + '_process_stereo'];
+                if (processFn) {
+                    console.log(`[Worklet] ${name} processing ${frames} frames via ${filter.prefix}_process_stereo`);
+                    processFn(filter.ptr, filter.leftBufferPtr, filter.rightBufferPtr,
+                             filter.leftBufferPtr, filter.rightBufferPtr, frames);
+
+                    // Re-interleave back
+                    for (let i = 0; i < frames; i++) {
+                        heapF32[i * 2] = leftHeap[i];
+                        heapF32[i * 2 + 1] = rightHeap[i];
+                    }
+                } else {
+                    console.error(`[Worklet] ${name} process function NOT FOUND: ${filter.prefix}_process_stereo`);
+                }
+            }
+        }
+
+        // De-interleave output
         const outputL = output[0];
         const outputR = output[1] || output[0];
 
-        const alpha = 0.995; // DC blocker coefficient
-
-        // Track stereo peaks while de-interleaving
-        let leftPeak = 0;
-        let rightPeak = 0;
-
+        // Simple de-interleave - WASM effects handle clipping internally
         for (let i = 0; i < frames; i++) {
-            let l = heapF32[i * 2];
-            let r = heapF32[i * 2 + 1];
-
-            // Only soft clip if signal is actually clipping (> 1.0)
-            if (Math.abs(l) > 1.0) {
-                l = Math.sign(l) * Math.tanh(Math.abs(l));
-            }
-            if (Math.abs(r) > 1.0) {
-                r = Math.sign(r) * Math.tanh(Math.abs(r));
-            }
-
-            outputL[i] = l;
-            outputR[i] = r;
-
-            // Track peaks for VU meter
-            leftPeak = Math.max(leftPeak, Math.abs(l));
-            rightPeak = Math.max(rightPeak, Math.abs(r));
-        }
-
-        // Send stereo peaks to main thread every 128 frames (~3ms at 48kHz)
-        this.peakLevelFrameCounter += frames;
-        if (this.peakLevelFrameCounter >= 128) {
-            this.peakLevelFrameCounter = 0;
-
-            // Get TRIM peak level using direct function name
-            const trimEffect = this.effects.get('model1_trim');
-            if (trimEffect && trimEffect.enabled) {
-                const getPeakLevelFn = this.wasmModule._fx_model1_trim_get_peak_level;
-                if (getPeakLevelFn) {
-                    const peakLevel = getPeakLevelFn(trimEffect.ptr);
-                    this.port.postMessage({ type: 'peakLevel', level: peakLevel });
-                }
-            }
-
-            // Send stereo peaks for VU meter
-            this.port.postMessage({
-                type: 'stereoPeaks',
-                left: leftPeak,
-                right: rightPeak
-            });
+            outputL[i] = heapF32[i * 2];
+            outputR[i] = heapF32[i * 2 + 1];
         }
 
         return true;

@@ -127,6 +127,69 @@
             word-break: break-all;
         }
 
+        /* FX Shelf Effect Cards */
+        .fx-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            padding: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .fx-item.enabled {
+            border-color: #CF1A37;
+            box-shadow: 0 0 15px rgba(207, 26, 55, 0.3);
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, #2a1a1a 100%);
+        }
+
+        .fx-item-name {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .fx-item.enabled .fx-item-name {
+            color: #CF1A37;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            width: 50px;
+            height: 24px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: var(--text-secondary);
+            left: 2px;
+            top: 2px;
+            transition: all 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #a01528;
+            border-color: #CF1A37;
+        }
+
+        .toggle-switch.active::after {
+            left: 28px;
+            background: #CF1A37;
+        }
+
         .knob-container {
             display: flex;
             flex-direction: column;
@@ -310,17 +373,16 @@
             width: 16px;
             height: 16px;
             background: var(--brand-accent);
-            border-radius: 50%;
             cursor: pointer;
+            border: 1px solid var(--brand-accent);
         }
 
         .synth-param-slider::-moz-range-thumb {
             width: 16px;
             height: 16px;
             background: var(--brand-accent);
-            border-radius: 50%;
             cursor: pointer;
-            border: none;
+            border: 1px solid var(--brand-accent);
         }
 
         .synth-param-value {
@@ -355,6 +417,9 @@
         <div class="banner-title">RegrooveFX Strudel</div>
         <button class="synth-shelf-button" id="synthShelfBtn">
             🎹 <span id="synthCount">0</span>
+        </button>
+        <button class="synth-shelf-button" id="fxShelfBtn" style="right: 90px;">
+            🎛️ FX
         </button>
     </div>
 
@@ -404,6 +469,29 @@
             <button class="modal-close" id="synthDetailClose">×</button>
         </div>
         <div class="modal-body" id="synthDetailParams" style="overflow-y: auto;">
+            <!-- Parameters will be populated here -->
+        </div>
+    </div>
+
+    <!-- FX Shelf Panel -->
+    <div class="synth-shelf-overlay" id="fxShelfOverlay"></div>
+    <div class="synth-shelf-panel" id="fxShelfPanel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0; color: var(--brand-primary); font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Master Effects Chain</h3>
+        </div>
+        <div id="fxList" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Effects will be populated here -->
+        </div>
+    </div>
+
+    <!-- FX Detail Panel -->
+    <div class="synth-detail-overlay" id="fxDetailOverlay"></div>
+    <div class="synth-detail-panel" id="fxDetailPanel">
+        <div class="modal-header">
+            <h2 id="fxDetailName">Effect</h2>
+            <button class="modal-close" id="fxDetailClose">×</button>
+        </div>
+        <div class="modal-body" id="fxDetailParams" style="overflow-y: auto;">
             <!-- Parameters will be populated here -->
         </div>
     </div>
@@ -518,6 +606,8 @@
     <script type="module" src="../replugged/components/synth-ui-base.js"></script>
     <script type="module" src="../replugged/components/rvbass-ui.js"></script>
     <script type="module" src="../replugged/components/rvkeys-ui.js"></script>
+    <script type="module" src="../replugged/components/rgahx-ui.js"></script>
+    <script type="module" src="../replugged/components/rgsid-ui.js"></script>
     <script type="module" src="app.js"></script>
 </body>
 </html>

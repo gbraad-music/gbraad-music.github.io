@@ -210,6 +210,63 @@ class RFXLooper {
         document.getElementById('aboutClose')?.addEventListener('click', () => this.closeAbout());
         document.getElementById('aboutOverlay')?.addEventListener('click', () => this.closeAbout());
 
+        // Debug logging setup
+        const debugLog = document.getElementById('debugLog');
+        const enableLogging = document.getElementById('enableLogging');
+        const clearLogBtn = document.getElementById('clearLog');
+
+        if (enableLogging && debugLog && clearLogBtn) {
+            const originalLog = console.log;
+            const originalWarn = console.warn;
+            const originalError = console.error;
+
+            const addLogEntry = (message, type = 'log') => {
+                if (!enableLogging.checked) return;
+
+                const entry = document.createElement('div');
+                const timestamp = new Date().toLocaleTimeString();
+
+                if (type === 'error') {
+                    entry.style.color = '#ff4444';
+                } else if (type === 'warn') {
+                    entry.style.color = '#ffaa00';
+                } else {
+                    entry.style.color = '#aaa';
+                }
+
+                entry.textContent = `[${timestamp}] ${message}`;
+                debugLog.appendChild(entry);
+                debugLog.scrollTop = debugLog.scrollHeight;
+            };
+
+            console.log = function(...args) {
+                originalLog.apply(console, args);
+                addLogEntry(args.join(' '), 'log');
+            };
+
+            console.warn = function(...args) {
+                originalWarn.apply(console, args);
+                addLogEntry(args.join(' '), 'warn');
+            };
+
+            console.error = function(...args) {
+                originalError.apply(console, args);
+                addLogEntry(args.join(' '), 'error');
+            };
+
+            enableLogging.addEventListener('change', () => {
+                if (enableLogging.checked) {
+                    debugLog.style.display = 'block';
+                } else {
+                    debugLog.style.display = 'none';
+                }
+            });
+
+            clearLogBtn.addEventListener('click', () => {
+                debugLog.innerHTML = '<div style="color: #555;">Debug log</div>';
+            });
+        }
+
         // Input hotkey buttons
         for (let i = 1; i <= 4; i++) {
             document.getElementById(`inputHotkey${i}Btn`)?.addEventListener('click', () => this.selectInputHotkey(i));
@@ -456,11 +513,15 @@ class RFXLooper {
 
     async enableInput() {
         try {
+            console.log('[enableInput] Starting...');
+
             // First ensure worklet is initialized
             await this.initializeAudioWorklet();
+            console.log('[enableInput] Worklet initialized');
 
             // Get device from active hotkey
             const deviceId = this.activeInputHotkey ? this.inputHotkeys[this.activeInputHotkey] : null;
+            console.log('[enableInput] Device ID:', deviceId || 'default');
 
             // Request microphone access
             const constraints = {
@@ -472,20 +533,27 @@ class RFXLooper {
                 }
             };
 
+            console.log('[enableInput] Requesting microphone with constraints:', constraints);
+
             // Disconnect existing input if any
             if (this.inputNode) {
                 this.inputNode.disconnect();
             }
 
             this.inputStream = await navigator.mediaDevices.getUserMedia(constraints);
+            console.log('[enableInput] Got media stream:', this.inputStream);
+
             this.inputNode = this.audioContext.createMediaStreamSource(this.inputStream);
+            console.log('[enableInput] Created input node');
 
             // Connect input to worklet
             this.inputNode.connect(this.workletNode);
+            console.log('[enableInput] Connected to worklet');
 
-            console.log('Audio input enabled with device:', deviceId || 'default');
+            console.log('✅ Audio input enabled with device:', deviceId || 'default');
         } catch (error) {
-            console.error('Failed to enable audio input:', error);
+            console.error('❌ Failed to enable audio input:', error);
+            alert('Microphone access failed: ' + error.message + '\n\nPlease check permissions in your browser settings.');
         }
     }
 
@@ -719,33 +787,41 @@ class RFXLooper {
 
     recordTrack(index) {
         const currentState = this.trackStates[index];
-        console.log(`REC button track ${index}, current state: ${currentState}`);
+        console.log(`[recordTrack] Track ${index}, state: ${currentState}, inputNode: ${!!this.inputNode}, workletReady: ${this.workletReady}`);
 
         if (currentState === 1) {
             // Currently recording -> STOP recording and start playing
-            console.log(`Stopping recording on track ${index}, starting playback`);
+            // Add 200ms delay to capture the tail/release after clicking stop
+            console.log(`Stopping recording on track ${index} in 200ms (capturing tail)...`);
             if (!this.workletReady) return;
-            this.workletNode.port.postMessage({
-                type: 'trackPlay', // This will stop recording and start playing
-                track: index
-            });
+
+            setTimeout(() => {
+                this.workletNode.port.postMessage({
+                    type: 'trackPlay', // This will stop recording and start playing
+                    track: index
+                });
+                console.log(`Recording stopped on track ${index}, starting playback`);
+            }, 200);
         } else if (currentState === 2 || currentState === 3) {
             // Track has data (PLAYING or STOPPED) - cannot record over it
-            console.warn('Cannot record - track has data. Clear the track first!');
+            console.warn('❌ Cannot record - track has data. Clear the track first!');
+            alert('Cannot record - track has data. Clear the track first!');
             return;
         } else {
             // Empty (state 0) -> START recording
             // MUST have input enabled to record!
             if (!this.inputNode) {
-                console.warn('Cannot record - no input enabled. Click an IN button first!');
+                console.warn('❌ Cannot record - no input enabled. Click an IN button first!');
+                alert('Cannot record - no input enabled.\n\nPlease click an IN button first to enable microphone!');
                 return;
             }
             if (!this.workletReady) {
-                console.warn('Worklet not ready yet');
+                console.warn('❌ Worklet not ready yet');
+                alert('Audio system not ready yet. Please wait...');
                 return;
             }
 
-            console.log(`Starting recording on track ${index}`);
+            console.log(`✅ Starting recording on track ${index}`);
             this.workletNode.port.postMessage({
                 type: 'trackRecord',
                 track: index

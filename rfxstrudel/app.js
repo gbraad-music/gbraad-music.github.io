@@ -163,6 +163,11 @@ class RFXStrudel {
         document.getElementById('synthShelfOverlay')?.addEventListener('click', () => this.closeSynthShelf());
         document.getElementById('synthDetailClose')?.addEventListener('click', () => this.closeSynthDetail());
 
+        // FX Shelf UI
+        document.getElementById('fxShelfBtn')?.addEventListener('click', () => this.openFxShelf());
+        document.getElementById('fxShelfOverlay')?.addEventListener('click', () => this.closeFxShelf());
+        document.getElementById('fxDetailClose')?.addEventListener('click', () => this.closeFxDetail());
+
         // Listen for synth load events
         window.addEventListener('rfx:synthLoaded', (e) => {
             this.onSynthLoaded(e.detail);
@@ -182,12 +187,26 @@ class RFXStrudel {
 
         // Listen for parameter changes from custom UIs
         window.addEventListener('rfx:paramChanged', (e) => {
-            const { paramName, value, source } = e.detail;
+            const { paramName, value, source, instanceId } = e.detail;
 
             // Don't update knob if event came from knob (avoid loop)
             if (source === 'knob') return;
 
-            // Update all scoped knobs that match this parameter (e.g., r:cutoff, s:cutoff)
+            // If event comes from synth UI with instanceId, only update that instance's knobs
+            if (instanceId && this.currentSynthInstance && instanceId === this.currentSynthInstance.id) {
+                const label = this.currentSynthInstance.label;
+                if (label) {
+                    // Update only the scoped knob for this label
+                    const scopedName = `${label}:${paramName}`;
+                    this.updateKnobFromSlider(scopedName, value);
+                    if (window.rfxParams) {
+                        window.rfxParams[scopedName] = value;
+                    }
+                    return;
+                }
+            }
+
+            // Otherwise update all matching knobs (for non-scoped changes)
             for (const scopedName of this.dynamicKnobs.keys()) {
                 if (scopedName === paramName || scopedName.endsWith(`:${paramName}`)) {
                     this.updateKnobFromSlider(scopedName, value);
@@ -355,7 +374,7 @@ class RFXStrudel {
                 code: `// AHX Drums\nstack(\n  note("36 ~ ~ ~").s("rgahxdrum"),    // Kick\n  note("~ 38 ~ 38").s("rgahxdrum")    // Snare\n).cpm(140)`
             },
             preset3: {
-                code: `// AHX Chip Melody\nnote("c4 e4 g4 a4").s("rgahxsynth").cpm(140)`
+                code: `// AHX Chip Melody\nnote("c4 e4 g4 a4").s("rgahx").cpm(140)`
             },
             preset4: {
                 code: `// RV Bass\nnote("c2 ~ e2 ~").s("rvbass")\n  .knob("cutoff")\n  .knob("resonance")\n  .cpm(120)`
@@ -467,6 +486,9 @@ class RFXStrudel {
 
             console.log('✅ RFX integration complete!');
             console.log('📦 Available synths:', rfx.getSynthList().join(', '));
+
+            // Populate FX shelf
+            this.updateFxList();
 
             // Restore saved audio output device
             const savedOutputDevice = localStorage.getItem('rfxstrudel_audio_output');
@@ -760,12 +782,14 @@ class RFXStrudel {
             // Preload synths before evaluating to avoid delays during playback
             await rfx.preloadSynths(code);
 
-            // Only hush if code actually changed (for immediate pattern change)
-            const codeChanged = code !== this.lastEvaluatedCode;
-            if (this.isPlaying && codeChanged && window.hush) {
+            // Always hush if already playing (prevents multiple instances)
+            if (this.isPlaying && window.hush) {
                 window.hush();
                 rfx.stopAll();
             }
+
+            // Reset clock offset when starting fresh (prevents stale offset after idle)
+            rfx.resetClockOffset();
 
             // Evaluate the code with Strudel (this also starts playback via .play())
             await this.strudel.evaluate(code);
@@ -895,30 +919,17 @@ class RFXStrudel {
         if (!outputDeviceList) return;
 
         try {
-            // First, enumerate without permission (will show device IDs but no labels)
-            let devices = await navigator.mediaDevices.enumerateDevices();
-            let audioOutputs = devices.filter(device => device.kind === 'audiooutput');
-
-            // Check if we have labels - if first device has no label, we need permission
-            const needsPermission = audioOutputs.length > 0 && !audioOutputs[0].label;
-
-            if (needsPermission && !this.audioDevicePermissionGranted) {
-                console.log('Requesting microphone permission to access device labels...');
-                try {
-                    // Request audio permission (needed to see device labels)
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    // Stop the stream immediately, we just needed permission
-                    stream.getTracks().forEach(track => track.stop());
-                    this.audioDevicePermissionGranted = true;
-
-                    // Re-enumerate now that we have permission
-                    devices = await navigator.mediaDevices.enumerateDevices();
-                    audioOutputs = devices.filter(device => device.kind === 'audiooutput');
-                    console.log('✅ Device labels now available');
-                } catch (error) {
-                    console.warn('⚠️ Microphone permission denied - device labels will not be available:', error);
-                }
+            // Request permission to unlock device labels (from player.js pattern)
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+            } catch (permErr) {
+                console.warn('Could not get audio permission for device labels:', permErr);
             }
+
+            // Now enumerate devices (labels should be available)
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const audioOutputs = devices.filter(device => device.kind === 'audiooutput');
 
             // Get saved device
             const savedDeviceId = localStorage.getItem('rfxstrudel_audio_output');
@@ -926,11 +937,10 @@ class RFXStrudel {
             // Clear and populate dropdown
             outputDeviceList.innerHTML = '<option value="">Default Output</option>';
 
-            audioOutputs.forEach((device, index) => {
+            audioOutputs.forEach((device) => {
                 const option = document.createElement('option');
                 option.value = device.deviceId;
-                // Use label if available, otherwise use generic name
-                option.textContent = device.label || `Audio Output ${index + 1}`;
+                option.textContent = device.label || `Speaker ${outputDeviceList.options.length}`;
                 outputDeviceList.appendChild(option);
             });
 
@@ -1024,35 +1034,58 @@ class RFXStrudel {
         document.getElementById('synthShelfPanel')?.classList.remove('active');
     }
 
-    openSynthDetail(synthName) {
+    openSynthDetail(instanceId) {
         this.closeSynthShelf();
 
-        document.getElementById('synthDetailName').textContent = synthName.toUpperCase();
+        // Get the specific instance by ID
+        const synthInstance = rfx.getSynthById(instanceId);
+        if (!synthInstance) {
+            console.error(`Synth instance not found: ${instanceId}`);
+            return;
+        }
+
+        const synthName = synthInstance.name;
+        const label = synthInstance.label;
+
+        // Store current instance for parameter scoping
+        this.currentSynthInstance = synthInstance;
+
+        // Display name with label
+        const displayName = label ? `${label}: ${synthName}` : synthName;
+        document.getElementById('synthDetailName').textContent = displayName.toUpperCase();
         const paramsContainer = document.getElementById('synthDetailParams');
         paramsContainer.innerHTML = '';
 
         // Try to load the synth's custom UI component
         const descriptor = window.SynthRegistry?.get?.(synthName);
-        const synthInstance = rfx.getSynthByName(synthName);
 
         if (descriptor?.uiComponent) {
             // Load custom UI component
             const uiComponentName = descriptor.uiComponent;
-            console.log(`Loading UI component: ${uiComponentName}`);
+            console.log(`Loading UI component: ${uiComponentName} for instance ${instanceId}`);
 
             const uiElement = document.createElement(uiComponentName);
             if (synthInstance?.instance) {
                 uiElement.setSynth(synthInstance.instance);
+                // Set the instanceId and label so UI knows which scoped params to use
+                uiElement.setAttribute('data-instance-id', instanceId);
+                if (label) {
+                    uiElement.setAttribute('data-label', label);
+                }
             }
             paramsContainer.appendChild(uiElement);
 
-            // Sync initial values from rfxParams after UI loads
+            // Sync initial values from rfxParams for THIS label only
             setTimeout(() => {
-                if (window.rfxParams) {
-                    for (const [paramName, value] of Object.entries(window.rfxParams)) {
-                        window.dispatchEvent(new CustomEvent('rfx:paramChanged', {
-                            detail: { paramName, value, source: 'init' }
-                        }));
+                if (window.rfxParams && label) {
+                    // Only sync scoped params for this label
+                    for (const [scopedName, value] of Object.entries(window.rfxParams)) {
+                        if (scopedName.startsWith(`${label}:`)) {
+                            const paramName = scopedName.split(':')[1];
+                            window.dispatchEvent(new CustomEvent('rfx:paramChanged', {
+                                detail: { paramName, value, source: 'init', instanceId }
+                            }));
+                        }
                     }
                 }
             }, 100);
@@ -1076,7 +1109,6 @@ class RFXStrudel {
                     slider.className = 'synth-param-slider';
                     slider.min = '0';
                     slider.max = '127';
-                    slider.value = Math.round((param.default || 0.5) * 127);
 
                     // Add param name for knob sync lookup
                     const paramName = param.name?.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -1084,19 +1116,54 @@ class RFXStrudel {
                         slider.setAttribute('data-param-name', paramName);
                     }
 
+                    // Get initial value from scoped parameters if available
+                    let initialValue = param.default || 0.5;
+                    const instanceLabel = synthInstance?.label;
+                    if (paramName && instanceLabel && window.rfxParams) {
+                        const scopedName = `${instanceLabel}:${paramName}`;
+                        if (scopedName in window.rfxParams) {
+                            initialValue = window.rfxParams[scopedName];
+                        }
+                    }
+
+                    slider.value = Math.round(initialValue * 127);
+
                     const value = document.createElement('div');
                     value.className = 'synth-param-value';
-                    value.textContent = (param.default || 0.5).toFixed(2);
+                    value.textContent = initialValue.toFixed(2);
 
                     slider.addEventListener('input', () => {
                         const normalized = slider.value / 127;
                         value.textContent = normalized.toFixed(2);
-                        rfx.setSynthParameter(synthName, param.index, normalized);
 
-                        // Sync with dynamic knob if it exists
-                        if (paramName) {
+                        // Update the specific instance using the instance object
+                        if (synthInstance?.instance?.setParameter) {
+                            synthInstance.instance.setParameter(param.index, normalized);
+                        }
+
+                        // Update scoped parameter for this label
+                        const instanceLabel = synthInstance?.label;
+                        if (paramName && instanceLabel) {
+                            const scopedName = `${instanceLabel}:${paramName}`;
+                            // Update scoped knob
+                            this.updateKnobFromSlider(scopedName, normalized);
+                            // Update scoped rfxParams
+                            if (window.rfxParams) {
+                                window.rfxParams[scopedName] = normalized;
+                            }
+
+                            // Emit event for this specific instance
+                            window.dispatchEvent(new CustomEvent('rfx:paramChanged', {
+                                detail: {
+                                    paramName,
+                                    value: normalized,
+                                    source: 'ui',
+                                    instanceId: instanceId
+                                }
+                            }));
+                        } else if (paramName) {
+                            // Fallback for unlabeled instances
                             this.updateKnobFromSlider(paramName, normalized);
-                            // Also update rfxParams for pattern knobs
                             if (window.rfxParams) {
                                 window.rfxParams[paramName] = normalized;
                             }
@@ -1160,7 +1227,7 @@ class RFXStrudel {
                 <div class="synth-item-name">${firstLine}</div>
                 <div class="synth-item-id">${secondLine}</div>
             `;
-            item.addEventListener('click', () => this.openSynthDetail(synth.name));
+            item.addEventListener('click', () => this.openSynthDetail(synth.id));
             synthList.appendChild(item);
         });
     }
@@ -1171,6 +1238,164 @@ class RFXStrudel {
             const synths = rfx.getLoadedSynths();
             synthCount.textContent = synths.length;
         }
+    }
+
+    // FX Shelf UI Methods
+    openFxShelf() {
+        document.getElementById('fxShelfOverlay')?.classList.add('active');
+        document.getElementById('fxShelfPanel')?.classList.add('active');
+        this.updateFxList();
+    }
+
+    closeFxShelf() {
+        document.getElementById('fxShelfOverlay')?.classList.remove('active');
+        document.getElementById('fxShelfPanel')?.classList.remove('active');
+    }
+
+    openFxDetail(effectName) {
+        this.closeFxShelf();
+
+        const effect = rfx.getAvailableEffects().find(e => e.name === effectName);
+        if (!effect) return;
+
+        this.currentEffect = effectName;
+
+        document.getElementById('fxDetailName').textContent = `MASTER: ${effectName.toUpperCase().replace(/_/g, ' ')}`;
+        const paramsContainer = document.getElementById('fxDetailParams');
+        paramsContainer.innerHTML = '';
+
+        // Add enable/disable toggle at the top
+        const headerToggle = document.createElement('div');
+        headerToggle.style.padding = '15px';
+        headerToggle.style.borderBottom = '1px solid var(--border)';
+        headerToggle.style.display = 'flex';
+        headerToggle.style.justifyContent = 'space-between';
+        headerToggle.style.alignItems = 'center';
+
+        const toggleLabel = document.createElement('div');
+        toggleLabel.textContent = 'EFFECT ENABLED';
+        toggleLabel.style.fontSize = '11px';
+        toggleLabel.style.color = 'var(--text-secondary)';
+        toggleLabel.style.textTransform = 'uppercase';
+        toggleLabel.style.letterSpacing = '1px';
+
+        const toggleSwitch = document.createElement('div');
+        toggleSwitch.className = 'toggle-switch';
+        toggleSwitch.dataset.effect = effectName;
+
+        // Check if already enabled in the shelf
+        const shelfToggle = document.querySelector(`.toggle-switch[data-effect="${effectName}"]`);
+        const isEnabled = shelfToggle?.classList.contains('active');
+        if (isEnabled) {
+            toggleSwitch.classList.add('active');
+        }
+
+        toggleSwitch.addEventListener('click', () => {
+            const isActive = toggleSwitch.classList.contains('active');
+            const newState = !isActive;
+
+            if (newState) {
+                toggleSwitch.classList.add('active');
+            } else {
+                toggleSwitch.classList.remove('active');
+            }
+
+            rfx.toggleEffect(effectName, newState);
+        });
+
+        headerToggle.appendChild(toggleLabel);
+        headerToggle.appendChild(toggleSwitch);
+        paramsContainer.appendChild(headerToggle);
+
+        // Create sliders for each parameter (using same structure as synth detail)
+        effect.params.forEach(paramName => {
+            // Get current value directly from effect (don't auto-create in proxy)
+            const currentValue = rfx.getEffectParamValue?.(effectName, paramName) || 0.5;
+
+            const item = document.createElement('div');
+            item.className = 'synth-param-item';
+
+            const label = document.createElement('div');
+            label.className = 'synth-param-label';
+            label.textContent = paramName.toUpperCase().replace(/_/g, ' ');
+
+            const slider = document.createElement('input');
+            slider.type = 'range';
+            slider.className = 'synth-param-slider';
+            slider.min = '0';
+            slider.max = '127';
+            slider.value = Math.round(currentValue * 127);
+
+            const value = document.createElement('div');
+            value.className = 'synth-param-value';
+            value.textContent = currentValue.toFixed(2);
+
+            slider.addEventListener('input', () => {
+                const normalized = slider.value / 127;
+                value.textContent = normalized.toFixed(2);
+
+                // Directly call setEffectParam without triggering proxy (no knob creation)
+                rfx.setEffectParam(effectName, paramName, normalized);
+            });
+
+            item.appendChild(label);
+            item.appendChild(slider);
+            item.appendChild(value);
+            paramsContainer.appendChild(item);
+        });
+
+        document.getElementById('fxDetailOverlay')?.classList.add('active');
+        document.getElementById('fxDetailPanel')?.classList.add('active');
+    }
+
+    closeFxDetail() {
+        document.getElementById('fxDetailOverlay')?.classList.remove('active');
+        document.getElementById('fxDetailPanel')?.classList.remove('active');
+        this.currentEffect = null;
+        this.updateFxList();
+    }
+
+    updateFxList() {
+        const fxList = document.getElementById('fxList');
+        if (!fxList) return;
+
+        const effects = rfx.getAvailableEffects();
+        fxList.innerHTML = '';
+
+        effects.forEach(effect => {
+            const item = document.createElement('div');
+            item.className = 'fx-item';
+            item.dataset.effect = effect.name;
+
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'fx-item-name';
+            nameDiv.textContent = effect.name.toUpperCase().replace(/_/g, ' ');
+            nameDiv.addEventListener('click', () => this.openFxDetail(effect.name));
+
+            const toggleSwitch = document.createElement('div');
+            toggleSwitch.className = 'toggle-switch';
+            toggleSwitch.dataset.effect = effect.name;
+
+            toggleSwitch.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isActive = toggleSwitch.classList.contains('active');
+                const newState = !isActive;
+
+                if (newState) {
+                    toggleSwitch.classList.add('active');
+                    item.classList.add('enabled');
+                } else {
+                    toggleSwitch.classList.remove('active');
+                    item.classList.remove('enabled');
+                }
+
+                rfx.toggleEffect(effect.name, newState);
+            });
+
+            item.appendChild(nameDiv);
+            item.appendChild(toggleSwitch);
+            fxList.appendChild(item);
+        });
     }
 }
 

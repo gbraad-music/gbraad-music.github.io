@@ -1,8 +1,10 @@
 // RV Keys - Voltakt Keys WASM Polyphonic Synthesizer
 // Wraps the RV Keys WASM synth in an AudioWorklet
+// Version: 2.1.0 (30 parameters)
 
 class RVKeysSynth {
     constructor(audioContext) {
+        this.version = "2.0.0-param-fix";
         this.audioContext = audioContext;
         this.workletNode = null;
         this.masterGain = null;
@@ -64,44 +66,43 @@ class RVKeysSynth {
             { index: 17, name: "Decay/Release", type: "float", min: 0, max: 1, default: 0.63, group: "EG", scale: "normalized", width: 40 },
             { index: 18, name: "Sustain", type: "float", min: 0, max: 1, default: 0.71, group: "EG", scale: "normalized", width: 40 },
 
-            // LFO (19-23)
+            // LFO (19-22)
             { index: 19, name: "LFO Wave", type: "enum", group: "LFO", default: 0,
               options: [{value: 0, label: "Triangle"}, {value: 0.5, label: "Square"}, {value: 1, label: "Sawtooth"}]
             },
             { index: 20, name: "LFO Rate", type: "float", min: 0, max: 1, default: 0, group: "LFO", scale: "normalized", width: 45 },
             { index: 21, name: "LFO Pitch Int", type: "float", min: 0, max: 1, default: 0, group: "LFO", scale: "normalized", width: 40 },
             { index: 22, name: "LFO Cutoff Int", type: "float", min: 0, max: 1, default: 0, group: "LFO", scale: "normalized", width: 40 },
-            { index: 23, name: "LFO Sync", type: "boolean", default: true, group: "LFO" },
 
-            // Voice Mode (24)
-            { index: 24, name: "Voice Mode", type: "enum", group: "Voice", default: 0,
+            // Voice Mode (23)
+            { index: 23, name: "Voice Mode", type: "enum", group: "Voice", default: 6,
               options: [
-                {value: 0, label: "Poly"},
-                {value: 0.17, label: "Unison"},
-                {value: 0.34, label: "Octave"},
-                {value: 0.5, label: "Fifth"},
-                {value: 0.67, label: "Unison Ring"},
-                {value: 0.84, label: "Poly Ring"}
+                {value: 6, label: "Poly"},            // 0-12
+                {value: 25, label: "Unison"},         // 13-37
+                {value: 50, label: "Octave"},         // 38-62
+                {value: 75, label: "Fifth"},          // 63-87
+                {value: 100, label: "Unison Ring"},   // 88-112
+                {value: 120, label: "Poly Ring"}      // 113-127
               ]
             },
 
-            // Global (25-27)
-            { index: 25, name: "Volume", type: "float", min: 0, max: 1, default: 0.5, group: "Global", scale: "normalized", width: 50, height: 150 },
-            { index: 26, name: "Octave", type: "enum", group: "Global", default: 0.5,
+            // Global (24-26)
+            { index: 24, name: "Volume", type: "float", min: 0, max: 1, default: 0.5, group: "Global", scale: "normalized", width: 50, height: 150 },
+            { index: 25, name: "Octave", type: "enum", group: "Global", default: 55,
               options: [
-                {value: 0.1, label: "-2"},
-                {value: 0.3, label: "-1"},
-                {value: 0.5, label: "0"},
-                {value: 0.7, label: "+1"},
-                {value: 0.9, label: "+2"}
+                {value: 11, label: "-2"},   // 32' (0-21)
+                {value: 33, label: "-1"},   // 16' (22-43)
+                {value: 55, label: "0"},    // 8' (44-65)
+                {value: 77, label: "+1"},   // 4' (66-87)
+                {value: 99, label: "+2"}    // 2' (88-109)
               ]
             },
-            { index: 27, name: "Portamento", type: "float", min: 0, max: 1, default: 0, group: "Global", scale: "normalized", width: 45 },
+            { index: 26, name: "Portamento", type: "float", min: 0, max: 1, default: 0, group: "Global", scale: "normalized", width: 45 },
 
-            // Delay (28-30)
-            { index: 28, name: "Delay Enable", type: "boolean", default: false, group: "Delay" },
-            { index: 29, name: "Delay Time", type: "float", min: 0, max: 1, default: 0.5, group: "Delay", scale: "normalized", width: 45 },
-            { index: 30, name: "Delay Feedback", type: "float", min: 0, max: 1, default: 0.47, group: "Delay", scale: "normalized", width: 45 }
+            // Delay (27-29)
+            { index: 27, name: "Delay Enable", type: "boolean", default: false, group: "Delay" },
+            { index: 28, name: "Delay Time", type: "float", min: 0, max: 1, default: 0.5, group: "Delay", scale: "normalized", width: 45 },
+            { index: 29, name: "Delay Feedback", type: "float", min: 0, max: 1, default: 0.47, group: "Delay", scale: "normalized", width: 45 }
         ];
     }
 
@@ -122,20 +123,17 @@ class RVKeysSynth {
             this.masterGain.gain.value = 1.0;
 
             // Speaker output (can be toggled on/off)
+            // Note: Don't auto-connect to destination - let external code route via connect()
             this.speakerGain = this.audioContext.createGain();
-            this.speakerGain.gain.value = 0; // Start muted
-            this.speakerGain.connect(this.audioContext.destination);
+            this.speakerGain.gain.value = 1.0; // Default enabled for direct usage
 
-            // Audio graph: worklet → masterGain → speakerGain → destination
-            this.masterGain.connect(this.speakerGain);
+            // Audio graph will be: worklet → masterGain → (external via connect())
 
             // Load and register AudioWorklet processor (only once per AudioContext)
             if (!this.audioContext._synthWorkletLoaded) {
-                await this.audioContext.audioWorklet.addModule(
-                    window.location.pathname.includes('/rfxsynths')
-                        ? '../replugged/worklets/synth-worklet-processor.js?v=203'
-                        : 'replugged/worklets/synth-worklet-processor.js?v=203'
-                );
+                // Use ../replugged/worklets/ from /rfxsynths/ or /rfxstrudel/, otherwise replugged/worklets/
+                const workletPath = window.location.pathname.includes('/replugged/') ? 'worklets/' : '../replugged/worklets/';
+                await this.audioContext.audioWorklet.addModule(`${workletPath}synth-worklet-processor.js?v=210`);
                 this.audioContext._synthWorkletLoaded = true;
             }
 
@@ -161,9 +159,9 @@ class RVKeysSynth {
                     // Process any pending notes
                     for (const note of this.pendingNotes) {
                         if (note.type === 'on') {
-                            this.handleNoteOn(note.note, note.velocity);
+                            this.noteOn(note.note, note.velocity);
                         } else {
-                            this.handleNoteOff(note.note);
+                            this.noteOff(note.note);
                         }
                     }
                     this.pendingNotes = [];
@@ -202,11 +200,13 @@ class RVKeysSynth {
 
     async loadWasm() {
         try {
+            // Determine WASM path: either in /rfxsynths/ or accessing ../rfxsynths/
+            const wasmPath = window.location.pathname.includes('/rfxsynths/') ? '' : '../rfxsynths/';
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rvkeys.js`),
-                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rvkeys.wasm`)
+                fetch(`${wasmPath}rvkeys.js`),
+                fetch(`${wasmPath}rvkeys.wasm`)
             ]);
 
             // Check if responses are OK
@@ -242,7 +242,7 @@ class RVKeysSynth {
         }
     }
 
-    handleNoteOn(note, velocity) {
+    noteOn(note, velocity) {
         if (!this.wasmReady) {
             this.pendingNotes.push({ type: 'on', note, velocity });
             return;
@@ -254,7 +254,7 @@ class RVKeysSynth {
         });
     }
 
-    handleNoteOff(note) {
+    noteOff(note) {
         if (!this.wasmReady) {
             this.pendingNotes.push({ type: 'off', note });
             return;
@@ -278,14 +278,22 @@ class RVKeysSynth {
     setParameter(index, value) {
         if (!this.wasmReady) return;
 
+        // Debug logging to track parameter changes
+        const paramInfo = RVKeysSynth.getParameterInfo();
+        const param = paramInfo.find(p => p.index === index);
+        console.log(`[RVKeys] setParameter(${index}, ${value}) - ${param ? param.name : 'UNKNOWN'}`);
+
+        // Send as appropriate type based on parameter metadata
+        const messageType = param && param.type === 'enum' ? 'setParameterInt' : 'setParameter';
+
         this.workletNode.port.postMessage({
-            type: 'setParameter',
+            type: messageType,
             data: { index, value }
         });
     }
 
     getParameterCount() {
-        return 31;  // RV Keys has 31 parameters
+        return 30;  // RV Keys has 30 parameters
     }
 
     setMasterGain(value) {
@@ -298,6 +306,26 @@ class RVKeysSynth {
         if (this.speakerGain) {
             this.speakerGain.gain.value = enabled ? 1.0 : 0.0;
             this.isAudible = enabled;
+        }
+    }
+
+    /**
+     * Connect this synth to a destination node (Web Audio API standard)
+     */
+    connect(destination) {
+        if (!this.masterGain) {
+            console.warn('[RV Keys] Cannot connect - not initialized');
+            return destination;
+        }
+        return this.masterGain.connect(destination);
+    }
+
+    /**
+     * Disconnect this synth from all destinations
+     */
+    disconnect() {
+        if (this.masterGain) {
+            this.masterGain.disconnect();
         }
     }
 

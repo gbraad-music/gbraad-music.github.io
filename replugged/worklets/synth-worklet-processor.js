@@ -5,7 +5,6 @@
 class SynthWorkletProcessor extends AudioWorkletProcessor {
     constructor(options) {
         super();
-        console.log('[SynthWorklet] ✅ LOADED v203 - FIXED setParameter type mismatch');
         this.wasmModule = null;
         this.synthPtr = null;
         this.audioBufferPtr = null;
@@ -43,8 +42,14 @@ class SynthWorkletProcessor extends AudioWorkletProcessor {
             this.allNotesOff();
         } else if (type === 'setParam' || type === 'setParameter') {
             this.setParameter(data.index, data.value);
+        } else if (type === 'setParameterInt') {
+            this.setParameterInt(data.index, data.value);
         } else if (type === 'reset') {
             this.reset();
+        } else if (type === 'loadSysex') {
+            this.loadSysex(data.sysexData, data.patchNum || 0);
+        } else if (type === 'selectPatch') {
+            this.selectPatch(data.sysexData, data.patchNum);
         } else if (type === 'plist_import') {
             this.importPreset(data.buffer);
         } else if (type === 'plist_export') {
@@ -74,20 +79,52 @@ class SynthWorkletProcessor extends AudioWorkletProcessor {
             // Stop all notes before importing
             this.allNotesOff();
 
+            console.log(`[SynthWorklet] importPreset: buffer size=${buffer.length} bytes`);
+            console.log(`[SynthWorklet] synthPtr=0x${this.synthPtr.toString(16)}`);
+            console.log(`[SynthWorklet] First 16 bytes:`, Array.from(buffer.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' '));
+
+            // Check PList state BEFORE import
+            const lengthBefore = this.wasmModule._regroove_synth_get_plist_length ?
+                this.wasmModule._regroove_synth_get_plist_length(this.synthPtr) : -1;
+            console.log(`[SynthWorklet] PList length BEFORE import: ${lengthBefore}`);
+
             // Allocate buffer in WASM memory
             const bufferPtr = this.wasmModule._malloc(buffer.length);
             const heapU8 = new Uint8Array(this.wasmMemory.buffer, bufferPtr, buffer.length);
             heapU8.set(buffer);
 
+            console.log(`[SynthWorklet] Calling _regroove_synth_import_preset(0x${this.synthPtr.toString(16)}, 0x${bufferPtr.toString(16)}, ${buffer.length})`);
+
+            // Try clearing PList first (in case old data is blocking import)
+            if (this.wasmModule._regroove_synth_clear_plist) {
+                console.log('[SynthWorklet] Clearing PList before import...');
+                this.wasmModule._regroove_synth_clear_plist(this.synthPtr);
+            }
+
             // Call C import function (handles all parsing)
             const result = this.wasmModule._regroove_synth_import_preset(this.synthPtr, bufferPtr, buffer.length);
+            console.log(`[SynthWorklet] _regroove_synth_import_preset returned: ${result}`);
 
             // Free buffer
             this.wasmModule._free(bufferPtr);
 
             if (result) {
                 console.log('[SynthWorklet] .ahxp preset imported successfully');
-                this.port.postMessage({ type: 'preset_imported', data: { success: true } });
+
+                // Get parameter values from synth to update UI
+                const parameters = [];
+                if (this.wasmFuncs.get_parameter_count && this.wasmFuncs.get_parameter) {
+                    const paramCount = this.wasmFuncs.get_parameter_count(this.synthPtr);
+                    for (let i = 0; i < paramCount; i++) {
+                        const value = this.wasmFuncs.get_parameter(this.synthPtr, i);
+                        parameters.push({ index: i, value: value });
+                    }
+                }
+
+                this.port.postMessage({ type: 'preset_imported', data: { success: true, parameters } });
+
+                // Also send PList state if available
+                this.getPListState();
             } else {
                 console.error('[SynthWorklet] Preset import failed');
                 this.port.postMessage({ type: 'preset_imported', data: { success: false } });
@@ -117,14 +154,26 @@ class SynthWorkletProcessor extends AudioWorkletProcessor {
     }
 
     getPListState() {
+        console.log('[SynthWorklet] getPListState() called');
         if (!this.wasmModule || !this.synthPtr) {
             console.error('[SynthWorklet] Cannot get PList state: WASM not initialized');
             return;
         }
 
         try {
+            // Check if functions exist
+            if (!this.wasmModule._regroove_synth_get_plist_length) {
+                console.error('[SynthWorklet] _regroove_synth_get_plist_length not found!');
+                return;
+            }
+            if (!this.wasmModule._regroove_synth_get_plist_speed) {
+                console.error('[SynthWorklet] _regroove_synth_get_plist_speed not found!');
+                return;
+            }
+
             const length = this.wasmModule._regroove_synth_get_plist_length(this.synthPtr);
             const speed = this.wasmModule._regroove_synth_get_plist_speed(this.synthPtr);
+            console.log(`[SynthWorklet] PList length: ${length}, speed: ${speed}`);
 
             // Get all entries
             const entries = [];
@@ -144,6 +193,7 @@ class SynthWorkletProcessor extends AudioWorkletProcessor {
                 this.wasmModule._free(entryPtr);
             }
 
+            console.log(`[SynthWorklet] Sending PList state: ${entries.length} entries`);
             // Send state to main thread
             this.port.postMessage({
                 type: 'plist_state',
@@ -368,12 +418,29 @@ class SynthWorkletProcessor extends AudioWorkletProcessor {
             console.log(`[SynthWorklet] Buffer: 0x${this.audioBufferPtr.toString(16)}`);
 
             // Create synth instance (engine ID passed from main thread)
+            console.log(`[SynthWorklet] Creating synth with engine ID: ${engineId}, sample rate: ${this.sampleRate}`);
             if (this.wasmFuncs.create) {
-                this.synthPtr = this.wasmFuncs.create(engineId);
+                this.synthPtr = this.wasmFuncs.create(engineId, this.sampleRate);
                 if (!this.synthPtr) {
                     throw new Error(`regroove_synth_create(${engineId}) returned null/undefined`);
                 }
-                console.log(`[SynthWorklet] Synth created (engine ${engineId}): 0x${this.synthPtr.toString(16)}`);
+                console.log(`[SynthWorklet] ✅ Synth created (engine ${engineId}): 0x${this.synthPtr.toString(16)}`);
+
+                // Get parameter count to verify synth is correct
+                if (this.wasmFuncs.get_parameter_count) {
+                    const paramCount = this.wasmFuncs.get_parameter_count(this.synthPtr);
+                    console.log(`[SynthWorklet] Synth has ${paramCount} parameters`);
+                }
+
+                // Initialize all parameters to their default values
+                if (this.wasmFuncs.get_parameter_count && this.wasmFuncs.get_parameter_default && this.wasmFuncs.set_parameter) {
+                    const paramCount = this.wasmFuncs.get_parameter_count(this.synthPtr);
+                    for (let i = 0; i < paramCount; i++) {
+                        const defaultValue = this.wasmFuncs.get_parameter_default(this.synthPtr, i);
+                        this.wasmFuncs.set_parameter(this.synthPtr, i, defaultValue);
+                    }
+                    console.log(`[SynthWorklet] Initialized ${paramCount} parameters to defaults`);
+                }
             } else {
                 throw new Error('regroove_synth_create not found in WASM exports');
             }
@@ -406,7 +473,10 @@ class SynthWorkletProcessor extends AudioWorkletProcessor {
 
     handleNoteOn(note, velocity) {
         if (!this.synthPtr || !this.wasmFuncs.note_on) return;
-        this.wasmFuncs.note_on(this.synthPtr, note, velocity);
+        // Convert normalized velocity (0-1) to MIDI velocity (0-127)
+        // If velocity > 1.0, assume it's already in MIDI range (0-127)
+        const midiVelocity = velocity > 1.0 ? Math.floor(velocity) : Math.floor(velocity * 127);
+        this.wasmFuncs.note_on(this.synthPtr, note, midiVelocity);
     }
 
     handleNoteOff(note) {
@@ -424,9 +494,54 @@ class SynthWorkletProcessor extends AudioWorkletProcessor {
         this.wasmFuncs.set_parameter_value(this.synthPtr, index, value);
     }
 
+    setParameterInt(index, value) {
+        if (!this.synthPtr) return;
+        // Use integer API if available, otherwise convert to normalized
+        if (this.wasmModule._regroove_synth_set_parameter_int) {
+            this.wasmModule._regroove_synth_set_parameter_int(this.synthPtr, index, value);
+        } else if (this.wasmFuncs.set_parameter_value) {
+            // Fallback: get max value and normalize
+            const maxValue = this.wasmModule._regroove_synth_get_parameter_max_value ?
+                this.wasmModule._regroove_synth_get_parameter_max_value(index) : 127;
+            this.wasmFuncs.set_parameter_value(this.synthPtr, index, value / maxValue);
+        }
+    }
+
     reset() {
         if (!this.synthPtr || !this.wasmFuncs.reset) return;
         this.wasmFuncs.reset(this.synthPtr);
+    }
+
+    loadSysex(sysexData, patchNum) {
+        if (!this.wasmModule || !this.synthPtr) {
+            console.error('[SynthWorklet] Cannot load SysEx: WASM not initialized');
+            return;
+        }
+
+        if (!this.wasmModule._rgdx7_load_sysex) {
+            console.warn('[SynthWorklet] rgdx7_load_sysex not available');
+            return;
+        }
+
+        // Allocate memory for SysEx data
+        const dataPtr = this.wasmModule._malloc(sysexData.length);
+        const heapU8 = new Uint8Array(this.wasmMemory.buffer, dataPtr, sysexData.length);
+        heapU8.set(sysexData);
+
+        // Call WASM function to load SysEx
+        const result = this.wasmModule._rgdx7_load_sysex(this.synthPtr, dataPtr, sysexData.length, patchNum || 0);
+
+        // Free allocated memory
+        this.wasmModule._free(dataPtr);
+
+        if (!result) {
+            console.error('[SynthWorklet] Failed to load SysEx');
+        }
+    }
+
+    selectPatch(sysexData, patchNum) {
+        // Just reload with new patch number
+        this.loadSysex(sysexData, patchNum);
     }
 
     getPresetCount() {
@@ -521,7 +636,6 @@ class SynthWorkletProcessor extends AudioWorkletProcessor {
 
     process(inputs, outputs, parameters) {
         if (!this.wasmModule || !this.synthPtr || !this.audioBufferPtr || !this.wasmFuncs.process) {
-            // Output silence
             return true;
         }
 
@@ -532,22 +646,25 @@ class SynthWorkletProcessor extends AudioWorkletProcessor {
 
         const frames = output[0].length;
 
-        // Update heap view (use saved memory reference)
-        const heapF32 = new Float32Array(
-            this.wasmMemory.buffer,
-            this.audioBufferPtr,
-            frames * 2
-        );
+        // Reuse heap view if buffer hasn't been resized
+        if (!this.heapF32 || this.heapF32.length !== frames * 2) {
+            this.heapF32 = new Float32Array(
+                this.wasmMemory.buffer,
+                this.audioBufferPtr,
+                frames * 2
+            );
+        }
 
         // Zero the buffer
-        heapF32.fill(0);
+        this.heapF32.fill(0);
 
         // Process audio through synth
-        this.wasmFuncs.process(this.synthPtr, this.audioBufferPtr, frames, this.sampleRate);
+        this.wasmFuncs.process(this.synthPtr, this.audioBufferPtr, frames);
 
         // De-interleave output
         const outputL = output[0];
         const outputR = output[1] || output[0];
+        const heapF32 = this.heapF32;
 
         for (let i = 0; i < frames; i++) {
             outputL[i] = heapF32[i * 2];

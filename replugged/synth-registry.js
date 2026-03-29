@@ -4,6 +4,15 @@
  */
 
 class SynthRegistry {
+    static getPaths() {
+        const inReplugged = window.location.pathname.includes('/replugged/');
+        const inRfxsynths = window.location.pathname.includes('/rfxsynths/');
+        return {
+            wasm: inRfxsynths ? '' : '../rfxsynths/',
+            worklets: inReplugged ? 'worklets/' : '../replugged/worklets/'
+        };
+    }
+
     static synths = new Map();
     static engineIdMap = new Map(); // Map engine ID to synth ID
     static manifest = null; // Loaded from synth-manifest.json
@@ -174,6 +183,11 @@ class SynthRegistry {
             script.src = synthInfo.script + '?v=' + Date.now();
             script.async = true;
 
+            // Support ES6 modules
+            if (synthInfo.isModule) {
+                script.type = 'module';
+            }
+
             script.onload = () => {
                 this.loadedScripts.add(synthInfo.script);
                 // Registration is synchronous, just give browser a tick to execute
@@ -236,12 +250,10 @@ class SynthRegistry {
     }
 }
 
-// Export for use in modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = SynthRegistry;
-}
+// ES6 module export
+export { SynthRegistry };
 
-// Expose globally for dynamic loading
+// Expose globally for dynamic loading and backwards compatibility
 if (typeof window !== 'undefined') {
     window.SynthRegistry = SynthRegistry;
 }

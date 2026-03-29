@@ -72,7 +72,7 @@ export async function initStrudel() {
                 }
 
                 // Extract tempo modifiers (.bpm, .cpm) from patterns and apply to stack
-                // Also inject pattern labels as metadata
+                // Also inject pattern labels as metadata and expose as global variables
                 const modifiedPatterns = patterns.map((p, i) => {
                     // Check for .bpm() or .cpm() at the end
                     const bpmMatch = p.match(/\.bpm\((\d+)\)\s*$/);
@@ -95,9 +95,18 @@ export async function initStrudel() {
                     return p;
                 });
 
-                // Wrap in stack()
+                // Expose labeled patterns as global variables (for console access)
+                // Use window assignment to avoid const redeclaration on re-evaluation
+                const variableAssignments = patternLabels.map((label, i) => {
+                    return `window.${label} = ${modifiedPatterns[i]};`;
+                }).join('\n');
+
+                // Build stack using the exposed variables
+                const stackVars = patternLabels.map(label => `window.${label}`).join(',\n');
+
+                // Wrap in stack() with variable assignments first
                 if (modifiedPatterns.length > 0) {
-                    code = `stack(\n${modifiedPatterns.join(',\n')}\n)${stackModifiers}`;
+                    code = `${variableAssignments}\nstack(\n${stackVars}\n)${stackModifiers}`;
                 }
             }
 

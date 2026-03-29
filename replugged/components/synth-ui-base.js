@@ -46,12 +46,21 @@ export function cleanupParameterSync(component) {
     }
 }
 
-export function emitParameterChange(paramIndex, paramName, value) {
+export function emitParameterChange(paramIndex, paramName, value, component = null) {
     /**
      * Emit parameter change event to sync with knobs
      * Call this whenever a UI control changes a parameter
+     * @param {HTMLElement} component - Optional component reference to get instanceId
      */
-    window.dispatchEvent(new CustomEvent('rfx:paramChanged', {
-        detail: { paramName, value, source: 'ui' }
-    }));
+    const detail = { paramName, value, source: 'ui' };
+
+    // If component is provided, get the instanceId from data attribute
+    if (component) {
+        const instanceId = component.getAttribute('data-instance-id');
+        if (instanceId) {
+            detail.instanceId = instanceId;
+        }
+    }
+
+    window.dispatchEvent(new CustomEvent('rfx:paramChanged', { detail }));
 }

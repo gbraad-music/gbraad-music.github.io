@@ -42,7 +42,7 @@ class RGResonate1Synth {
 
             // Load and register AudioWorklet processor (with cache-busting)
             if (!this.audioContext._synthWorkletLoaded) {
-                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/synth-worklet-processor.js?v=184' : 'replugged/worklets/synth-worklet-processor.js?v=184');
+                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/synth-worklet-processor.js?v=210' : '../replugged/worklets/synth-worklet-processor.js?v=210');
                 this.audioContext._synthWorkletLoaded = true;
             }
 
@@ -63,9 +63,9 @@ class RGResonate1Synth {
                     // Process any pending notes
                     for (const note of this.pendingNotes) {
                         if (note.type === 'on') {
-                            this.handleNoteOn(note.note, note.velocity);
+                            this.noteOn(note.note, note.velocity);
                         } else {
-                            this.handleNoteOff(note.note);
+                            this.noteOff(note.note);
                         }
                     }
                     this.pendingNotes = [];
@@ -88,10 +88,13 @@ class RGResonate1Synth {
         try {
             console.log('[RGResonate1Synth] Loading WASM...');
 
+            // Determine WASM path: either in /rfxsynths/ or accessing ../rfxsynths/
+            const wasmPath = window.location.pathname.includes('/rfxsynths/') ? '' : '../rfxsynths/';
+
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rgresonate1.js`),
-                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rgresonate1.wasm`)
+                fetch(`${wasmPath}rgresonate1.js`),
+                fetch(`${wasmPath}rgresonate1.wasm`)
             ]);
 
             const jsCode = await jsResponse.text();
@@ -114,7 +117,7 @@ class RGResonate1Synth {
         }
     }
 
-    handleNoteOn(note, velocity) {
+    noteOn(note, velocity) {
         if (!this.isActive) return;
 
         if (!this.wasmReady) {
@@ -130,7 +133,7 @@ class RGResonate1Synth {
         });
     }
 
-    handleNoteOff(note) {
+    noteOff(note) {
         if (!this.isActive) return;
 
         if (!this.wasmReady) {

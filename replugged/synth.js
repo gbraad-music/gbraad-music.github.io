@@ -1,4 +1,5 @@
 import { wakeLockManager } from './external/wakelock.js';
+import { SynthRegistry } from './synth-registry.js';
 
 let audioContext;
 let midiManager;
@@ -84,10 +85,16 @@ async function init() {
   // Initialize synth engines
   document
     .getElementById("btnInitSimple")
-    .addEventListener("click", () => initializeSynth("simple"));
+    ?.addEventListener("click", () => initializeSynth("simple"));
+  document
+    .getElementById("btnInitRG101")
+    .addEventListener("click", () => initializeSynth("rg101"));
+  document
+    .getElementById("btnInitRGDX7")
+    .addEventListener("click", () => initializeSynth("rgdx7"));
   document
     .getElementById("btnInitRGResonate1")
-    .addEventListener("click", () => initializeSynth("rgresonate1"));
+    ?.addEventListener("click", () => initializeSynth("rgresonate1"));
   document
     .getElementById("btnInitRGAHX")
     .addEventListener("click", () => initializeSynth("rgahx"));
@@ -311,7 +318,8 @@ async function initializeSynth(engine) {
   // Check if initialization failed
   if (!initSuccess) {
     let engineName = "Simple";
-    if (engine === "rgresonate1") engineName = "RGResonate1";
+    if (engine === "rg101") engineName = "RG101";
+    else if (engine === "rgresonate1") engineName = "RGResonate1";
     else if (engine === "rgahx") engineName = "RGAHX";
     else if (engine === "rgsid") engineName = "RGSID";
     else if (engine === "rg1piano") engineName = "RG1Piano";
@@ -340,8 +348,20 @@ async function initializeSynth(engine) {
                 'isAudible:', currentSynth.isAudible);
   }
 
-  // Connect auto-generated UI to synth instance
-  if (engine === "rgahx") {
+  // Connect UI to synth instance
+  if (engine === "rg101") {
+    const synthUI = document.getElementById("rg101Controls");
+    setTimeout(() => {
+      synthUI.synth = currentSynth;
+      console.log("[RG101] Custom UI connected to synth instance");
+    }, 500);
+  } else if (engine === "rgdx7") {
+    const synthUI = document.getElementById("rgdx7Controls");
+    setTimeout(() => {
+      synthUI.synth = currentSynth;
+      console.log("[RGDX7] Custom UI connected to synth instance");
+    }, 500);
+  } else if (engine === "rgahx") {
     const synthUI = document.getElementById("rgahxControls");
     setTimeout(() => {
       synthUI.setSynthInstance(currentSynth);
@@ -391,7 +411,9 @@ async function initializeSynth(engine) {
   sharedAnalyzer.connectTo(masterGainNode);
 
   let engineName = "Simple";
-  if (engine === "rgresonate1") engineName = "RGResonate1";
+  if (engine === "rg101") engineName = "RG101";
+  else if (engine === "rgdx7") engineName = "RGDX7 FM";
+  else if (engine === "rgresonate1") engineName = "RGResonate1";
   else if (engine === "rgahx") engineName = "RGAHX";
   else if (engine === "rgsid") engineName = "RGSID";
   else if (engine === "rg1piano") engineName = "RG1Piano";
@@ -402,8 +424,10 @@ async function initializeSynth(engine) {
   synthStatus.innerHTML = `Synth: <span>${engineName}</span>`;
 
   // Update button states - Remove all active classes first
-  document.getElementById("btnInitSimple").classList.remove("active");
-  document.getElementById("btnInitRGResonate1").classList.remove("active");
+  document.getElementById("btnInitSimple")?.classList.remove("active");
+  document.getElementById("btnInitRG101").classList.remove("active");
+  document.getElementById("btnInitRGDX7").classList.remove("active");
+  document.getElementById("btnInitRGResonate1")?.classList.remove("active");
   document.getElementById("btnInitRGAHX").classList.remove("active");
   document.getElementById("btnInitRGSID").classList.remove("active");
   document.getElementById("btnInitRG1Piano").classList.remove("active");
@@ -414,9 +438,13 @@ async function initializeSynth(engine) {
 
   // Add active class to current engine
   if (engine === "simple") {
-    document.getElementById("btnInitSimple").classList.add("active");
+    document.getElementById("btnInitSimple")?.classList.add("active");
+  } else if (engine === "rg101") {
+    document.getElementById("btnInitRG101").classList.add("active");
+  } else if (engine === "rgdx7") {
+    document.getElementById("btnInitRGDX7").classList.add("active");
   } else if (engine === "rgresonate1") {
-    document.getElementById("btnInitRGResonate1").classList.add("active");
+    document.getElementById("btnInitRGResonate1")?.classList.add("active");
   } else if (engine === "rgahx") {
     document.getElementById("btnInitRGAHX").classList.add("active");
   } else if (engine === "rgsid") {
@@ -434,12 +462,18 @@ async function initializeSynth(engine) {
   }
 
   // Show/hide engine-specific controls
+  document.getElementById("rg101Controls").style.display =
+    engine === "rg101" ? "block" : "none";
+  document.getElementById("rgdx7Controls").style.display =
+    engine === "rgdx7" ? "block" : "none";
   document.getElementById("rgahxControls").style.display =
     engine === "rgahx" ? "block" : "none";
   document.getElementById("plistEditor").style.display =
     engine === "rgahx" ? "block" : "none";
   document.getElementById("rgsidControls").style.display =
     engine === "rgsid" ? "block" : "none";
+  document.getElementById("rgsfzControls").style.display =
+    engine === "rgsfz" ? "block" : "none";
   document.getElementById("rgslicerControls").style.display =
     engine === "rgslicer" ? "block" : "none";
   document.getElementById("rgslicerWavControls").style.display =
@@ -719,7 +753,7 @@ function setupMIDIHandlers() {
 
     // Route to SFZ player if loaded (takes priority)
     if (sfzPlayer && sfzPlayer.regions.length > 0) {
-      sfzPlayer.handleNoteOn(data.note, data.velocity);
+      sfzPlayer.noteOn(data.note, data.velocity);
       // console.log("[MIDI] Routed to SFZ");
     }
     // MIDI Channel 10 (index 9) routes to drums (GM standard)
@@ -733,7 +767,7 @@ function setupMIDIHandlers() {
         const status = 0x90 | data.channel; // Note On + channel
         currentSynth.handleMidi(status, data.note, data.velocity);
       } else {
-        currentSynth.handleNoteOn(data.note, data.velocity);
+        currentSynth.noteOn(data.note, data.velocity);
       }
     }
 
@@ -757,7 +791,7 @@ function setupMIDIHandlers() {
 
     // Send note off to SFZ player if loaded
     if (sfzPlayer && sfzPlayer.regions.length > 0) {
-      sfzPlayer.handleNoteOff(data.note, data.velocity);
+      sfzPlayer.noteOff(data.note, data.velocity);
     }
     // Only send note off to synth (drums don't need note off)
     else if (data.channel !== 9 && currentSynth) {
@@ -766,7 +800,7 @@ function setupMIDIHandlers() {
         const status = 0x80 | data.channel; // Note Off + channel
         currentSynth.handleMidi(status, data.note, 0);
       } else {
-        currentSynth.handleNoteOff(data.note);
+        currentSynth.noteOff(data.note);
       }
     }
   });
@@ -1333,12 +1367,12 @@ function playKeyboardNote(note, velocity, isNoteOff = false) {
 
     // Send note off to SFZ player if loaded
     if (sfzPlayer && sfzPlayer.regions.length > 0) {
-      sfzPlayer.handleNoteOff(note, velocity);
+      sfzPlayer.noteOff(note, velocity);
     }
     // Only send note off to synth (not drums)
     else if (keyboardChannel !== 9 && currentSynth) {
-      if (typeof currentSynth.handleNoteOff === 'function') {
-        currentSynth.handleNoteOff(note);
+      if (typeof currentSynth.noteOff === 'function') {
+        currentSynth.noteOff(note);
       }
     }
   } else {
@@ -1372,7 +1406,7 @@ function playKeyboardNote(note, velocity, isNoteOff = false) {
 
     // Route to SFZ player if loaded (takes priority)
     if (sfzPlayer && sfzPlayer.regions.length > 0) {
-      sfzPlayer.handleNoteOn(note, velocity);
+      sfzPlayer.noteOn(note, velocity);
     }
     // Route to drums or synth based on channel
     else if (keyboardChannel === 9) {
@@ -1385,7 +1419,7 @@ function playKeyboardNote(note, velocity, isNoteOff = false) {
     } else {
       // Other channels (synth)
       if (currentSynth) {
-        currentSynth.handleNoteOn(note, velocity);
+        currentSynth.noteOn(note, velocity);
       }
     }
   }

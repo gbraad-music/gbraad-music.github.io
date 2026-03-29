@@ -1,8 +1,12 @@
-const CACHE_NAME = 'rfx-synths-v37';
+const CACHE_NAME = 'rfx-synths-v38';
 const ASSETS = [
     './',
     './index.html',
     './manifest.json',
+    './rg101-synth.js',
+    './rg101-synth.wasm',
+    './rx7synth.js',
+    './rx7synth.wasm',
     './rgresonate1.js',
     './rgresonate1.wasm',
     './rgahxsynth.js',
@@ -38,6 +42,11 @@ const ASSETS = [
     '../replugged/components/motion-sequencer.js',
     '../replugged/components/rvkeys-ui.js',
     '../replugged/components/rvbass-ui.js',
+    '../replugged/components/rg101-synth.js',
+    '../replugged/components/rg101-ui.js',
+    '../replugged/components/rgdx7-synth.js',
+    '../replugged/components/rgdx7-ui.js',
+    '../replugged/components/synth-ui-base.js',
     '../replugged/worklets/synth-worklet-processor.js',
     '../replugged/worklets/drum-worklet-processor.js',
     '../replugged/external/midi-rtc/midi-codec.js',

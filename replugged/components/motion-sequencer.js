@@ -65,8 +65,11 @@ class MotionSequencer extends HTMLElement {
             return;
         }
 
-        // Check if synth has required methods
-        if (!synth.handleNoteOn || !synth.handleNoteOff) {
+        // Check if synth has required methods (accept both noteOn/noteOff and handleNoteOn/handleNoteOff)
+        const hasNoteOn = synth.noteOn || synth.handleNoteOn;
+        const hasNoteOff = synth.noteOff || synth.handleNoteOff;
+
+        if (!hasNoteOn || !hasNoteOff) {
             this.style.display = 'none';
             return;
         }
@@ -76,10 +79,13 @@ class MotionSequencer extends HTMLElement {
         // Get parameter info if available, otherwise use empty array
         const paramInfo = synth.getParameterInfo ? synth.getParameterInfo().map(p => ({name: p.name})) : [];
 
-        // Connect sequencer to synth
+        // Connect sequencer to synth (use noteOn/noteOff if available, fallback to handleNoteOn/handleNoteOff)
+        const noteOnMethod = synth.noteOn || synth.handleNoteOn;
+        const noteOffMethod = synth.noteOff || synth.handleNoteOff;
+
         this.setSynth({
-            noteOn: (note, velocity) => synth.handleNoteOn(note, velocity),
-            noteOff: (note) => synth.handleNoteOff(note)
+            noteOn: (note, velocity) => noteOnMethod.call(synth, note, velocity),
+            noteOff: (note) => noteOffMethod.call(synth, note)
         }, paramInfo);
 
         // Set parameter callback if synth supports parameters

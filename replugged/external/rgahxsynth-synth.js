@@ -25,46 +25,46 @@ class RGAHXSynth {
     static getParameterInfo() {
         return [
             // Oscillator (0-2)
-            { index: 0, name: "Waveform", type: "enum", group: "Oscillator", default: 1,
-              options: [
+            { index: 0, name: "Waveform", type: "int", min: 0, max: 3, default: 1, group: "Oscillator",
+              enum_values: [  // CC with named values
                 {value: 0, label: "Triangle"},
                 {value: 1, label: "Sawtooth"},
                 {value: 2, label: "Square"},
                 {value: 3, label: "Noise"}
               ]
             },
-            { index: 1, name: "Wave Len", type: "int", min: 0, max: 5, default: 4, group: "Oscillator", width: 40 },
+            { index: 1, name: "Wave Length", type: "int", min: 0, max: 5, default: 4, group: "Oscillator", width: 40 },
             { index: 2, name: "Volume", type: "int", min: 0, max: 64, default: 64, group: "Oscillator", width: 40 },
 
             // Envelope (3-9)
-            { index: 3, name: "A Time", type: "int", min: 0, max: 255, default: 1, group: "Envelope", width: 35, height: 150 },
-            { index: 4, name: "A Vol", type: "int", min: 0, max: 64, default: 64, group: "Envelope", width: 35, height: 150 },
-            { index: 5, name: "D Time", type: "int", min: 0, max: 255, default: 20, group: "Envelope", width: 35, height: 150 },
-            { index: 6, name: "D Vol", type: "int", min: 0, max: 64, default: 48, group: "Envelope", width: 35, height: 150 },
-            { index: 7, name: "S Time", type: "int", min: 0, max: 255, default: 0, group: "Envelope", width: 35, height: 150, format: "sustain" },
-            { index: 8, name: "R Time", type: "int", min: 0, max: 255, default: 30, group: "Envelope", width: 35, height: 150 },
-            { index: 9, name: "R Vol", type: "int", min: 0, max: 64, default: 0, group: "Envelope", width: 35, height: 150 },
+            { index: 3, name: "Attack Time", type: "int", min: 0, max: 255, default: 1, group: "Envelope", width: 35, height: 150 },
+            { index: 4, name: "Attack Volume", type: "int", min: 0, max: 64, default: 64, group: "Envelope", width: 35, height: 150 },
+            { index: 5, name: "Decay Time", type: "int", min: 0, max: 255, default: 20, group: "Envelope", width: 35, height: 150 },
+            { index: 6, name: "Decay Volume", type: "int", min: 0, max: 64, default: 48, group: "Envelope", width: 35, height: 150 },
+            { index: 7, name: "Sustain Time", type: "int", min: 0, max: 255, default: 0, group: "Envelope", width: 35, height: 150, format: "sustain" },
+            { index: 8, name: "Release Time", type: "int", min: 0, max: 255, default: 30, group: "Envelope", width: 35, height: 150 },
+            { index: 9, name: "Release Volume", type: "int", min: 0, max: 64, default: 0, group: "Envelope", width: 35, height: 150 },
 
             // Filter (10-13)
-            { index: 10, name: "Lower", type: "int", min: 0, max: 63, default: 1, group: "Filter", width: 40 },
-            { index: 11, name: "Upper", type: "int", min: 0, max: 63, default: 63, group: "Filter", width: 40 },
-            { index: 12, name: "Speed", type: "int", min: 0, max: 63, default: 0, group: "Filter", width: 40 },
-            { index: 13, name: "Enable", type: "boolean", default: false, group: "Filter" },
+            { index: 10, name: "Filter Lower", type: "int", min: 0, max: 63, default: 1, group: "Filter", width: 40 },
+            { index: 11, name: "Filter Upper", type: "int", min: 0, max: 63, default: 63, group: "Filter", width: 40 },
+            { index: 12, name: "Filter Speed", type: "int", min: 0, max: 63, default: 0, group: "Filter", width: 40 },
+            { index: 13, name: "Filter Enable", type: "boolean", default: false, group: "Filter" },
 
             // PWM / Square (14-17)
-            { index: 14, name: "Lower", type: "int", min: 0, max: 63, default: 1, group: "PWM", width: 40 },
-            { index: 15, name: "Upper", type: "int", min: 0, max: 63, default: 63, group: "PWM", width: 40 },
-            { index: 16, name: "Speed", type: "int", min: 0, max: 63, default: 0, group: "PWM", width: 40 },
-            { index: 17, name: "Enable", type: "boolean", default: false, group: "PWM" },
+            { index: 14, name: "PWM Lower", type: "int", min: 0, max: 63, default: 1, group: "PWM", width: 40 },
+            { index: 15, name: "PWM Upper", type: "int", min: 0, max: 63, default: 63, group: "PWM", width: 40 },
+            { index: 16, name: "PWM Speed", type: "int", min: 0, max: 63, default: 0, group: "PWM", width: 40 },
+            { index: 17, name: "PWM Enable", type: "boolean", default: false, group: "PWM" },
 
             // Vibrato (18-20)
-            { index: 18, name: "Delay", type: "int", min: 0, max: 255, default: 0, group: "Vibrato", width: 40 },
-            { index: 19, name: "Depth", type: "int", min: 0, max: 255, default: 0, group: "Vibrato", width: 40 },
-            { index: 20, name: "Speed", type: "int", min: 0, max: 255, default: 0, group: "Vibrato", width: 40 },
+            { index: 18, name: "Vibrato Delay", type: "int", min: 0, max: 255, default: 0, group: "Vibrato", width: 40 },
+            { index: 19, name: "Vibrato Depth", type: "int", min: 0, max: 255, default: 0, group: "Vibrato", width: 40 },
+            { index: 20, name: "Vibrato Speed", type: "int", min: 0, max: 255, default: 0, group: "Vibrato", width: 40 },
 
             // Hard Cut Release (21-22)
-            { index: 21, name: "Enable", type: "boolean", default: false, group: "Hard Cut Release" },
-            { index: 22, name: "Frames", type: "int", min: 0, max: 255, default: 0, group: "Hard Cut Release", width: 40 }
+            { index: 21, name: "Hard Cut Enable", type: "boolean", default: false, group: "Hard Cut Release" },
+            { index: 22, name: "Hard Cut Frames", type: "int", min: 0, max: 255, default: 0, group: "Hard Cut Release", width: 40 }
         ];
     }
 
@@ -96,7 +96,7 @@ class RGAHXSynth {
 
             // Load and register AudioWorklet processor (only once per AudioContext)
             if (!this.audioContext._synthWorkletLoaded) {
-                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/synth-worklet-processor.js?v=242' : 'replugged/worklets/synth-worklet-processor.js?v=242');
+                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/synth-worklet-processor.js?v=210' : '../replugged/worklets/synth-worklet-processor.js?v=210');
                 this.audioContext._synthWorkletLoaded = true;
             }
 
@@ -117,12 +117,15 @@ class RGAHXSynth {
                     // Process any pending notes
                     for (const note of this.pendingNotes) {
                         if (note.type === 'on') {
-                            this.handleNoteOn(note.note, note.velocity);
+                            this.noteOn(note.note, note.velocity);
                         } else {
-                            this.handleNoteOff(note.note);
+                            this.noteOff(note.note);
                         }
                     }
                     this.pendingNotes = [];
+
+                    // Request initial PList state
+                    this.workletNode.port.postMessage({ type: 'plist_get_state' });
                 } else if (type === 'error') {
                     console.error('[RGAHXSynth] WASM error:', data);
                 } else if (type === 'plist_state') {
@@ -152,14 +155,25 @@ class RGAHXSynth {
         try {
             console.log('[RGAHXSynth] Loading WASM...');
 
+            // Determine WASM path: either in /rfxsynths/ or accessing ../rfxsynths/
+            const wasmPath = window.location.pathname.includes('/rfxsynths/') ? '' : '../rfxsynths/';
+
             // Fetch both JS glue code and WASM binary
+            console.log(`[RGAHXSynth] Loading from: ${wasmPath}rgahxsynth.js and .wasm`);
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rgahxsynth.js?v=242`),
-                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rgahxsynth.wasm?v=242`)
+                fetch(`${wasmPath}rgahxsynth.js?v=209`),
+                fetch(`${wasmPath}rgahxsynth.wasm?v=209`)
             ]);
+
+            if (!jsResponse.ok || !wasmResponse.ok) {
+                throw new Error(`Failed to fetch WASM files: JS=${jsResponse.status} WASM=${wasmResponse.status}`);
+            }
 
             const jsCode = await jsResponse.text();
             const wasmBytes = await wasmResponse.arrayBuffer();
+
+            console.log(`[RGAHXSynth] Loaded ${jsCode.length} bytes JS, ${wasmBytes.byteLength} bytes WASM`);
+            console.log(`[RGAHXSynth] Sending to worklet with engine ID: 1 (RGAHX)`);
 
             // Send to worklet
             this.workletNode.port.postMessage({
@@ -178,7 +192,7 @@ class RGAHXSynth {
         }
     }
 
-    handleNoteOn(note, velocity) {
+    noteOn(note, velocity) {
         if (!this.isActive) return;
 
         if (!this.wasmReady) {
@@ -194,7 +208,7 @@ class RGAHXSynth {
         });
     }
 
-    handleNoteOff(note) {
+    noteOff(note) {
         if (!this.isActive) return;
 
         if (!this.wasmReady) {
@@ -254,33 +268,20 @@ class RGAHXSynth {
 
     /**
      * Set parameter by index (for auto-generated UI)
-     * Maps index to named parameter for worklet
      */
     setParameter(index, value) {
         if (!this.isActive || !this.wasmReady || !this.workletNode) return;
 
-        // Map index to parameter name
-        const paramMap = {
-            0: 'waveform', 1: 'wave_length', 2: 'osc_volume',
-            3: 'attack_frames', 4: 'attack_volume', 5: 'decay_frames',
-            6: 'decay_volume', 7: 'sustain_frames', 8: 'release_frames',
-            9: 'release_volume', 10: 'filter_lower', 11: 'filter_upper',
-            12: 'filter_speed', 13: 'filter_enable', 14: 'square_lower',
-            15: 'square_upper', 16: 'square_speed', 17: 'square_enable',
-            18: 'vibrato_delay', 19: 'vibrato_depth', 20: 'vibrato_speed',
-            21: 'hard_cut_release', 22: 'hard_cut_frames'
-        };
+        // Determine if this is an integer parameter
+        const paramInfo = RGAHXSynth.getParameterInfo();
+        const param = paramInfo.find(p => p.index === index);
 
-        const param = paramMap[index];
-        if (!param) {
-            console.warn(`[RGAHXSynth] Unknown parameter index: ${index}`);
-            return;
-        }
+        // Use integer API for int, boolean, and any parameter with enum_values
+        const useIntAPI = param && (param.type === 'int' || param.type === 'boolean' || param.enum_values);
 
-        // Send to worklet
         this.workletNode.port.postMessage({
-            type: 'setParam',
-            data: { param, value }
+            type: useIntAPI ? 'setParameterInt' : 'setParameter',
+            data: { index, value }
         });
     }
 
@@ -344,6 +345,8 @@ class RGAHXSynth {
      * Handle PList state update from worklet
      */
     handlePListStateUpdate(data) {
+        console.log('[RGAHXSynth] handlePListStateUpdate called with:', data);
+        console.log(`[RGAHXSynth] PList entries: ${data.entries ? data.entries.length : 0}`);
         // Dispatch custom event that the UI can listen to
         const event = new CustomEvent('plist_state', { detail: data });
         window.dispatchEvent(event);
@@ -444,6 +447,9 @@ class RGAHXSynth {
     }
 }
 
+// Export for use in other scripts
+window.RGAHXSynth = RGAHXSynth;
+
 // Register synth in registry (auto-discovery)
 if (typeof SynthRegistry !== 'undefined') {
     SynthRegistry.register({
@@ -458,6 +464,7 @@ if (typeof SynthRegistry !== 'undefined') {
             wasm: 'synths/rgahxsynth.wasm'
         },
         category: 'synthesizer',
+        uiComponent: 'rgahx-ui',
         getParameterInfo: RGAHXSynth.getParameterInfo
     });
 }

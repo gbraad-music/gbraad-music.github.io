@@ -1,5 +1,8 @@
 // RV Keys UI Component - Matches Volca Keys Hardware Layout
 // Sections: Voicing, Octave, VCO, VCF, LFO, EG, Delay, Volume
+// Version: 2.1.0 (30 parameters)
+
+import { setupParameterSync, cleanupParameterSync, emitParameterChange } from './synth-ui-base.js';
 
 class RVKeysUI extends HTMLElement {
     constructor() {
@@ -12,16 +15,38 @@ class RVKeysUI extends HTMLElement {
     connectedCallback() {
         this.render();
         this.setupEventListeners();
+
+        // Setup parameter sync with dynamic knobs
+        setupParameterSync(this, {
+            7: 'detune',          // VCO2 Detune (main detune control)
+            12: 'vcoegint',       // VCO EG Int
+            13: 'cutoff',         // Cutoff
+            14: 'resonance',      // Peak (Resonance)
+            15: 'vcfegint',       // VCF EG Int
+            16: 'attack',         // Attack
+            17: 'decayrelease',   // Decay/Release
+            18: 'sustain',        // Sustain
+            19: 'lfowave',        // LFO Wave
+            20: 'lforate',        // LFO Rate
+            21: 'lfopitchint',    // LFO Pitch Int
+            22: 'lfocutoffint',   // LFO Cutoff Int
+            23: 'voicemode',      // Voice Mode
+            24: 'volume',         // Volume
+            25: 'octave',         // Octave
+            26: 'portamento',     // Portamento
+            27: 'delayenable',    // Delay Enable
+            28: 'delaytime',      // Delay Time
+            29: 'delayfeedback'   // Delay Feedback
+        });
+    }
+
+    disconnectedCallback() {
+        cleanupParameterSync(this);
     }
 
     setSynth(synth) {
         this.synth = synth;
-        // Initialize LFO Sync to ON by default
-        this.setParameter(23, 1.0);
-    }
-
-    setSequencer(sequencer) {
-        this.sequencer = sequencer;
+        // Note: RV Keys doesn't have LFO Sync parameter (index 23 is Bass-only LFO Amp Int)
     }
 
     render() {
@@ -98,7 +123,7 @@ class RVKeysUI extends HTMLElement {
                     width: 100%;
                     height: 4px;
                     background: #2a2a2a;
-                    border-radius: 2px;
+                    border-radius: 0px;
                     outline: none;
                     -webkit-appearance: none;
                 }
@@ -192,12 +217,12 @@ class RVKeysUI extends HTMLElement {
                     <div class="control">
                         <label class="control-label">Mode</label>
                         <select id="voiceMode">
-                            <option value="0">Poly</option>
-                            <option value="0.17">Unison</option>
-                            <option value="0.34">Octave</option>
-                            <option value="0.51">Fifth</option>
-                            <option value="0.68">Unison Ring</option>
-                            <option value="0.85">Poly Ring</option>
+                            <option value="6">Poly</option>
+                            <option value="25">Unison</option>
+                            <option value="50">Octave</option>
+                            <option value="75">Fifth</option>
+                            <option value="100">Unison Ring</option>
+                            <option value="120">Poly Ring</option>
                         </select>
                     </div>
                 </div>
@@ -207,11 +232,11 @@ class RVKeysUI extends HTMLElement {
                     <div class="control">
                         <label class="control-label">Octave Shift</label>
                         <select id="octave">
-                            <option value="0.1">-2</option>
-                            <option value="0.3">-1</option>
-                            <option value="0.5" selected>0</option>
-                            <option value="0.7">+1</option>
-                            <option value="0.9">+2</option>
+                            <option value="11">-2</option>
+                            <option value="33">-1</option>
+                            <option value="55" selected>0</option>
+                            <option value="77">+1</option>
+                            <option value="99">+2</option>
                         </select>
                     </div>
                 </div>
@@ -362,13 +387,6 @@ class RVKeysUI extends HTMLElement {
                         <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5">
                         <span class="control-value" id="volumeValue">50%</span>
                     </div>
-
-                    <div class="control">
-                        <label class="control-label" style="color: #666;">Sequencer</label>
-                        <div style="font-size: 10px; color: #555; font-style: italic;">
-                            (Not implemented)
-                        </div>
-                    </div>
                 </div>
             </div>
         `;
@@ -377,14 +395,14 @@ class RVKeysUI extends HTMLElement {
     setupEventListeners() {
         const root = this.shadowRoot;
 
-        // Voice Mode
+        // Voice Mode (index 23 - uses integer CC values)
         root.getElementById('voiceMode').addEventListener('change', (e) => {
-            this.setParameter(24, parseFloat(e.target.value));
+            this.setParameter(23, parseInt(e.target.value));
         });
 
-        // Octave
+        // Octave (index 25 - uses integer CC values)
         root.getElementById('octave').addEventListener('change', (e) => {
-            this.setParameter(26, parseFloat(e.target.value));
+            this.setParameter(25, parseInt(e.target.value));
         });
 
         // VCO
@@ -397,7 +415,7 @@ class RVKeysUI extends HTMLElement {
 
         root.getElementById('portamento').addEventListener('input', (e) => {
             const value = parseFloat(e.target.value);
-            this.setParameter(27, value);
+            this.setParameter(26, value);
             root.getElementById('portamentoValue').textContent = value > 0.01 ? `${Math.round(value * 100)}%` : 'Off';
         });
 
@@ -472,27 +490,27 @@ class RVKeysUI extends HTMLElement {
             root.getElementById('sustainValue').textContent = `${Math.round(value * 100)}%`;
         });
 
-        // Delay
+        // Delay (indices 27-29)
         root.getElementById('delayEnable').addEventListener('change', (e) => {
-            this.setParameter(28, parseFloat(e.target.value));
+            this.setParameter(27, parseFloat(e.target.value));
         });
 
         root.getElementById('delayTime').addEventListener('input', (e) => {
             const value = parseFloat(e.target.value);
-            this.setParameter(29, value);
+            this.setParameter(28, value);
             root.getElementById('delayTimeValue').textContent = `${Math.round(value * 100)}%`;
         });
 
         root.getElementById('delayFeedback').addEventListener('input', (e) => {
             const value = parseFloat(e.target.value);
-            this.setParameter(30, value);
+            this.setParameter(29, value);
             root.getElementById('delayFeedbackValue').textContent = `${Math.round(value * 100)}%`;
         });
 
-        // Volume
+        // Volume (index 24)
         root.getElementById('volume').addEventListener('input', (e) => {
             const value = parseFloat(e.target.value);
-            this.setParameter(25, value);
+            this.setParameter(24, value);
             root.getElementById('volumeValue').textContent = `${Math.round(value * 100)}%`;
         });
     }
@@ -505,6 +523,105 @@ class RVKeysUI extends HTMLElement {
             if (this.sequencer && this.sequencer.pattern.recordingMotion) {
                 this.sequencer.recordMotion(index, value);
             }
+
+            // Emit parameter change for sync with knobs
+            const paramNames = {
+                7: 'detune',
+                12: 'vcoegint',
+                13: 'cutoff',
+                14: 'resonance',
+                15: 'vcfegint',
+                16: 'attack',
+                17: 'decayrelease',
+                18: 'sustain',
+                19: 'lfowave',
+                20: 'lforate',
+                21: 'lfopitchint',
+                22: 'lfocutoffint',
+                23: 'voicemode',
+                24: 'volume',
+                25: 'octave',
+                26: 'portamento',
+                27: 'delayenable',
+                28: 'delaytime',
+                29: 'delayfeedback'
+            };
+            const paramName = paramNames[index];
+            if (paramName) {
+                emitParameterChange(index, paramName, value, this);
+            }
+        }
+    }
+
+    updateParameter(index, value) {
+        // Called by parameter sync when external knob changes
+        const root = this.shadowRoot;
+        if (!root) return;
+
+        // Update UI controls to reflect the new value
+        switch(index) {
+            case 7: // Detune
+                const detune = root.getElementById('detune');
+                if (detune) {
+                    detune.value = value;
+                    root.getElementById('detuneValue').textContent = `${Math.round(value * 100)}%`;
+                }
+                break;
+            case 13: // Cutoff
+                const cutoff = root.getElementById('cutoff');
+                if (cutoff) {
+                    cutoff.value = value;
+                    root.getElementById('cutoffValue').textContent = `${Math.round(value * 100)}%`;
+                }
+                break;
+            case 14: // Resonance
+                const resonance = root.getElementById('peak');
+                if (resonance) {
+                    resonance.value = value;
+                    root.getElementById('peakValue').textContent = `${Math.round(value * 100)}%`;
+                }
+                break;
+            case 16: // Attack
+                const attack = root.getElementById('attack');
+                if (attack) {
+                    attack.value = value;
+                    root.getElementById('attackValue').textContent = `${Math.round(value * 100)}%`;
+                }
+                break;
+            case 17: // Decay/Release
+                const decay = root.getElementById('decay');
+                if (decay) {
+                    decay.value = value;
+                    root.getElementById('decayValue').textContent = `${Math.round(value * 100)}%`;
+                }
+                break;
+            case 18: // Sustain
+                const sustain = root.getElementById('sustain');
+                if (sustain) {
+                    sustain.value = value;
+                    root.getElementById('sustainValue').textContent = `${Math.round(value * 100)}%`;
+                }
+                break;
+            case 20: // LFO Rate
+                const lfoRate = root.getElementById('lfoRate');
+                if (lfoRate) {
+                    lfoRate.value = value;
+                    root.getElementById('lfoRateValue').textContent = `${Math.round(value * 100)}%`;
+                }
+                break;
+            case 24: // Volume
+                const volume = root.getElementById('volume');
+                if (volume) {
+                    volume.value = value;
+                    root.getElementById('volumeValue').textContent = `${Math.round(value * 100)}%`;
+                }
+                break;
+            // Add more cases as needed
+        }
+
+        // Apply to synth
+        if (this.synth && this.synth.setParameter) {
+            this.synth.setParameter(index, value);
         }
     }
 }

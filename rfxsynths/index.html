@@ -61,7 +61,7 @@
             <p>WebMIDI support</p>
             <p>Multi-synth testing</p>
             <p>
-                Synths: RG1Piano, RGResonate1, RGAHXSynth, RGSID, RG909 Drum, RGAHXDrum, RGSFZ, RGSlicer
+                Synths: RG101, RX7 FM, RG1Piano, RGResonate1, RGAHXSynth, RGSID, RG909 Drum, RGAHXDrum, RGSFZ, RGSlicer
             </p>
             <p>
                 Uses: WebAssembly, Web Audio API, WebMIDI, WebRTC
@@ -211,8 +211,12 @@
         <div class="section">
             <div class="section-title">Synth Engine</div>
             <div class="synth-engines" style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-                <button id="btnInitSimple">Simple Synth</button>
-                <button id="btnInitRGResonate1">RGResonate1</button>
+                <!--<div class="smoketest">
+ 		  <button id="btnInitSimple">Simple Synth</button>
+                  <button id="btnInitRGResonate1">RGResonate1</button>
+                </div>-->
+                <button id="btnInitRG101">RG101</button>
+                <button id="btnInitRGDX7">RX7 FM</button>
                 <button id="btnInitRGAHX">RGAHX</button>
                 <button id="btnInitRGSID">RGSID</button>
                 <button id="btnInitRG1Piano">RG1Piano</button>
@@ -221,6 +225,12 @@
                 <button id="btnInitRGSFZ">RGSFZ Sampler</button>
                 <button id="btnInitRGSlicer">RGSlicer</button>
             </div>
+
+            <!-- RG101 Synth Controls (Custom UI) -->
+            <rg101-ui id="rg101Controls" style="display: none;"></rg101-ui>
+
+            <!-- RGDX7 FM Synth Controls (Custom UI with SysEx loading) -->
+            <rgdx7-ui id="rgdx7Controls" synth="rgdx7" style="display: none;"></rgdx7-ui>
 
             <!-- RGAHX Synth Controls (AUTO-GENERATED from parameter metadata) -->
             <synth-ui id="rgahxControls" synth="rgahx" style="display: none;"></synth-ui>
@@ -397,7 +407,7 @@
     <script type="module" src="../replugged/components/pad-knob.js"></script>
 
     <!-- Synth auto-discovery system -->
-    <script src="../replugged/synth-registry.js"></script>
+    <script type="module" src="../replugged/synth-registry.js"></script>
     <script type="module" src="../replugged/synth-ui.js"></script>
 
     <!-- Motion Sequencer Component -->
@@ -411,9 +421,13 @@
     <script src="../replugged/external/frequency-analyzer.js"></script>
     <script src="../replugged/external/midi-audio-synth.js"></script>
 
-    <!-- RV Keys & RV Bass UI Components -->
-    <script src="../replugged/components/rvkeys-ui.js"></script>
-    <script src="../replugged/components/rvbass-ui.js"></script>
+    <!-- Synth UI Components (loaded dynamically by synth-registry) -->
+    <script type="module" src="../replugged/components/rg101-ui.js"></script>
+    <script type="module" src="../replugged/components/rgdx7-ui.js"></script>
+    <script type="module" src="../replugged/components/rvkeys-ui.js"></script>
+    <script type="module" src="../replugged/components/rvbass-ui.js"></script>
+    <script type="module" src="../replugged/components/rgahx-ui.js"></script>
+    <script type="module" src="../replugged/components/rgsid-ui.js"></script>
 
     <!-- WebRTC MIDI (loaded as module) -->
     <script type="module" src="../replugged/external/midi-rtc-bridge.js"></script>

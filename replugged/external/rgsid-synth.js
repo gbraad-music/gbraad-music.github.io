@@ -173,7 +173,7 @@ class RGSIDSynth {
 
             // Load and register AudioWorklet processor (with cache-busting)
             if (!this.audioContext._synthWorkletLoaded) {
-                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/synth-worklet-processor.js?v=300' : 'replugged/worklets/synth-worklet-processor.js?v=300');
+                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/synth-worklet-processor.js?v=210' : '../replugged/worklets/synth-worklet-processor.js?v=210');
                 this.audioContext._synthWorkletLoaded = true;
             }
 
@@ -197,9 +197,9 @@ class RGSIDSynth {
                     // Process any pending notes
                     for (const note of this.pendingNotes) {
                         if (note.type === 'on') {
-                            this.handleNoteOn(note.note, note.velocity);
+                            this.noteOn(note.note, note.velocity);
                         } else {
-                            this.handleNoteOff(note.note);
+                            this.noteOff(note.note);
                         }
                     }
                     this.pendingNotes = [];
@@ -228,10 +228,13 @@ class RGSIDSynth {
         try {
             console.log('[RGSIDSynth] Loading WASM...');
 
+            // Determine WASM path: either in /rfxsynths/ or accessing ../rfxsynths/
+            const wasmPath = window.location.pathname.includes('/rfxsynths/') ? '' : '../rfxsynths/';
+
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rgsidsynth.js`),
-                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rgsidsynth.wasm`)
+                fetch(`${wasmPath}rgsidsynth.js`),
+                fetch(`${wasmPath}rgsidsynth.wasm`)
             ]);
 
             const jsCode = await jsResponse.text();
@@ -254,7 +257,7 @@ class RGSIDSynth {
         }
     }
 
-    handleNoteOn(note, velocity) {
+    noteOn(note, velocity) {
         if (!this.isActive) return;
 
         if (!this.wasmReady) {
@@ -270,7 +273,7 @@ class RGSIDSynth {
         });
     }
 
-    handleNoteOff(note) {
+    noteOff(note) {
         if (!this.isActive) return;
 
         if (!this.wasmReady) {
@@ -407,9 +410,11 @@ class RGSIDSynth {
 
     async loadUserPresets() {
         try {
-            const response = await fetch('../data/sid_user_presets.txt');
+            // Use ../data/ when in /rfxsynths/, otherwise data/
+            const dataPath = window.location.pathname.includes('/rfxsynths/') ? '../data/' : 'data/';
+            const response = await fetch(`${dataPath}sid_user_presets.txt`);
             if (!response.ok) {
-                console.log('[RGSIDSynth] No user presets found (data/sid_user_presets.txt)');
+                console.log(`[RGSIDSynth] No user presets found (${dataPath}sid_user_presets.txt)`);
                 return;
             }
 
@@ -678,6 +683,7 @@ if (typeof SynthRegistry !== 'undefined') {
             wasm: 'synths/rgsidsynth.wasm'
         },
         category: 'synthesizer',
+        uiComponent: 'rgsid-ui',
         getParameterInfo: RGSIDSynth.getParameterInfo
     });
 }

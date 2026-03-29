@@ -40,7 +40,7 @@ class RGSlicerSynth {
 
             // Load and register AudioWorklet processor (reuse synth-worklet, with cache-busting)
             if (!this.audioContext._synthWorkletLoaded) {
-                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/synth-worklet-processor.js?v=176' : 'replugged/worklets/synth-worklet-processor.js?v=176');
+                await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/synth-worklet-processor.js?v=210' : '../replugged/worklets/synth-worklet-processor.js?v=210');
                 this.audioContext._synthWorkletLoaded = true;
             }
 
@@ -61,9 +61,9 @@ class RGSlicerSynth {
                     // Process any pending notes
                     for (const note of this.pendingNotes) {
                         if (note.type === 'on') {
-                            this.handleNoteOn(note.note, note.velocity);
+                            this.noteOn(note.note, note.velocity);
                         } else {
-                            this.handleNoteOff(note.note);
+                            this.noteOff(note.note);
                         }
                     }
                     this.pendingNotes = [];
@@ -170,7 +170,7 @@ class RGSlicerSynth {
         return RGSlicerSynth.getParameterInfo();
     }
 
-    handleNoteOn(note, velocity) {
+    noteOn(note, velocity) {
         if (!this.wasmReady) {
             this.pendingNotes.push({ type: 'on', note, velocity });
             return;
@@ -182,7 +182,7 @@ class RGSlicerSynth {
         });
     }
 
-    handleNoteOff(note) {
+    noteOff(note) {
         if (!this.wasmReady) {
             this.pendingNotes.push({ type: 'off', note });
             return;

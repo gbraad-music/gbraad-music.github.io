@@ -38,7 +38,7 @@ class RGAHXDrum {
             console.log('[RGAHXDrum] Audio graph connected: worklet → masterGain → speakerGain → destination');
 
             // Load and register AudioWorklet processor (reuse drum worklet)
-            await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/drum-worklet-processor.js' : 'replugged/worklets/drum-worklet-processor.js');
+            await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/replugged/') ? 'worklets/drum-worklet-processor.js?v=210' : '../replugged/worklets/drum-worklet-processor.js?v=210');
 
             // Create worklet node with custom name
             this.workletNode = new AudioWorkletNode(this.audioContext, 'drum-worklet-processor');
@@ -75,8 +75,8 @@ class RGAHXDrum {
             // Fetch both JS glue code and WASM binary (cache-busting with timestamp)
             const timestamp = Date.now();
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rgahxdrum.js?t=${timestamp}`),
-                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rgahxdrum.wasm?t=${timestamp}`)
+                fetch(`${window.location.pathname.includes('/rfxsynths/') ? '' : '../rfxsynths/'}rgahxdrum.js?t=${timestamp}`),
+                fetch(`${window.location.pathname.includes('/rfxsynths/') ? '' : '../rfxsynths/'}rgahxdrum.wasm?t=${timestamp}`)
             ]);
 
             const jsCode = await jsResponse.text();
@@ -113,6 +113,18 @@ class RGAHXDrum {
         });
     }
 
+    // Alias for compatibility with synth interface
+    // Accepts normalized velocity (0-1) and converts to MIDI (0-127)
+    noteOn(note, velocity = 1.0) {
+        const midiVelocity = Math.floor(velocity * 127);
+        this.triggerDrum(note, midiVelocity);
+    }
+
+    // Drums don't need noteOff but add stub for compatibility
+    noteOff(note) {
+        // No-op for drums
+    }
+
     async setAudible(enabled) {
         if (!this.speakerGain) {
             console.error('[RGAHXDrum] setAudible called but speakerGain is null!');
@@ -140,6 +152,20 @@ class RGAHXDrum {
         this.speakerGain.gain.linearRampToValueAtTime(enabled ? 1.0 : 0.0, currentTime + 0.05);
 
         console.log(`[RGAHXDrum] ${enabled ? 'AUDIBLE' : 'MUTED'}`);
+    }
+
+    connect(destination) {
+        if (!this.masterGain) {
+            console.warn('[RGAHXDrum] Cannot connect - not initialized');
+            return destination;
+        }
+        return this.masterGain.connect(destination);
+    }
+
+    disconnect() {
+        if (this.masterGain) {
+            this.masterGain.disconnect();
+        }
     }
 
     destroy() {

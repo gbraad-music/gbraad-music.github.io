@@ -90,11 +90,14 @@ class DrumWorkletProcessor extends AudioWorkletProcessor {
         if (!this.drumPtr) return;
         const triggerFn = this.wasmModule['_' + this.triggerFunc];
         if (!triggerFn) return;
+        // Convert normalized velocity (0-1) to MIDI velocity (0-127)
+        // If velocity > 1.0, assume it's already in MIDI range (0-127)
+        const midiVelocity = velocity > 1.0 ? Math.floor(velocity) : Math.floor(velocity * 127);
         // RG909 uses 4 params, RGAHX uses 3
         if (this.triggerFunc.includes('909')) {
-            triggerFn(this.drumPtr, note, velocity, this.sampleRate);
+            triggerFn(this.drumPtr, note, midiVelocity, this.sampleRate);
         } else {
-            triggerFn(this.drumPtr, note, velocity);
+            triggerFn(this.drumPtr, note, midiVelocity);
         }
     }
 

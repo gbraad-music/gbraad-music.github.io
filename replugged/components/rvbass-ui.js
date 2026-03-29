@@ -141,7 +141,7 @@ class RVBassUI extends HTMLElement {
                     width: 100%;
                     height: 4px;
                     background: #2a2a2a;
-                    border-radius: 2px;
+                    border-radius: 0px;
                     outline: none;
                     -webkit-appearance: none;
                 }
@@ -647,7 +647,7 @@ class RVBassUI extends HTMLElement {
             };
             const paramName = paramNames[index];
             if (paramName) {
-                emitParameterChange(index, paramName, value);
+                emitParameterChange(index, paramName, value, this);
             }
         }
     }

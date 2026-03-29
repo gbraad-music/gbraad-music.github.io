@@ -40,7 +40,7 @@ class RG909Drum {
             console.log('[RG909Drum] Audio graph connected: worklet → masterGain → speakerGain → destination');
 
             // Load and register AudioWorklet processor
-            await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/rfxsynths') ? '../replugged/worklets/drum-worklet-processor.js' : 'replugged/worklets/drum-worklet-processor.js');
+            await this.audioContext.audioWorklet.addModule(window.location.pathname.includes('/replugged/') ? 'worklets/drum-worklet-processor.js?v=210' : '../replugged/worklets/drum-worklet-processor.js?v=210');
 
             // Create worklet node
             this.workletNode = new AudioWorkletNode(this.audioContext, 'drum-worklet-processor');
@@ -77,8 +77,8 @@ class RG909Drum {
             // Fetch both JS glue code and WASM binary (cache-busting with timestamp)
             const timestamp = Date.now();
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rg909-drum.js?t=${timestamp}`),
-                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rg909-drum.wasm?t=${timestamp}`)
+                fetch(`${window.location.pathname.includes('/rfxsynths/') ? '' : '../rfxsynths/'}rg909-drum.js?t=${timestamp}`),
+                fetch(`${window.location.pathname.includes('/rfxsynths/') ? '' : '../rfxsynths/'}rg909-drum.wasm?t=${timestamp}`)
             ]);
 
             const jsCode = await jsResponse.text();
@@ -123,6 +123,18 @@ class RG909Drum {
         });
     }
 
+    // Alias for compatibility with synth interface
+    // Accepts normalized velocity (0-1) and converts to MIDI (0-127)
+    noteOn(note, velocity = 1.0) {
+        const midiVelocity = Math.floor(velocity * 127);
+        this.triggerDrum(note, midiVelocity);
+    }
+
+    // Drums don't need noteOff but add stub for compatibility
+    noteOff(note) {
+        // No-op for drums
+    }
+
     async setAudible(enabled) {
         if (!this.speakerGain) {
             console.error('[RG909Drum] ❌ setAudible called but speakerGain is null!');
@@ -152,6 +164,20 @@ class RG909Drum {
         console.log(`[RG909Drum] ✅ ${enabled ? 'AUDIBLE' : 'MUTED'}`);
     }
 
+
+    connect(destination) {
+        if (!this.masterGain) {
+            console.warn('[RG909Drum] Cannot connect - not initialized');
+            return destination;
+        }
+        return this.masterGain.connect(destination);
+    }
+
+    disconnect() {
+        if (this.masterGain) {
+            this.masterGain.disconnect();
+        }
+    }
     destroy() {
         console.log('[RG909Drum] Destroying...');
 

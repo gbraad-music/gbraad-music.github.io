@@ -77,23 +77,14 @@ class RVBassSynth {
             { index: 24, name: "Sustain ON", type: "boolean", default: false, group: "EG" },
             { index: 25, name: "AMP EG ON", type: "boolean", default: false, group: "EG" },
 
-            // Global (26-28)
+            // Global (26-27)
             { index: 26, name: "Volume", type: "float", min: 0, max: 1, default: 0.7, group: "Global", scale: "normalized", width: 50, height: 150 },
-            { index: 27, name: "Octave", type: "enum", group: "Global", default: 0.3,
-              options: [
-                {value: 0.1, label: "-2"},
-                {value: 0.3, label: "-1"},
-                {value: 0.5, label: "0"},
-                {value: 0.7, label: "+1"},
-                {value: 0.9, label: "+2"}
-              ]
-            },
-            { index: 28, name: "Portamento", type: "float", min: 0, max: 1, default: 0, group: "Global", scale: "normalized" },
+            { index: 27, name: "Portamento", type: "float", min: 0, max: 1, default: 0, group: "Global", scale: "normalized" },
 
-            // Delay (29-31)
-            { index: 29, name: "Delay Enable", type: "boolean", default: false, group: "Delay" },
-            { index: 30, name: "Delay Time", type: "float", min: 0, max: 1, default: 0.5, group: "Delay", scale: "normalized" },
-            { index: 31, name: "Delay Feedback", type: "float", min: 0, max: 1, default: 0.47, group: "Delay", scale: "normalized" }
+            // Delay (28-30)
+            { index: 28, name: "Delay Enable", type: "boolean", default: false, group: "Delay" },
+            { index: 29, name: "Delay Time", type: "float", min: 0, max: 1, default: 0.5, group: "Delay", scale: "normalized" },
+            { index: 30, name: "Delay Feedback", type: "float", min: 0, max: 1, default: 0.47, group: "Delay", scale: "normalized" }
         ];
     }
 
@@ -114,20 +105,17 @@ class RVBassSynth {
             this.masterGain.gain.value = 1.0;
 
             // Speaker output (can be toggled on/off)
+            // Note: Don't auto-connect to destination - let external code route via connect()
             this.speakerGain = this.audioContext.createGain();
-            this.speakerGain.gain.value = 0; // Start muted
-            this.speakerGain.connect(this.audioContext.destination);
+            this.speakerGain.gain.value = 1.0; // Default enabled for direct usage
 
-            // Audio graph: worklet → masterGain → speakerGain → destination
-            this.masterGain.connect(this.speakerGain);
+            // Audio graph will be: worklet → masterGain → (external via connect())
+            // Or for standalone: worklet → masterGain → speakerGain → destination (set via setAudible)
 
             // Load and register AudioWorklet processor (only once per AudioContext)
             if (!this.audioContext._synthWorkletLoaded) {
-                await this.audioContext.audioWorklet.addModule(
-                    window.location.pathname.includes('/rfxsynths')
-                        ? '../replugged/worklets/synth-worklet-processor.js?v=203'
-                        : 'replugged/worklets/synth-worklet-processor.js?v=203'
-                );
+                const workletPath = window.location.pathname.includes('/replugged/') ? 'worklets/' : '../replugged/worklets/';
+                await this.audioContext.audioWorklet.addModule(`${workletPath}synth-worklet-processor.js?v=210`);
                 this.audioContext._synthWorkletLoaded = true;
             }
 
@@ -153,9 +141,9 @@ class RVBassSynth {
                     // Process any pending notes
                     for (const note of this.pendingNotes) {
                         if (note.type === 'on') {
-                            this.handleNoteOn(note.note, note.velocity);
+                            this.noteOn(note.note, note.velocity);
                         } else {
-                            this.handleNoteOff(note.note);
+                            this.noteOff(note.note);
                         }
                     }
                     this.pendingNotes = [];
@@ -194,11 +182,13 @@ class RVBassSynth {
 
     async loadWasm() {
         try {
+            // Determine WASM path: either in /rfxsynths/ or accessing ../rfxsynths/
+            const wasmPath = window.location.pathname.includes('/rfxsynths/') ? '' : '../rfxsynths/';
 
             // Fetch both JS glue code and WASM binary
             const [jsResponse, wasmResponse] = await Promise.all([
-                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rvbass.js`),
-                fetch(`${window.location.pathname.includes('/rfxsynths') ? '' : 'synths/'}rvbass.wasm`)
+                fetch(`${wasmPath}rvbass.js`),
+                fetch(`${wasmPath}rvbass.wasm`)
             ]);
 
             // Check if responses are OK
@@ -218,6 +208,7 @@ class RVBassSynth {
                 data: {
                     jsCode: jsCode,
                     wasmBytes: wasmBytes,
+                    sampleRate: this.audioContext.sampleRate,
                     moduleName: 'RVBassModule',  // Module export name
                     engineId: 1  // Bass = 1
                 }
@@ -234,7 +225,7 @@ class RVBassSynth {
         }
     }
 
-    handleNoteOn(note, velocity) {
+    noteOn(note, velocity) {
         if (!this.wasmReady) {
             this.pendingNotes.push({ type: 'on', note, velocity });
             return;
@@ -246,7 +237,7 @@ class RVBassSynth {
         });
     }
 
-    handleNoteOff(note) {
+    noteOff(note) {
         if (!this.wasmReady) {
             this.pendingNotes.push({ type: 'off', note });
             return;
@@ -290,6 +281,26 @@ class RVBassSynth {
         if (this.speakerGain) {
             this.speakerGain.gain.value = enabled ? 1.0 : 0.0;
             this.isAudible = enabled;
+        }
+    }
+
+    /**
+     * Connect this synth to a destination node (Web Audio API standard)
+     */
+    connect(destination) {
+        if (!this.masterGain) {
+            console.warn('[RV Bass] Cannot connect - not initialized');
+            return destination;
+        }
+        return this.masterGain.connect(destination);
+    }
+
+    /**
+     * Disconnect this synth from all destinations
+     */
+    disconnect() {
+        if (this.masterGain) {
+            this.masterGain.disconnect();
         }
     }
 

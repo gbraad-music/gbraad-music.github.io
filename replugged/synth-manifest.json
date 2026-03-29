@@ -1,6 +1,20 @@
 {
   "synths": [
     {
+      "id": "rg101",
+      "className": "RG101Synth",
+      "script": "../replugged/components/rg101-synth.js",
+      "category": "synthesizer",
+      "isModule": true
+    },
+    {
+      "id": "rgdx7",
+      "className": "RGDX7Synth",
+      "script": "../replugged/components/rgdx7-synth.js",
+      "category": "synthesizer",
+      "isModule": true
+    },
+    {
       "id": "rgresonate1",
       "className": "RGResonate1Synth",
       "script": "../replugged/external/rgresonate1-synth.js",

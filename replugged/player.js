@@ -2,6 +2,7 @@
 // NO FALLBACK - Requires compiled WebAssembly
 
 import { wakeLockManager } from './external/wakelock.js';
+import { isADFFile, extractModulesFromADF } from './external/adf-parser.js';
 
 class AudioEffectsProcessor {
   constructor() {
@@ -73,8 +74,8 @@ class AudioEffectsProcessor {
 
     // Load both the JS and WASM files from main thread
     const [jsResponse, wasmResponse] = await Promise.all([
-      fetch((window.location.pathname.includes('/rfxplayer/') ? '' : 'rfxplayer/') + "regroove-effects.js"),
-      fetch((window.location.pathname.includes('/rfxplayer/') ? '' : 'rfxplayer/') + "regroove-effects.wasm"),
+      fetch((window.location.pathname.includes('/rfxplayer/') ? '' : 'rfxplayer/') + "regroove-effects.js?v=" + Date.now()),
+      fetch((window.location.pathname.includes('/rfxplayer/') ? '' : 'rfxplayer/') + "regroove-effects.wasm?v=" + Date.now()),
     ]);
 
     if (!jsResponse.ok || !wasmResponse.ok) {
@@ -87,7 +88,7 @@ class AudioEffectsProcessor {
 
     console.log("🎛️ Registering AudioWorklet...");
     await this.audioContext.audioWorklet.addModule(
-      (window.location.pathname.includes('/rfxplayer/') ? '../replugged/' : '') + "worklets/audio-worklet-processor.js",
+      (window.location.pathname.includes('/rfxplayer/') ? '../replugged/' : '') + "worklets/audio-worklet-processor.js?v=" + Date.now(),
     );
 
     console.log("🔧 Creating worklet...");
@@ -119,7 +120,8 @@ class AudioEffectsProcessor {
         } else if (e.data.type === "ready") {
           clearTimeout(timeout);
           console.log("✅ Worklet ready!");
-          resolve();
+          // Load special filters after main WASM is ready
+          this.loadSpecialFilters().then(resolve);
         } else if (e.data.type === "error") {
           clearTimeout(timeout);
           reject(new Error(`Worklet: ${e.data.error}`));
@@ -140,6 +142,68 @@ class AudioEffectsProcessor {
     console.log("🔊 Audio: Source → WASM → Master Gain → Speakers");
   }
 
+  async loadSpecialFilters() {
+    return this.loadSpecialFiltersToWorklet(this.workletNode);
+  }
+
+  async loadSpecialFiltersToWorklet(workletNode) {
+    console.log("🔐 Loading special filters (MS-20 & 700S)...");
+
+    const specialFilterConfigs = [
+      { name: 'ms20_hp_filter', moduleName: 'MS20FilterModule', jsFile: 'ms20-filter.js', wasmFile: 'ms20-filter.wasm' },
+      { name: 'ms20_lp_filter', moduleName: 'MS20FilterModule', jsFile: 'ms20-filter.js', wasmFile: 'ms20-filter.wasm' },
+      { name: '700s_filter', moduleName: 'Filter700SModule', jsFile: '700s-filter.js', wasmFile: '700s-filter.wasm' }
+    ];
+
+    for (const config of specialFilterConfigs) {
+      try {
+        const pathPrefix = (window.location.pathname.includes('/rfxplayer/') ? '' : 'rfxplayer/');
+        const cacheBuster = '?v=' + Date.now();
+        const [jsResponse, wasmResponse] = await Promise.all([
+          fetch(pathPrefix + config.jsFile + cacheBuster),
+          fetch(pathPrefix + config.wasmFile + cacheBuster),
+        ]);
+
+        if (!jsResponse.ok || !wasmResponse.ok) {
+          console.warn(`⚠️ ${config.name} not found, skipping...`);
+          continue;
+        }
+
+        const jsCode = await jsResponse.text();
+        const wasmBytes = await wasmResponse.arrayBuffer();
+
+        // Wait for special filter to be loaded
+        await new Promise((resolve) => {
+          const handler = (e) => {
+            if (e.data.type === "specialFilterReady" && e.data.name === config.name) {
+              workletNode.port.removeEventListener("message", handler);
+              console.log(`✅ ${config.name} loaded`);
+              resolve();
+            }
+          };
+          workletNode.port.addEventListener("message", handler);
+
+          workletNode.port.postMessage(
+            {
+              type: "specialFilterBytes",
+              data: {
+                name: config.name,
+                moduleName: config.moduleName,
+                jsCode: jsCode,
+                wasmBytes: wasmBytes,
+              },
+            },
+            [wasmBytes],
+          );
+        });
+      } catch (error) {
+        console.warn(`⚠️ Failed to load ${config.name}:`, error);
+      }
+    }
+
+    console.log("🔐 Special filters loaded");
+  }
+
   async initModMedPlayer() {
     console.log("📡 Loading Deck Player WASM (MOD/MED/AHX/SID)...");
 
@@ -148,14 +212,6 @@ class AudioEffectsProcessor {
       const createDeckPlayerModule =
         await import(deckPlayerPath).then((m) => m.default);
       this.modMedModule = await createDeckPlayerModule();
-
-      console.log(
-        "Module keys:",
-        Object.keys(this.modMedModule).filter((k) => !k.startsWith("_")),
-      );
-      console.log("Has HEAPU8:", !!this.modMedModule.HEAPU8);
-      console.log("Has wasmMemory:", !!this.modMedModule.wasmMemory);
-      console.log("Has _malloc:", typeof this.modMedModule._malloc);
 
       this.modMedPlayer = this.modMedModule._deck_player_create_wasm(
         this.audioContext.sampleRate,
@@ -1364,8 +1420,8 @@ class AudioEffectsProcessor {
 
       // Send WASM to offline worklet
       const [jsResponse, wasmResponse] = await Promise.all([
-        fetch((window.location.pathname.includes('/rfxplayer/') ? '' : 'rfxplayer/') + "regroove-effects.js"),
-        fetch((window.location.pathname.includes('/rfxplayer/') ? '' : 'rfxplayer/') + "regroove-effects.wasm"),
+        fetch((window.location.pathname.includes('/player/') ? '' : 'player/') + "regroove-effects.js?v=" + Date.now()),
+        fetch((window.location.pathname.includes('/player/') ? '' : 'player/') + "regroove-effects.wasm?v=" + Date.now()),
       ]);
       const jsCode = await jsResponse.text();
       const wasmBytes = await wasmResponse.arrayBuffer();
@@ -1384,7 +1440,8 @@ class AudioEffectsProcessor {
               [wasmBytes],
             );
           } else if (e.data.type === "ready") {
-            resolve();
+            // Load special filters into offline worklet
+            this.loadSpecialFiltersToWorklet(offlineWorklet).then(resolve);
           }
         };
       });
@@ -1592,6 +1649,21 @@ const effectDefinitions = [
       "wow_flutter_rate",
     ],
   },
+  {
+    name: "ms20_hp_filter",
+    title: "MS-20 HP Filter",
+    params: ["cutoff", "resonance", "drive"],
+  },
+  {
+    name: "ms20_lp_filter",
+    title: "MS-20 LP Filter",
+    params: ["cutoff", "resonance", "drive"],
+  },
+  {
+    name: "700s_filter",
+    title: "miniKORG 700S Filter",
+    params: ["hp_cutoff", "lp_cutoff", "resonance", "brightness"],
+  },
 ];
 
 function createModel1UI() {
@@ -1665,6 +1737,14 @@ function createModel1UI() {
           defaultValue = 50; // Mid frequency
         } else if (paramName === "gain") {
           defaultValue = 50; // 0dB (neutral)
+        }
+      } else if (def.name === "ms20_hp_filter") {
+        if (paramName === "cutoff") {
+          defaultValue = 0; // Fully open (20 Hz - passes everything)
+        } else if (paramName === "resonance") {
+          defaultValue = 0; // Minimum (0.5 - no squealing)
+        } else if (paramName === "drive") {
+          defaultValue = 10; // Neutral (0.1 drive)
         }
       }
 
@@ -1743,19 +1823,25 @@ function createModel1UI() {
 
 // Essential effects (Distortion, EQ, Filter, Reverb)
 const essentialEffects = ["distortion", "eq", "filter", "reverb"];
+const specialEffects = ["ms20_hp_filter", "ms20_lp_filter", "700s_filter"];
 
 // Split effect definitions
-const essentialEffectDefinitions = effectDefinitions.filter(def => 
+const essentialEffectDefinitions = effectDefinitions.filter(def =>
   essentialEffects.includes(def.name)
 );
 
-const additionalEffectDefinitions = effectDefinitions.filter(def => 
-  !essentialEffects.includes(def.name)
+const specialEffectDefinitions = effectDefinitions.filter(def =>
+  specialEffects.includes(def.name)
+);
+
+const additionalEffectDefinitions = effectDefinitions.filter(def =>
+  !essentialEffects.includes(def.name) && !specialEffects.includes(def.name)
 );
 
 function createEffectUI() {
   createEffectsForContainer("essential-effects", essentialEffectDefinitions);
   createEffectsForContainer("additional-effects", additionalEffectDefinitions);
+  createEffectsForContainer("special-effects", specialEffectDefinitions);
 }
 
 function createEffectsForContainer(containerId, definitions) {
@@ -1826,6 +1912,38 @@ function createEffectsForContainer(containerId, definitions) {
         else if (paramName === "wow_flutter_depth")
           defaultValue = 0; // No wow/flutter
         else if (paramName === "wow_flutter_rate") defaultValue = 50; // Mid-range (doesn't matter if depth=0)
+      }
+
+      // MS-20 HP Filter - NEUTRAL defaults (fully open, no resonance)
+      if (def.name === "ms20_hp_filter") {
+        if (paramName === "cutoff")
+          defaultValue = 0; // Fully open (20 Hz - HPF passes everything)
+        else if (paramName === "resonance")
+          defaultValue = 0; // Minimum (no squealing)
+        else if (paramName === "drive")
+          defaultValue = 10; // Neutral (0.1 drive)
+      }
+
+      // MS-20 LP Filter - NEUTRAL defaults (fully open, no resonance)
+      if (def.name === "ms20_lp_filter") {
+        if (paramName === "cutoff")
+          defaultValue = 100; // Fully open (20 kHz - LPF passes everything)
+        else if (paramName === "resonance")
+          defaultValue = 0; // Minimum (no squealing)
+        else if (paramName === "drive")
+          defaultValue = 10; // Neutral (0.1 drive)
+      }
+
+      // 700S Filter - NEUTRAL defaults (fully open, no resonance/brightness)
+      if (def.name === "700s_filter") {
+        if (paramName === "hp_cutoff")
+          defaultValue = 0; // Fully open (20 Hz - passes everything)
+        else if (paramName === "lp_cutoff")
+          defaultValue = 100; // Fully open (20 kHz - passes everything)
+        else if (paramName === "resonance")
+          defaultValue = 0; // Minimum (no resonance)
+        else if (paramName === "brightness")
+          defaultValue = 0; // Off (no brightness boost)
       }
 
       // Use pad-knob component for each parameter
@@ -2409,15 +2527,41 @@ document.getElementById("audioFile").addEventListener("change", async (e) => {
       }
       processor.stop();
 
+      // Check if any files are .adf (Amiga disk images)
+      let finalFiles = [];
+      for (const file of files) {
+        if (isADFFile(file)) {
+          console.log(`🖼️ Detected ADF file: ${file.name}`);
+          try {
+            const extractedModules = await extractModulesFromADF(file);
+            if (extractedModules.length > 0) {
+              console.log(`✅ Extracted ${extractedModules.length} modules from ${file.name}`);
+              finalFiles.push(...extractedModules);
+            } else {
+              console.warn(`⚠️ No modules found in ${file.name}`);
+            }
+          } catch (error) {
+            console.error(`❌ Failed to parse ADF ${file.name}:`, error);
+            // Add original file if extraction fails
+            finalFiles.push(file);
+          }
+        } else {
+          // Not an ADF file, add as-is
+          finalFiles.push(file);
+        }
+      }
+
       // Load playlist (multiple files) or single file
-      if (files.length > 1) {
-        await loadPlaylist(files);
-      } else {
+      if (finalFiles.length > 1) {
+        await loadPlaylist(finalFiles);
+      } else if (finalFiles.length === 1) {
         // Single file - clear playlist and load normally
         processor.playlist = [];
         processor.currentTrackIndex = 0;
         updatePlaylistUI();
-        await processor.loadAudioFile(files[0]);
+        await processor.loadAudioFile(finalFiles[0]);
+      } else {
+        console.error('❌ No files to load after ADF extraction');
       }
 
       updatePlaybackButtons();
@@ -2621,7 +2765,8 @@ function setupSectionFullscreen() {
   const sections = [
     { btnId: 'btnModel1Fullscreen', sectionId: 'model1Section' },
     { btnId: 'btnEssentialFullscreen', sectionId: 'essentialEffectsSection' },
-    { btnId: 'btnAdditionalFullscreen', sectionId: 'additionalEffectsSection' }
+    { btnId: 'btnAdditionalFullscreen', sectionId: 'additionalEffectsSection' },
+    { btnId: 'btnSpecialFullscreen', sectionId: 'specialEffectsSection' }
   ];
 
   sections.forEach(({ btnId, sectionId }) => {

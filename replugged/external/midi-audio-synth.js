@@ -166,6 +166,9 @@ class MIDIAudioSynth {
         // }
     }
 
+    noteOn(note, velocity) { return this.handleNoteOn(note, velocity); }
+    noteOff(note) { return this.handleNoteOff(note); }
+
     releaseVoice(voice) {
         if (!voice.oscillator) {
             // console.log('[MIDIAudioSynth] ⚠️ releaseVoice called but no oscillator');
