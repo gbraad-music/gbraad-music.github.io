@@ -122,6 +122,9 @@ async function init() {
     .getElementById("btnInitDrum")
     .addEventListener("click", initializeDrum);
   document
+    .getElementById("btnInitRG404Drum")
+    .addEventListener("click", initializeRG404Drum);
+  document
     .getElementById("btnInitAHXDrum")
     .addEventListener("click", initializeAHXDrum);
 
@@ -561,6 +564,7 @@ async function initializeDrum() {
 
   // Update button states
   document.getElementById("btnInitDrum").classList.add("active");
+  document.getElementById("btnInitRG404Drum").classList.remove("active");
   document.getElementById("btnInitAHXDrum").classList.remove("active");
   document.getElementById("btnRenderDrums").disabled = false;
 }
@@ -632,7 +636,83 @@ async function initializeAHXDrum() {
 
   // Update button states
   document.getElementById("btnInitDrum").classList.remove("active");
+  document.getElementById("btnInitRG404Drum").classList.remove("active");
   document.getElementById("btnInitAHXDrum").classList.add("active");
+}
+
+async function initializeRG404Drum() {
+  // Resume AudioContext if needed
+  if (audioContext.state === "suspended") {
+    await audioContext.resume();
+  }
+
+  // Destroy existing drum engines if switching
+  if (drumSynth) {
+    drumSynth.destroy();
+    drumSynth = null;
+  }
+  if (ahxDrumSynth) {
+    ahxDrumSynth.destroy();
+    ahxDrumSynth = null;
+  }
+
+  try {
+    const RG404Drum = await SynthRegistry.getSynthClass('rg404');
+    drumSynth = new RG404Drum(audioContext);
+  } catch (error) {
+    synthStatus.innerHTML = `Drum: <span style="color: #ff3333;">ERROR</span><br><span style="color: #ff6666; font-size: 11px;">${error.message}</span>`;
+    console.error("[Synth Test] Failed to load RG404Drum:", error);
+    return;
+  }
+
+  const initSuccess = await drumSynth.initialize();
+
+  if (!initSuccess) {
+    const errorMsg = drumSynth.wasmError || "Failed to initialize drum engine";
+    synthStatus.innerHTML = `Drum: <span style="color: #ff3333;">RG404 - ERROR</span><br><span style="color: #ff6666; font-size: 11px;">${errorMsg}</span>`;
+    console.error("[Synth Test] Failed to initialize RG404 Drum:", errorMsg);
+    if (drumSynth) {
+      drumSynth.destroy();
+      drumSynth = null;
+    }
+    return;
+  }
+
+  // Create shared analyzer if not exists
+  if (!sharedAnalyzer) {
+    sharedAnalyzer = new FrequencyAnalyzer(audioContext, {
+      fftSize: 8192,
+      smoothing: 0.8,
+      updateRate: 50,
+      sourceName: "midi-synth",
+      enableDecay: true,
+    });
+    sharedAnalyzer.start();
+    console.log("[Synth Test] Created shared frequency analyzer");
+
+    // Listen to frequency events
+    sharedAnalyzer.on("*", (event) => {
+      if (event.type === "frequency" && event.data && event.data.bands) {
+        updateFrequencyBars(event.data.bands);
+      }
+    });
+  }
+
+  // Connect drum to shared analyzer
+  drumSynth.masterGain.connect(sharedAnalyzer.inputGain);
+  console.log("[Synth Test] Connected RG404 drum to shared analyzer");
+
+  // Connect analyzer to master gain (volume control)
+  sharedAnalyzer.connectTo(masterGainNode);
+
+  // Don't call setAudible(true) - already connected through analyzer
+  // (Calling setAudible would create dual path: analyzer + speakerGain = 2x volume!)
+
+  // Update button states
+  document.getElementById("btnInitDrum").classList.remove("active");
+  document.getElementById("btnInitRG404Drum").classList.add("active");
+  document.getElementById("btnInitAHXDrum").classList.remove("active");
+  document.getElementById("btnRenderDrums").disabled = false;
 }
 
 function toggleWebRTCConfig() {

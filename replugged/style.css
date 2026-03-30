@@ -281,6 +281,11 @@ button:hover, select:hover {
     background: #3a3a3a;
 }
 
+select:focus {
+    outline: none;
+    border-color: #0066FF !important;
+}
+
 button:active {
     background: #0066FF;
     color: #fff;

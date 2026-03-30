@@ -146,7 +146,7 @@ class RG101UI extends HTMLElement {
                     border: none;
                 }
 
-                select {
+                .rg101-container select {
                     background: #333;
                     color: #fff;
                     border: 1px solid #4ecdc4;

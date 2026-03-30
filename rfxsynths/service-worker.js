@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rfx-synths-v38';
+const CACHE_NAME = 'rfx-synths-v40';
 const ASSETS = [
     './',
     './index.html',
@@ -17,6 +17,8 @@ const ASSETS = [
     './rg1piano.wasm',
     './rg909-drum.js',
     './rg909-drum.wasm',
+    './rg404-drum.js',
+    './rg404-drum.wasm',
     './rgahxdrum.js',
     './rgahxdrum.wasm',
     './rgslicer.js',
@@ -31,6 +33,7 @@ const ASSETS = [
     '../replugged/apple-touch-icon.png',
     '../replugged/synth.js',
     '../replugged/synth-registry.js',
+    '../replugged/synth-manifest.json',
     '../replugged/synth-ui.js',
     '../replugged/components/piano-keyboard.js',
     '../replugged/components/svg-slider.js',
@@ -65,6 +68,7 @@ const ASSETS = [
     '../replugged/external/rgsid-synth.js',
     '../replugged/external/rg1piano-synth.js',
     '../replugged/external/rg909-drum.js',
+    '../replugged/external/rg404-drum.js',
     '../replugged/external/rgsfz-synth.js',
     '../replugged/external/rgahxdrum.js',
     '../replugged/external/rgslicer-synth.js',

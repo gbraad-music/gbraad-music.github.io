@@ -69,6 +69,12 @@
       "category": "drum"
     },
     {
+      "id": "rg404",
+      "className": "RG404Drum",
+      "script": "../replugged/external/rg404-drum.js",
+      "category": "drum"
+    },
+    {
       "id": "rgahxdrum",
       "className": "RGAHXDrum",
       "script": "../replugged/external/rgahxdrum.js",

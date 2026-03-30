@@ -1,10 +1,10 @@
-// AudioWorklet Processor for RG909 WASM Drum Synth
+// AudioWorklet Processor for WASM Drum Synths (RG909, RG404, RGAHX)
 // Handles drum triggers and audio generation
 
 class DrumWorkletProcessor extends AudioWorkletProcessor {
     constructor(options) {
         super();
-        console.log('[DrumWorklet] ✅ LOADED - TR-909 Style Drum Machine');
+        console.log('[DrumWorklet] ✅ LOADED - Drum Machine Worklet');
         this.wasmModule = null;
         this.drumPtr = null;
         this.audioBufferPtr = null;
@@ -63,7 +63,7 @@ class DrumWorkletProcessor extends AudioWorkletProcessor {
 
             console.log('[DrumWorklet] WASM ready');
 
-            // Allocate audio buffer (mono for AHX, stereo for RG909)
+            // Allocate audio buffer (mono for AHX, stereo for RG909/RG404)
             const channelCount = this.processFunc.includes('f32') ? 2 : 1;
             this.audioBufferPtr = this.wasmModule._malloc(this.bufferSize * channelCount * 4);
 
@@ -93,8 +93,8 @@ class DrumWorkletProcessor extends AudioWorkletProcessor {
         // Convert normalized velocity (0-1) to MIDI velocity (0-127)
         // If velocity > 1.0, assume it's already in MIDI range (0-127)
         const midiVelocity = velocity > 1.0 ? Math.floor(velocity) : Math.floor(velocity * 127);
-        // RG909 uses 4 params, RGAHX uses 3
-        if (this.triggerFunc.includes('909')) {
+        // RG909 and RG404 use 4 params, RGAHX uses 3
+        if (this.triggerFunc.includes('909') || this.triggerFunc.includes('404')) {
             triggerFn(this.drumPtr, note, midiVelocity, this.sampleRate);
         } else {
             triggerFn(this.drumPtr, note, midiVelocity);
@@ -133,15 +133,15 @@ class DrumWorkletProcessor extends AudioWorkletProcessor {
         heapF32.fill(0);
 
         // Process audio through drum synth
-        // RG909 uses 4 params (drumPtr, buffer, frames, sampleRate), RGAHX uses 3 (drumPtr, buffer, frames)
-        if (this.processFunc.includes('909')) {
+        // RG909 and RG404 use 4 params (drumPtr, buffer, frames, sampleRate), RGAHX uses 3 (drumPtr, buffer, frames)
+        if (this.processFunc.includes('909') || this.processFunc.includes('404')) {
             processFn(this.drumPtr, this.audioBufferPtr, frames, this.sampleRate);
         } else {
             processFn(this.drumPtr, this.audioBufferPtr, frames);
         }
 
         if (isStereo) {
-            // De-interleave stereo output (RG909)
+            // De-interleave stereo output (RG909, RG404)
             const outputL = output[0];
             const outputR = output[1] || output[0];
 
