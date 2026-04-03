@@ -122,8 +122,8 @@ async function init() {
     .getElementById("btnInitDrum")
     .addEventListener("click", initializeDrum);
   document
-    .getElementById("btnInitRG404Drum")
-    .addEventListener("click", initializeRG404Drum);
+    .getElementById("btnInitRD404Drum")
+    .addEventListener("click", initializeRD404Drum);
   document
     .getElementById("btnInitAHXDrum")
     .addEventListener("click", initializeAHXDrum);
@@ -564,7 +564,7 @@ async function initializeDrum() {
 
   // Update button states
   document.getElementById("btnInitDrum").classList.add("active");
-  document.getElementById("btnInitRG404Drum").classList.remove("active");
+  document.getElementById("btnInitRD404Drum").classList.remove("active");
   document.getElementById("btnInitAHXDrum").classList.remove("active");
   document.getElementById("btnRenderDrums").disabled = false;
 }
@@ -636,11 +636,11 @@ async function initializeAHXDrum() {
 
   // Update button states
   document.getElementById("btnInitDrum").classList.remove("active");
-  document.getElementById("btnInitRG404Drum").classList.remove("active");
+  document.getElementById("btnInitRD404Drum").classList.remove("active");
   document.getElementById("btnInitAHXDrum").classList.add("active");
 }
 
-async function initializeRG404Drum() {
+async function initializeRD404Drum() {
   // Resume AudioContext if needed
   if (audioContext.state === "suspended") {
     await audioContext.resume();
@@ -657,11 +657,11 @@ async function initializeRG404Drum() {
   }
 
   try {
-    const RG404Drum = await SynthRegistry.getSynthClass('rg404');
-    drumSynth = new RG404Drum(audioContext);
+    const RD404Drum = await SynthRegistry.getSynthClass('rd404');
+    drumSynth = new RD404Drum(audioContext);
   } catch (error) {
     synthStatus.innerHTML = `Drum: <span style="color: #ff3333;">ERROR</span><br><span style="color: #ff6666; font-size: 11px;">${error.message}</span>`;
-    console.error("[Synth Test] Failed to load RG404Drum:", error);
+    console.error("[Synth Test] Failed to load RD404Drum:", error);
     return;
   }
 
@@ -669,7 +669,7 @@ async function initializeRG404Drum() {
 
   if (!initSuccess) {
     const errorMsg = drumSynth.wasmError || "Failed to initialize drum engine";
-    synthStatus.innerHTML = `Drum: <span style="color: #ff3333;">RG404 - ERROR</span><br><span style="color: #ff6666; font-size: 11px;">${errorMsg}</span>`;
+    synthStatus.innerHTML = `Drum: <span style="color: #ff3333;">RD404 - ERROR</span><br><span style="color: #ff6666; font-size: 11px;">${errorMsg}</span>`;
     console.error("[Synth Test] Failed to initialize RG404 Drum:", errorMsg);
     if (drumSynth) {
       drumSynth.destroy();
@@ -710,7 +710,7 @@ async function initializeRG404Drum() {
 
   // Update button states
   document.getElementById("btnInitDrum").classList.remove("active");
-  document.getElementById("btnInitRG404Drum").classList.add("active");
+  document.getElementById("btnInitRD404Drum").classList.add("active");
   document.getElementById("btnInitAHXDrum").classList.remove("active");
   document.getElementById("btnRenderDrums").disabled = false;
 }

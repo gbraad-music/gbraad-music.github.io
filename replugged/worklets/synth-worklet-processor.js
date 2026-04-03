@@ -659,7 +659,7 @@ class SynthWorkletProcessor extends AudioWorkletProcessor {
         this.heapF32.fill(0);
 
         // Process audio through synth
-        this.wasmFuncs.process(this.synthPtr, this.audioBufferPtr, frames);
+        this.wasmFuncs.process(this.synthPtr, this.audioBufferPtr, frames, this.sampleRate);
 
         // De-interleave output
         const outputL = output[0];

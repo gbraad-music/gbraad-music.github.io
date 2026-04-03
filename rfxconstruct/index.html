@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Visual Drum Synthesis Designer">
+    <meta name="theme-color" content="#CF1A37">
+    <title>RFX Construct - Drum Synthesis Designer</title>
+    <link rel="stylesheet" href="../replugged/style.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="top-banner">
+        <a href="../rfxsynths/" class="back-button">←</a>
+        <div class="banner-title">RFX Construct</div>
+    </div>
+
+    <div class="container">
+        <div class="main-grid">
+            <!-- Left Panel: Parameters -->
+            <div class="section parameters-panel">
+                <div class="section-title">
+                    Drum Synthesis Designer
+                    <button id="add-osc-btn" class="add-button">+ Add Oscillator</button>
+                </div>
+
+                <div id="oscillators-container">
+                    <!-- Oscillators will be added dynamically -->
+                </div>
+
+                <div class="param-section">
+                    <h3>Global Saturation</h3>
+                    <div class="param-group">
+                        <label>
+                            <span>Saturation Amount: <strong id="sat-amount-val">3.5</strong></span>
+                            <input type="range" id="sat-amount" min="1" max="10" value="3.5" step="0.1">
+                        </label>
+                        <label>
+                            <span>Output Scale: <strong id="sat-scale-val">0.7</strong></span>
+                            <input type="range" id="sat-scale" min="0.1" max="1" value="0.7" step="0.01">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="reset-btn" class="action-button">Reset to Defaults</button>
+                </div>
+            </div>
+
+            <!-- Right Panel: Visualization & Code -->
+            <div class="output-panel">
+                <div class="section">
+                    <div class="section-title">
+                        Waveform Preview
+                        <button id="preview-btn" class="add-button">▶ Play</button>
+                    </div>
+                    <canvas id="waveform" width="800" height="300"></canvas>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Generated C Code</div>
+                    <div class="code-actions">
+                        <button id="copy-btn" class="action-button">Copy Code</button>
+                    </div>
+                    <pre id="code-output"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
