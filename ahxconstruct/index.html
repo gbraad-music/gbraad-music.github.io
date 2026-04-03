@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AHX Performance List Constructor">
+    <meta name="theme-color" content="#CF1A37">
+    <title>AHX Construct - Performance List Designer</title>
+    <link rel="stylesheet" href="../replugged/style.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="top-banner">
+        <a href="../rfxsynths/" class="back-button">←</a>
+        <div class="banner-title">AHX Construct</div>
+    </div>
+
+    <div class="container">
+        <div class="main-grid">
+            <!-- Left Panel: PList & Preset -->
+            <div class="section parameters-panel">
+                <div class="section-title">
+                    Performance List Designer
+                </div>
+
+                <div class="param-section">
+                    <h3>Performance List</h3>
+                    <div class="param-group">
+                        <label>
+                            <span>Speed: <strong id="plist-speed-val">1</strong></span>
+                            <input type="range" id="plist-speed" min="1" max="255" value="1" step="1">
+                        </label>
+                    </div>
+
+                    <!-- PList Entries Table -->
+                    <div id="plist-entries-container" class="plist-table-container">
+                        <table class="plist-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Note</th>
+                                    <th>Fixed</th>
+                                    <th>Wave</th>
+                                    <th>FX1</th>
+                                    <th>FXP1</th>
+                                    <th>FX2</th>
+                                    <th>FXP2</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="plist-entries">
+                                <!-- Entries populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <button id="add-entry-btn" class="add-button" style="margin-top: 10px;">+ Add Entry</button>
+                </div>
+
+                <div class="button-group">
+                    <button id="load-kick-btn" class="action-button">Load Kick Preset</button>
+                    <button id="load-snare-btn" class="action-button">Load Snare Preset</button>
+                    <button id="load-arp-btn" class="action-button">Load Arp Preset</button>
+                </div>
+
+                <!-- Preset Parameters -->
+                <div class="param-section">
+                    <h3>Oscillator</h3>
+                    <div class="param-group">
+                        <label>
+                            <span>Waveform:</span>
+                            <select id="preset-waveform">
+                                <option value="0">Triangle</option>
+                                <option value="1">Sawtooth</option>
+                                <option value="2">Square</option>
+                                <option value="3" selected>Noise</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Wave Length: <strong id="preset-wavelength-val">5</strong></span>
+                            <input type="range" id="preset-wavelength" min="0" max="5" value="5" step="1">
+                        </label>
+                        <label>
+                            <span>Volume: <strong id="preset-volume-val">64</strong></span>
+                            <input type="range" id="preset-volume" min="0" max="64" value="64" step="1">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="param-section">
+                    <h3>Envelope (ADSR)</h3>
+                    <div class="param-group">
+                        <label>
+                            <span>Attack Time: <strong id="preset-atime-val">1</strong></span>
+                            <input type="range" id="preset-atime" min="1" max="255" value="1" step="1">
+                        </label>
+                        <label>
+                            <span>Attack Volume: <strong id="preset-avol-val">64</strong></span>
+                            <input type="range" id="preset-avol" min="0" max="64" value="64" step="1">
+                        </label>
+                        <label>
+                            <span>Decay Time: <strong id="preset-dtime-val">17</strong></span>
+                            <input type="range" id="preset-dtime" min="0" max="255" value="17" step="1">
+                        </label>
+                        <label>
+                            <span>Decay Volume: <strong id="preset-dvol-val">15</strong></span>
+                            <input type="range" id="preset-dvol" min="0" max="64" value="15" step="1">
+                        </label>
+                        <label>
+                            <span>Sustain Time: <strong id="preset-stime-val">4</strong></span>
+                            <input type="range" id="preset-stime" min="0" max="255" value="4" step="1">
+                        </label>
+                        <label>
+                            <span>Release Time: <strong id="preset-rtime-val">20</strong></span>
+                            <input type="range" id="preset-rtime" min="0" max="255" value="20" step="1">
+                        </label>
+                        <label>
+                            <span>Release Volume: <strong id="preset-rvol-val">0</strong></span>
+                            <input type="range" id="preset-rvol" min="0" max="64" value="0" step="1">
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Visualization & Code -->
+            <div class="output-panel">
+                <div class="section">
+                    <div class="section-title">
+                        Waveform Preview
+                        <button id="preview-btn" class="add-button">▶ Play</button>
+                    </div>
+                    <canvas id="waveform" width="800" height="300"></canvas>
+                    <input type="range" id="waveform-scroll" min="0" max="100" value="0" step="0.1" style="width: 100%; margin-top: 10px;">
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Generated C Code</div>
+                    <div class="code-actions">
+                        <button id="export-ahxp-btn" class="action-button">💾 Download .ahxp</button>
+                        <button id="copy-btn" class="action-button">Copy Code</button>
+                    </div>
+                    <pre id="code-output"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
