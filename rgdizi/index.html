@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="笛子 (Dizi) Chinese Bamboo Flute - Physical modeling synthesizer with dimo membrane">
+    <meta name="theme-color" content="#CF1A37">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RGDizi">
+    <title>RGDizi - Chinese Bamboo Flute Synthesizer</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/svg+xml" href="../replugged/favicon.svg">
+    <link rel="icon" type="image/png" sizes="96x96" href="../replugged/favicon-96x96.png">
+    <link rel="apple-touch-icon" href="../replugged/apple-touch-icon.png">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="top-banner">
+        <a href="../rfxsynths/index.html" class="back-button">←</a>
+        <div class="banner-title">RGDizi: 笛子 (Dizi) Chinese Bamboo Flute Synthesizer</div>
+    </div>
+
+    <div class="container">
+        <!-- Status -->
+        <div class="section">
+            <div id="status" style="text-align: center; padding: 10px; font-weight: bold;">
+                Click anywhere to start audio
+            </div>
+        </div>
+
+        <!-- MIDI Input Section -->
+        <div class="section">
+            <div class="section-title">MIDI Input Source</div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="midiInput" style="flex: 1; padding: 10px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 4px;">
+                    <option value="">Select MIDI Input...</option>
+                </select>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.85em; color: var(--text-secondary);">
+                MIDI: <span id="midiStatus">Not Connected</span>
+            </div>
+        </div>
+
+        <!-- Envelope -->
+        <div class="section">
+            <div class="section-title">Envelope (ADSR)</div>
+
+            <div class="control">
+                <label>Attack:</label>
+                <input type="range" id="env-attack" min="0.001" max="1.0" step="0.001" value="0.03">
+                <span class="value" id="val-attack">30 ms</span>
+            </div>
+
+            <div class="control">
+                <label>Decay:</label>
+                <input type="range" id="env-decay" min="0.001" max="2.0" step="0.001" value="0.05">
+                <span class="value" id="val-decay">50 ms</span>
+            </div>
+
+            <div class="control">
+                <label>Sustain:</label>
+                <input type="range" id="env-sustain" min="0.0" max="1.0" step="0.01" value="0.7">
+                <span class="value" id="val-sustain">70%</span>
+            </div>
+
+            <div class="control">
+                <label>Release:</label>
+                <input type="range" id="env-release" min="0.001" max="3.0" step="0.001" value="0.40">
+                <span class="value" id="val-release">400 ms</span>
+            </div>
+        </div>
+
+        <!-- Performance Controls -->
+        <div class="section">
+            <div class="section-title">Performance Controls</div>
+
+            <div class="control">
+                <label>Vibrato Depth:</label>
+                <input type="range" id="vibrato-depth" min="0" max="50" step="1" value="0">
+                <span class="value" id="val-vibrato-depth">0 cents</span>
+            </div>
+
+            <div class="control">
+                <label>Vibrato Rate:</label>
+                <input type="range" id="vibrato-rate" min="3" max="8" step="0.5" value="5.5">
+                <span class="value" id="val-vibrato-rate">5.5 Hz</span>
+            </div>
+
+            <div class="control">
+                <label>Flutter Depth:</label>
+                <input type="range" id="flutter-depth" min="0.0" max="1.0" step="0.05" value="0.0">
+                <span class="value" id="val-flutter-depth">0.00</span>
+            </div>
+
+            <div class="control">
+                <label>Flutter Rate:</label>
+                <input type="range" id="flutter-rate" min="8" max="20" step="1" value="15">
+                <span class="value" id="val-flutter-rate">15 Hz</span>
+            </div>
+        </div>
+
+        <!-- Dimo Membrane -->
+        <div class="section">
+            <div class="section-title">
+                Dimo Membrane (竹膜)
+                <button class="collapse-toggle" id="dimoToggle">▼</button>
+            </div>
+            <div id="dimoPanel" class="visible">
+                <div class="section-subtitle">Adds buzzy, reedy character to the flute tone</div>
+
+                <div class="control">
+                    <label>Dimo Intensity:</label>
+                    <input type="range" id="dimo-intensity" min="0.0" max="2.0" step="0.1" value="1.0">
+                    <span class="value" id="val-dimo-intensity">1.0</span>
+                </div>
+
+                <div class="control">
+                    <label>Dimo Frequency:</label>
+                    <input type="range" id="dimo-freq" min="2000" max="6000" step="100" value="4000">
+                    <span class="value" id="val-dimo-freq">4000 Hz</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Parameters -->
+        <div class="section">
+            <div class="section-title">
+                Advanced Parameters
+                <button class="collapse-toggle" id="advancedToggle">▶</button>
+            </div>
+            <div id="advancedPanel" style="display: none;">
+                <div class="section-subtitle">STK two-delay physical model parameters</div>
+
+                <div class="control">
+                    <label>Noise Gain:</label>
+                    <input type="range" id="noise-gain" min="0.0" max="0.4" step="0.01" value="0.10">
+                    <span class="value" id="val-noise">0.10</span>
+                </div>
+
+                <div class="control">
+                    <label>Filter Damping:</label>
+                    <input type="range" id="damping" min="0.3" max="0.9" step="0.01" value="0.65">
+                    <span class="value" id="val-damping">0.65</span>
+                </div>
+
+                <div class="control">
+                    <label>Jet Reflection:</label>
+                    <input type="range" id="jet-refl" min="0.0" max="0.9" step="0.01" value="0.50">
+                    <span class="value" id="val-jet-refl">0.50</span>
+                </div>
+
+                <div class="control">
+                    <label>End Reflection:</label>
+                    <input type="range" id="end-refl" min="0.0" max="0.9" step="0.01" value="0.50">
+                    <span class="value" id="val-end-refl">0.50</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- On-screen Keyboard -->
+        <div class="section">
+            <div class="section-title">
+                On-Screen Keyboard
+                <button class="collapse-toggle" id="keyboardToggle">▼</button>
+            </div>
+            <div class="keyboard-container visible" id="keyboardContainer">
+                <div class="keyboard-controls">
+                    <button id="keyboard-toggle" class="control-button">⌨ Computer Keyboard</button>
+                    <div class="octave-controls">
+                        <button class="octave-btn" id="octaveDown">-</button>
+                        <span id="octaveDisplay" style="color: #0066FF; min-width: 40px; text-align: center; font-weight: bold;">C5</span>
+                        <button class="octave-btn" id="octaveUp">+</button>
+                    </div>
+                    <button id="btn-vibrato" class="control-button">V Vibrato</button>
+                    <button id="btn-flutter" class="control-button">R Flutter</button>
+                    <button id="btnKeyboardFullscreen" style="margin-left: auto;">⛶ Fullscreen</button>
+                </div>
+                <div class="keyboard-with-bend">
+                    <!-- Pitch Bend Slider -->
+                    <div class="pitch-bend-container">
+                        <div style="text-align: center; color: #aaaaaa; font-size: 0.65em; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Bend</div>
+                        <svg-slider id="pitchBendSlider" value="64" min="0" max="127" width="45" color="#CF1A37" style="flex: 1;"></svg-slider>
+                        <div id="pitchBendValue" style="text-align: center; color: #ffffff; font-size: 0.75em; font-weight: bold; min-height: 1.2em;">0.00</div>
+                    </div>
+                    <!-- Piano Keyboard -->
+                    <div class="piano-keyboard" id="pianoKeyboard"></div>
+                </div>
+                <div class="keyboard-info">
+                    <span>Click keys to play. Use mouse or touch.</span>
+                    <span id="lastNote" style="color: #0066FF;">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../replugged/components/piano-keyboard.js"></script>
+    <script type="module" src="../replugged/components/svg-slider.js"></script>
+    <script type="module" src="app.js"></script>
+    <script>
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => {
+                        console.log('Service Worker registered');
+                    })
+                    .catch(err => console.warn('Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>

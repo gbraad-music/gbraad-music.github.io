@@ -1,0 +1,327 @@
+/* CSS Variables */
+:root {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #2a2a2a;
+  --accent: #cf1a37;
+  --accent-dim: #a01528;
+  --text-primary: #ffffff;
+  --text-secondary: #aaaaaa;
+  --border: #333333;
+}
+
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Body */
+body {
+  font-family: Arial, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* Top Banner */
+.top-banner {
+  background: var(--accent);
+  padding: 0 20px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.back-button {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1.5em;
+  cursor: pointer;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.back-button:hover {
+  transform: translateX(-3px);
+}
+
+.banner-title {
+  font-size: 1.1em;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+/* Container */
+.container {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Common Controls */
+button, select {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+}
+
+button:hover, select:hover {
+  border-color: #4a4a4a;
+}
+
+button:active {
+  background: var(--accent);
+}
+
+/* Section Styles */
+.section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 0.85em;
+  font-weight: bold;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.collapse-toggle {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 1em;
+  padding: 0 5px;
+}
+
+.collapse-toggle:hover {
+  color: var(--accent);
+}
+
+/* Dizi-specific styles */
+/* Additional Dizi-specific styles */
+.control {
+  margin-bottom: 15px;
+}
+.control label {
+  display: inline-block;
+  width: 150px;
+  color: var(--text-secondary);
+  font-size: 0.9em;
+}
+.control input[type="range"] {
+  width: 200px;
+  vertical-align: middle;
+}
+.control .value {
+  display: inline-block;
+  width: 80px;
+  text-align: right;
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 0.9em;
+}
+.control-button {
+  padding: 8px 15px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background 0.2s;
+}
+.control-button:hover {
+  background: var(--accent-dim);
+}
+.control-button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.hint {
+  font-size: 0.75em;
+  color: #666;
+  font-style: italic;
+}
+.section-subtitle {
+  font-size: 0.85em;
+  color: var(--text-secondary);
+  margin-bottom: 15px;
+  font-style: italic;
+}
+
+/* Keyboard Styles */
+.keyboard-container {
+  display: none;
+  background: var(--bg-primary);
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.keyboard-container:hover {
+  border-color: #4a4a4a;
+}
+
+.keyboard-container.visible {
+  display: block;
+}
+
+.keyboard-container:fullscreen {
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  border-radius: 0;
+  width: 100vw;
+  height: 100vh;
+  min-height: 0;
+}
+
+.keyboard-container:fullscreen .keyboard-with-bend {
+  height: 70vh;
+}
+
+.keyboard-container:fullscreen .piano-keyboard {
+  height: 100%;
+  width: auto;
+}
+
+.keyboard-container:fullscreen::after {
+  content: '✕';
+  display: block;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 20px;
+  color: var(--text-primary);
+  opacity: 0.6;
+  transition: opacity 0.2s, color 0.2s;
+  pointer-events: auto;
+  background: rgba(207, 26, 55, 0.8);
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  font-weight: bold;
+}
+
+.keyboard-container:fullscreen::after:hover {
+  opacity: 1;
+  background: rgba(207, 26, 55, 1);
+}
+
+.keyboard-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.keyboard-controls label {
+  color: #888;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.keyboard-controls select {
+  flex: 1;
+  min-width: 0;
+}
+
+.octave-controls {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.octave-btn {
+  padding: 8px 15px;
+  background: var(--bg-tertiary);
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.octave-btn:hover {
+  border-color: #4a4a4a;
+}
+
+.octave-btn:active {
+  background: #0066FF;
+}
+
+.keyboard-with-bend {
+  display: flex;
+  gap: 15px;
+  height: 400px;
+}
+
+.pitch-bend-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.piano-keyboard {
+  display: flex;
+  flex: 1;
+  height: 100%;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  padding: 10px;
+  overflow: hidden;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.keyboard-info {
+  margin-top: 10px;
+  font-size: 10px;
+  color: #666;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

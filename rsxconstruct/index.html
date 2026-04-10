@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="RS1 Preset Designer">
+    <meta name="theme-color" content="#CF1A37">
+    <title>RS1 Construct - Modular Synth Designer</title>
+    <link rel="stylesheet" href="../replugged/style.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="top-banner">
+        <a href="../rfxsynths/" class="back-button">←</a>
+        <div class="banner-title">RS1 Construct</div>
+    </div>
+
+    <div class="container">
+        <div class="main-grid">
+            <!-- Left Panel: Parameters -->
+            <div class="section parameters-panel">
+                <div class="section-title">
+                    RS1 Preset Designer
+                    <button id="add-op-btn" class="add-button">+ Add Operator</button>
+                </div>
+
+                <div id="operators-container">
+                    <!-- Output and Operators will be added dynamically -->
+                </div>
+
+                <div class="param-section">
+                    <h3>Preset Management</h3>
+                    <div class="param-group">
+                        <label>
+                            <span>Preset Name</span>
+                            <input type="text" id="preset-name" value="Custom" maxlength="31">
+                        </label>
+                        <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 8px;">
+                            <button id="save-local-btn" class="action-button">💾 Save Local</button>
+                            <button id="delete-local-btn" class="action-button" style="background: #661111;">Delete</button>
+                        </div>
+                    </div>
+
+                    <div class="param-group" style="margin-top: 12px;">
+                        <label>
+                            <span>Saved Presets</span>
+                            <select id="saved-presets-selector">
+                                <option value="">-- No saved presets --</option>
+                            </select>
+                        </label>
+                        <button id="load-local-btn" class="action-button">Load Saved</button>
+                    </div>
+
+                    <div class="param-group" style="margin-top: 12px;">
+                        <label>
+                            <span>Templates</span>
+                            <select id="preset-selector">
+                                <optgroup label="Synth Presets">
+                                    <option value="default">Default</option>
+                                    <option value="bell">Bell</option>
+                                    <option value="lead">Lead</option>
+                                    <option value="supersaw">Supersaw</option>
+                                    <option value="bass">Bass</option>
+                                    <option value="pad">Pad</option>
+                                </optgroup>
+                                <optgroup label="Drum Presets">
+                                    <option value="kick">Kick</option>
+                                    <option value="snare">Snare</option>
+                                    <option value="closedhat">Closed Hat</option>
+                                    <option value="openhat">Open Hat</option>
+                                    <option value="clap">Clap</option>
+                                    <option value="tom">Tom</option>
+                                </optgroup>
+                            </select>
+                        </label>
+                        <button id="load-preset-btn" class="action-button">Load Template</button>
+                    </div>
+
+                    <div class="param-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px;">
+                        <button id="save-btn" class="action-button">💾 Export (.rs1)</button>
+                        <button id="load-btn" class="action-button">📂 Import (.rs1)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Visualization & Code -->
+            <div class="output-panel">
+                <div class="section">
+                    <div class="section-title">
+                        Waveform Preview
+                        <button id="preview-btn" class="add-button">▶ Play (C4)</button>
+                    </div>
+                    <canvas id="waveform" width="800" height="300"></canvas>
+                    <input type="range" id="waveform-scroll" min="0" max="100" value="0" step="0.1" style="width: 100%; margin-top: 10px;">
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Operator Graph <span style="font-size: 12px; font-weight: normal; color: #888;">(click elements for details)</span></div>
+                    <svg id="operator-graph" style="background: #0a0a0a; border: 1px solid #333;"></svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DX7 Patch Editor">
+    <meta name="theme-color" content="#be3b65">
+    <title>RX7 Construct - DX7 Patch Editor</title>
+    <link rel="stylesheet" href="../replugged/style.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="top-banner">
+        <a href="../rfxsynths/" class="back-button">←</a>
+        <div class="banner-title">RX7 Construct</div>
+    </div>
+
+    <div class="container">
+        <!-- Top Panel -->
+        <div class="section">
+            <div class="top-controls">
+                <div class="patch-display">
+                    <div class="lcd-label">PATCH NAME</div>
+                    <input type="text" id="patch-name" class="lcd-input" value="INIT VOICE" maxlength="10">
+                </div>
+
+                <div class="action-buttons">
+                    <button id="load-cart-btn" class="dx7-button teal">Load Cartridge</button>
+                    <button id="save-cart-btn" class="dx7-button teal">Save Cartridge</button>
+                    <button id="load-voice-btn" class="dx7-button purple">Load Voice to Slot</button>
+                    <button id="save-voice-btn" class="dx7-button pink">Save Voice</button>
+                    <button id="reset-btn" class="dx7-button pink">Reset</button>
+                </div>
+            </div>
+
+            <div class="preview-controls">
+                <button id="preview-btn" class="dx7-button purple">▶ Preview C4</button>
+                <button id="stop-btn" class="dx7-button pink">■ Stop</button>
+
+                <select id="midi-input" style="margin-left: 20px; padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; min-width: 180px;">
+                    <option value="">No MIDI Input</option>
+                </select>
+                <span id="midi-status" style="margin-left: 8px; color: #888; font-size: 11px;">MIDI: Not connected</span>
+
+                <button id="keyboard-toggle" class="dx7-button" style="margin-left: 20px;">
+                    ⌨ Keyboard
+                </button>
+                <span id="octave-display" style="margin-left: 8px; color: #5a979a; font-size: 11px; font-weight: bold; display: none;">Oct: 4</span>
+
+                <button id="live-update-toggle" class="dx7-button" style="margin-left: auto;">
+                    Live Update
+                </button>
+
+                <span id="audio-status" style="display: none; margin-left: auto; color: #888; font-size: 11px;">Audio: Not loaded</span>
+            </div>
+        </div>
+
+        <!-- Cartridge Browser -->
+        <div class="section">
+            <div class="section-title">
+                <button class="collapse-toggle" id="cartridgeToggle">▶</button>
+                Cartridge Browser
+            </div>
+            <div class="cartridge-container" id="cartridgeContainer">
+                <div id="cartridge-info" style="color: #888; margin-bottom: 10px; font-size: 12px;">
+                    No cartridge loaded - Built-in presets available below
+                </div>
+                <div class="cartridge-grid" id="cartridge-grid">
+                    <!-- Preset slots will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <!-- Left: Algorithm & Global -->
+            <div class="section">
+                <div class="section-title">Algorithm & Global</div>
+
+                <div class="algorithm-section">
+                    <div class="algorithm-diagram">
+                        <svg id="algorithm-svg" width="200" height="200">
+                            <!-- Algorithm diagram will be rendered here -->
+                        </svg>
+                    </div>
+                    <div class="algorithm-controls">
+                        <div class="param-row">
+                            <label>Algorithm (1-32)</label>
+                            <input type="number" id="algorithm" min="1" max="32" value="1">
+                        </div>
+                        <div class="param-row">
+                            <label>Feedback (0-7)</label>
+                            <input type="range" id="feedback" min="0" max="7" value="0">
+                            <span id="feedback-value">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="global-params">
+                    <h3>LFO</h3>
+                    <div class="param-grid">
+                        <div class="param-item">
+                            <label>Speed</label>
+                            <input type="range" id="lfo-speed" min="0" max="99" value="35">
+                            <span id="lfo-speed-value">35</span>
+                        </div>
+                        <div class="param-item">
+                            <label>Delay</label>
+                            <input type="range" id="lfo-delay" min="0" max="99" value="0">
+                            <span id="lfo-delay-value">0</span>
+                        </div>
+                        <div class="param-item">
+                            <label>PM Depth</label>
+                            <input type="range" id="lfo-pm-depth" min="0" max="99" value="0">
+                            <span id="lfo-pm-depth-value">0</span>
+                        </div>
+                        <div class="param-item">
+                            <label>AM Depth</label>
+                            <input type="range" id="lfo-am-depth" min="0" max="99" value="0">
+                            <span id="lfo-am-depth-value">0</span>
+                        </div>
+                        <div class="param-item">
+                            <label>PM Sens</label>
+                            <input type="range" id="lfo-pm-sens" min="0" max="7" value="3">
+                            <span id="lfo-pm-sens-value">3</span>
+                        </div>
+                        <div class="param-item">
+                            <label>Waveform</label>
+                            <select id="lfo-waveform">
+                                <option value="0">Triangle</option>
+                                <option value="1">Saw Down</option>
+                                <option value="2">Saw Up</option>
+                                <option value="3">Square</option>
+                                <option value="4">Sine</option>
+                                <option value="5">S&H</option>
+                            </select>
+                        </div>
+                        <div class="param-item">
+                            <label>Sync</label>
+                            <select id="lfo-sync">
+                                <option value="0">Off</option>
+                                <option value="1">On</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h3>Pitch Envelope</h3>
+                    <div class="param-grid">
+                        <div class="param-item" data-label="Rate 1">
+                            <input type="range" id="pitch-eg-r1" min="0" max="99" value="99">
+                            <span id="pitch-eg-r1-value">99</span>
+                        </div>
+                        <div class="param-item" data-label="Rate 2">
+                            <input type="range" id="pitch-eg-r2" min="0" max="99" value="99">
+                            <span id="pitch-eg-r2-value">99</span>
+                        </div>
+                        <div class="param-item" data-label="Rate 3">
+                            <input type="range" id="pitch-eg-r3" min="0" max="99" value="99">
+                            <span id="pitch-eg-r3-value">99</span>
+                        </div>
+                        <div class="param-item" data-label="Rate 4">
+                            <input type="range" id="pitch-eg-r4" min="0" max="99" value="99">
+                            <span id="pitch-eg-r4-value">99</span>
+                        </div>
+                        <div class="param-item" data-label="Level 1">
+                            <input type="range" id="pitch-eg-l1" min="0" max="99" value="50">
+                            <span id="pitch-eg-l1-value">50</span>
+                        </div>
+                        <div class="param-item" data-label="Level 2">
+                            <input type="range" id="pitch-eg-l2" min="0" max="99" value="50">
+                            <span id="pitch-eg-l2-value">50</span>
+                        </div>
+                        <div class="param-item" data-label="Level 3">
+                            <input type="range" id="pitch-eg-l3" min="0" max="99" value="50">
+                            <span id="pitch-eg-l3-value">50</span>
+                        </div>
+                        <div class="param-item" data-label="Level 4">
+                            <input type="range" id="pitch-eg-l4" min="0" max="99" value="50">
+                            <span id="pitch-eg-l4-value">50</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Operators -->
+            <div class="operators-panel">
+                <div class="section-title">Operators (6 → 1)</div>
+                <div id="operators-container" class="operators-grid">
+                    <!-- Operators 6-1 will be generated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../replugged/external/midi-manager.js"></script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
