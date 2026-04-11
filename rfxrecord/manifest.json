@@ -1,0 +1,22 @@
+{
+  "name": "RegrooveFX Record",
+  "short_name": "RFX Record",
+  "description": "Multi-take audio recorder with live monitoring",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#CF1A37",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "../replugged/favicon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "../replugged/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
