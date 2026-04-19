@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="RS1 Synth - Resonate Physical Modeling Synthesizer">
+    <meta name="theme-color" content="#FF8C42">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RS1 Synth">
+    <title>RS1 Synth</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="top-banner">
+        <button class="hamburger-button" id="hamburgerBtn">☰</button>
+        <div class="banner-title">RS1 SYNTH</div>
+    </div>
+
+    <!-- Hamburger Menu -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+    <div class="menu-panel" id="menuPanel">
+        <button class="menu-close" id="menuClose">×</button>
+        <div class="menu-items">
+            <button class="menu-item" id="loadBtn">Load Cart...</button>
+            <button class="menu-item" id="mainBtn">Main</button>
+            <button class="menu-item" id="settingsBtn">Settings</button>
+
+            <!-- MIDI Input Device Selector -->
+            <div style="padding: 15px 0; border-top: 1px solid var(--border); margin-top: 10px;">
+                <label style="display: block; color: var(--text-secondary); font-size: 0.8em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">MIDI Input</label>
+                <select id="midiInputList" class="menu-item" style="padding: 10px 15px; margin-bottom: 0;">
+                    <option value="">All MIDI Devices</option>
+                </select>
+            </div>
+
+            <!-- Audio Output Device Selector -->
+            <div style="padding: 15px 0; border-top: 1px solid var(--border); margin-top: 10px;">
+                <label style="display: block; color: var(--text-secondary); font-size: 0.8em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Audio Output</label>
+                <select id="outputDeviceList" class="menu-item" style="padding: 10px 15px; margin-bottom: 0;">
+                    <option value="">Default Output</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content area with canvas -->
+    <div class="content">
+        <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
+        <input type="file" id="fileInput" accept=".rs1cart,.rs1">
+    </div>
+    <script type='text/javascript'>
+        // Menu functionality
+        var menuApp = {
+            toggleMenu: function() {
+                var overlay = document.getElementById('menuOverlay');
+                var panel = document.getElementById('menuPanel');
+                overlay.classList.toggle('active');
+                panel.classList.toggle('active');
+            },
+            closeMenu: function() {
+                var overlay = document.getElementById('menuOverlay');
+                var panel = document.getElementById('menuPanel');
+                overlay.classList.remove('active');
+                panel.classList.remove('active');
+            }
+        };
+
+        // Set up menu event listeners
+        document.getElementById('hamburgerBtn').addEventListener('click', function() {
+            menuApp.toggleMenu();
+        });
+
+        document.getElementById('menuClose').addEventListener('click', function() {
+            menuApp.closeMenu();
+        });
+
+        document.getElementById('menuOverlay').addEventListener('click', function() {
+            menuApp.closeMenu();
+        });
+
+        // Main button in menu
+        document.getElementById('mainBtn').addEventListener('click', function() {
+            if (Module.ccall) {
+                Module.ccall('wasm_set_view', 'void', ['number'], [0]);  // 0 = main
+            }
+            menuApp.closeMenu();
+        });
+
+        // Settings button in menu
+        document.getElementById('settingsBtn').addEventListener('click', function() {
+            if (Module.ccall) {
+                Module.ccall('wasm_set_view', 'void', ['number'], [1]);  // 1 = settings
+            }
+            menuApp.closeMenu();
+        });
+
+        // Load button in menu
+        document.getElementById('loadBtn').addEventListener('click', function() {
+            document.getElementById('fileInput').click();
+            menuApp.closeMenu();
+        });
+
+        // Intercept AudioContext creation to capture it
+        var originalAudioContext = window.AudioContext || window.webkitAudioContext;
+        window.rs1synthAudioContext = null;
+
+        window.AudioContext = function() {
+            var ctx = new originalAudioContext();
+            window.rs1synthAudioContext = ctx;
+            console.log('Captured AudioContext:', ctx);
+            return ctx;
+        };
+        window.AudioContext.prototype = originalAudioContext.prototype;
+
+        if (window.webkitAudioContext) {
+            window.webkitAudioContext = window.AudioContext;
+        }
+
+        var Module = {
+            canvas: document.getElementById('canvas'),
+            setStatus: function(text) {},
+            monitorRunDependencies: function(left) {},
+            onRuntimeInitialized: function() {
+                console.log('WASM runtime initialized, enumerating audio devices...');
+                // Wait for SDL audio to initialize
+                setTimeout(function() {
+                    enumerateAudioDevices();
+                }, 1000);
+            }
+        };
+
+        // Handle WebGL context loss and restoration
+        var canvas = document.getElementById('canvas');
+        canvas.addEventListener('webglcontextlost', function(e) {
+            console.error('WebGL context lost! Preventing default and attempting restore...');
+            e.preventDefault();
+        }, false);
+
+        canvas.addEventListener('webglcontextrestored', function() {
+            console.log('WebGL context restored! Calling C++ to reinitialize...');
+            if (Module._wasm_restore_gl_context) {
+                try {
+                    Module._wasm_restore_gl_context();
+                    console.log('GL context reinitialized successfully');
+                } catch(e) {
+                    console.error('Error during GL context restoration:', e);
+                }
+            } else {
+                console.error('wasm_restore_gl_context function not found');
+            }
+        }, false);
+
+        // Request MIDI access
+        if (navigator.requestMIDIAccess) {
+            navigator.requestMIDIAccess({ sysex: false }).then(
+                function(access) {
+                    console.log('MIDI access granted');
+                    setupMIDI(access);
+                },
+                function(err) {
+                    console.log('MIDI access denied:', err);
+                }
+            );
+        }
+
+        var midiAccess = null;
+        var selectedMidiInputId = null;
+
+        function setupMIDI(access) {
+            midiAccess = access;
+
+            // Populate MIDI input selector
+            var midiSelector = document.getElementById('midiInputList');
+            midiSelector.innerHTML = '<option value="">All MIDI Devices</option>';
+
+            access.inputs.forEach(function(input) {
+                console.log('MIDI input:', input.name);
+                var option = document.createElement('option');
+                option.value = input.id;
+                option.textContent = input.name;
+                midiSelector.appendChild(option);
+
+                // Set up message handler
+                input.onmidimessage = function(event) {
+                    // Only process if this device is selected or "all" is selected
+                    if (!selectedMidiInputId || selectedMidiInputId === input.id) {
+                        if (Module.ccall) {
+                            var data = event.data;
+                            Module.ccall('wasm_midi_message', 'void',
+                                ['number', 'number', 'number'],
+                                [data[0], data[1] || 0, data[2] || 0]);
+                        }
+                    }
+                };
+            });
+
+            // Listen for device changes
+            access.onstatechange = function(e) {
+                console.log('MIDI device state change:', e.port.name, e.port.state);
+                if (e.port.state === 'connected' && e.port.type === 'input') {
+                    // Refresh MIDI input list
+                    setupMIDI(access);
+                }
+            };
+        }
+
+        // Handle MIDI input selection
+        document.getElementById('midiInputList').addEventListener('change', function(e) {
+            selectedMidiInputId = e.target.value || null;
+            console.log('MIDI input filter:', selectedMidiInputId ? e.target.options[e.target.selectedIndex].text : 'All devices');
+        });
+
+        // Set up file input handler for loading RS1 carts
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (!file) return;
+
+            var reader = new FileReader();
+            reader.onload = function(event) {
+                var data = new Uint8Array(event.target.result);
+                var filename = file.name;
+
+                // Wait for WASM to be ready
+                if (typeof Module.FS === 'undefined') {
+                    console.error('WASM not ready yet');
+                    return;
+                }
+
+                // Create /tmp directory if it doesn't exist
+                try {
+                    Module.FS.mkdir('/tmp');
+                } catch(e) {}
+
+                // Write file to WASM virtual filesystem
+                var path = '/tmp/' + filename;
+                Module.FS.writeFile(path, data);
+
+                // Call C++ function to load the cart
+                if (Module.ccall) {
+                    Module.ccall('wasm_load_cart_callback', 'void', ['string'], [path]);
+                }
+
+                // Reset input so same file can be loaded again
+                e.target.value = '';
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // Make file input globally accessible so WASM can trigger it (for ImGui button)
+        window.openFileDialog = function() {
+            document.getElementById('fileInput').click();
+        };
+
+        // Audio device enumeration and selection
+        async function enumerateAudioDevices() {
+            try {
+                // Request microphone permission to get device labels
+                // (We don't actually use the mic, just need permission to see labels)
+                let stream = null;
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                } catch (err) {
+                    console.warn('Microphone permission denied - device labels will not be available:', err);
+                }
+
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
+
+                // Stop the microphone stream immediately (we don't need it anymore)
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+
+                // Populate output device selector
+                const outputSelector = document.getElementById('outputDeviceList');
+                outputSelector.innerHTML = '<option value="">Default Output</option>';
+                audioOutputs.forEach(device => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.textContent = device.label || `Output ${outputSelector.options.length}`;
+                    outputSelector.appendChild(option);
+                });
+
+                console.log('Audio output devices enumerated:', audioOutputs.length);
+            } catch (error) {
+                console.warn('Could not enumerate audio devices:', error);
+            }
+        }
+
+        // Handle output device selection
+        document.getElementById('outputDeviceList').addEventListener('change', async function(e) {
+            const deviceId = e.target.value || '';
+            try {
+                // Use the captured AudioContext
+                var audioCtx = window.rs1synthAudioContext;
+
+                if (!audioCtx) {
+                    console.warn('AudioContext not found - audio may not be initialized yet');
+                    return;
+                }
+
+                if (typeof audioCtx.setSinkId === 'function') {
+                    await audioCtx.setSinkId(deviceId);
+                    console.log('Output device changed to:', e.target.options[e.target.selectedIndex].text);
+                } else {
+                    console.warn('setSinkId not supported in this browser');
+                }
+            } catch (error) {
+                console.error('Failed to set output device:', error);
+            }
+        });
+    </script>
+    <script async type="text/javascript" src="rs1synth.js"></script>
+    <script>
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./service-worker.js').then(function(registration) {
+                console.log('ServiceWorker registered with scope:', registration.scope);
+            }).catch(function(err) {
+                console.log('ServiceWorker registration failed:', err);
+            });
+        }
+    </script>
+</body>
+</html>
