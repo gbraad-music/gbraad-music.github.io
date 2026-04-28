@@ -172,6 +172,53 @@
             border-bottom: 1px solid var(--nt78-brown);
             padding-bottom: 6px;
         }
+
+        .foldout {
+            margin-top: 30px;
+            border: 1px solid var(--nt78-brown);
+            background: linear-gradient(135deg, var(--nt78-dark) 0%, var(--nt78-plum) 100%);
+        }
+
+        .foldout summary {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--nt78-orange);
+            padding: 12px 16px;
+            cursor: pointer;
+            border-left: 4px solid var(--nt78-orange);
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+        }
+
+        .foldout summary::-webkit-details-marker { display: none; }
+
+        .foldout summary::before {
+            content: '▶';
+            font-size: 9px;
+            transition: transform 0.2s;
+        }
+
+        .foldout[open] summary::before {
+            transform: rotate(90deg);
+        }
+
+        .foldout summary:hover {
+            color: #ffffff;
+        }
+
+        .foldout-content {
+            padding: 16px;
+            border-top: 1px solid var(--nt78-brown);
+        }
+
+        .foldout-content img {
+            width: 100%;
+            display: block;
+        }
     </style>
 </head>
 <body class="index-page">
@@ -205,7 +252,7 @@
                         <img src="nt78.jpg" alt="NT-78 Vintage Drum Machine">
                     </div>
                     <div class="itch-card-body">
-                        <div class="itch-card-title">NT-78 Logue</div>
+                        <div class="itch-card-title">NT-78 Logue OSC</div>
                         <div class="itch-card-desc">
                             Logue oscillator unit for the Korg NTS1 mkII. Load as a custom oscillator and play the full NT-78 drumkit via MIDI.
                         </div>
@@ -220,13 +267,20 @@
                     <div class="itch-card-body">
                         <div class="itch-card-title">NT-78 Voice Cart</div>
                         <div class="itch-card-desc">
-                            Voice cart for use with RS1 Synth. Brings the NT-78 drumkit sounds to the RSX framework.
+                            Voice cart for use with RS1 Synth. Brings the NT-78 drumkit sounds to the RSX framework and applications.
                         </div>
                         <span class="itch-card-cta">Download on itch.io</span>
                     </div>
                 </a>
 
             </div>
+
+            <details class="foldout">
+                <summary>Logue OSC Instructions</summary>
+                <div class="foldout-content">
+                    <img src="layout.png" alt="NT-78 Logue OSC layout and instructions">
+                </div>
+            </details>
 
         </div>
     </div>
