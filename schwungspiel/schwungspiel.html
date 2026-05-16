@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang=en>
+<head>
+    <meta charset=utf-8>
+    <meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <meta name=description content="live performance tool">
+    <meta name=theme-color content=#CF1A37>
+    <meta name=apple-mobile-web-app-capable content=yes>
+    <meta name=apple-mobile-web-app-status-bar-style content=black-translucent>
+    <meta name=apple-mobile-web-app-title content=Schwungspiel>
+    <title>Schwungspiel</title>
+
+    <!-- PWA Manifest -->
+    <link rel=manifest href=manifest.json>
+
+    <!-- Icons -->
+    <link rel=icon type=image/png sizes=96x96 href=favicon.png>
+    <link rel=apple-touch-icon sizes=180x180 href=apple-touch-icon.png>
+    <link rel=icon type=image/png sizes=192x192 href=icon-192x192.png>
+    <link rel=icon type=image/png sizes=512x512 href=icon-512x512.png>
+
+    <!-- Styles -->
+    <link rel=stylesheet href=style.css>
+</head>
+<body>
+    <div class=top-banner>
+        <button class=hamburger-button id=hamburgerBtn>☰</button>
+        <div class=banner-title>Schwungspiel</div>
+    </div>
+
+    <!-- Hamburger Menu -->
+    <div class=menu-overlay id=menuOverlay></div>
+    <div class=menu-panel id=menuPanel>
+        <button class=menu-close id=menuClose>×</button>
+        <div class=menu-items>
+            <button class=menu-item id=loadSongBtn>📁 Load song</button>
+            <button class=menu-item id=sessionViewBtn>Session</button>
+            <button class=menu-item id=arrangeViewBtn>Arrange</button>
+
+            <!-- Audio Device Selectors -->
+            <div style="padding:15px 0;border-top:1px solid var(--border);margin-top:10px">
+                <label style=display:block;color:var(--text-secondary);font-size:.8em;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px>Audio Output</label>
+                <select id=outputDeviceList class=menu-item style="padding:10px 15px;margin-bottom:0;width:100%;box-sizing:border-box">
+                    <option value="">Default Output</option>
+                </select>
+            </div>
+
+            <!-- MIDI Device Selectors -->
+            <div style="padding:15px 0;border-top:1px solid var(--border);margin-top:10px">
+                <label style=display:block;color:var(--text-secondary);font-size:.8em;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px>MIDI Input</label>
+                <select id=midiInputList class=menu-item style="padding:10px 15px;margin-bottom:10px;width:100%;box-sizing:border-box">
+                    <option value="">None</option>
+                </select>
+                
+                <label style=display:block;color:var(--text-secondary);font-size:.8em;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px>MIDI Output</label>
+                <select id=midiOutputList class=menu-item style="padding:10px 15px;margin-bottom:0;width:100%;box-sizing:border-box">
+                    <option value="">None</option>
+                </select>
+            </div>
+
+            <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
+                <button class=menu-item id=creditsBtn>About / Credits</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Credits Modal -->
+    <div class=modal-overlay id=creditsOverlay></div>
+    <div class=modal id=creditsModal>
+        <div class=modal-header>
+            <h2>About Schwungspiel</h2>
+            <button class=modal-close id=creditsClose>×</button>
+        </div>
+        <div class=modal-body>
+            <p>live performance tool</p>
+            <p>
+		Uses: libmad, SDL3, ImGui, RtMidi, RegrooveFX, webassembly, ...
+            </p>
+            <p style=margin-top:20px;font-size:.9em;color:#999>
+                Created by Gerard Braad &lt;me@gbraad.nl>
+            </p>
+        </div>
+    </div>
+
+    <!-- Content area with canvas -->
+    <div class=content>
+        <div id=welcomeMessage style=position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#aaa;font-size:18px;z-index:50>
+            <p style=font-size:24px;margin-bottom:20px>Welcome to Schwungspiel</p>
+            <p>Click the ☰ menu button and select <strong>📁 Load Song</strong> to begin</p>
+            <p style=font-size:14px;margin-top:20px;color:#777>Supported formats: .mad, .ablbundle, .dawproject</p>
+        </div>
+        <canvas id=canvas oncontextmenu=event.preventDefault() tabindex=-1></canvas>
+        <input type=file id=fileInput accept=*>
+    </div>
+    <script>var menuApp={toggleMenu:function(){var e=document.getElementById("menuOverlay"),t=document.getElementById("menuPanel");e.classList.toggle("active"),t.classList.toggle("active")},closeMenu:function(){var e=document.getElementById("menuOverlay"),t=document.getElementById("menuPanel");e.classList.remove("active"),t.classList.remove("active")},showCredits:function(){var e=document.getElementById("creditsOverlay"),t=document.getElementById("creditsModal");e.classList.add("active"),t.classList.add("active"),this.closeMenu()},closeCredits:function(){var e=document.getElementById("creditsOverlay"),t=document.getElementById("creditsModal");e.classList.remove("active"),t.classList.remove("active")}};document.getElementById("hamburgerBtn").addEventListener("click",(function(){menuApp.toggleMenu()})),document.getElementById("menuClose").addEventListener("click",(function(){menuApp.closeMenu()})),document.getElementById("menuOverlay").addEventListener("click",(function(){menuApp.closeMenu()})),document.getElementById("loadSongBtn").addEventListener("click",(function(){document.getElementById("fileInput").click(),menuApp.closeMenu()})),document.getElementById("creditsBtn").addEventListener("click",(function(){menuApp.showCredits()})),document.getElementById("creditsClose").addEventListener("click",(function(){menuApp.closeCredits()})),document.getElementById("creditsOverlay").addEventListener("click",(function(){menuApp.closeCredits()})),document.getElementById("sessionViewBtn").addEventListener("click",(function(){menuApp.toggleMenu(),Module._wasm_switch_to_session&&Module._wasm_switch_to_session()})),document.getElementById("arrangeViewBtn").addEventListener("click",(function(){menuApp.toggleMenu(),Module._wasm_switch_to_arrange&&Module._wasm_switch_to_arrange()}));var originalAudioContext=window.AudioContext||window.webkitAudioContext;window.schwungspieludioContext=null,window.AudioContext=function(){var e=new originalAudioContext;return window.schwungspielAudioContext=e,console.log("Captured AudioContext:",e),e},window.AudioContext.prototype=originalAudioContext.prototype,window.webkitAudioContext&&(window.webkitAudioContext=window.AudioContext);var Module={canvas:document.getElementById("canvas"),setStatus:function(e){},monitorRunDependencies:function(e){},onRuntimeInitialized:function(){console.log("WASM runtime initialized"),requestAllPermissions()}};async function requestAllPermissions(){console.log("Requesting permissions..."),requestMIDIAccess();try{console.log("Requesting microphone/audio permission...");const e=await navigator.mediaDevices.getUserMedia({audio:!0});console.log("Audio permission granted"),e.getTracks().forEach((e=>e.stop())),setTimeout((function(){enumerateAudioDevices()}),100)}catch(e){console.warn("Audio permission denied or not available:",e),setTimeout((function(){enumerateAudioDevices()}),100)}}var canvas=document.getElementById("canvas");function requestMIDIAccess(){navigator.requestMIDIAccess?navigator.requestMIDIAccess({sysex:!0}).then((function(e){console.log("MIDI access granted"),window.midiAccess=e,enumerateMIDIDevices(),e.onstatechange=function(e){console.log("MIDI device state change:",e.port.name,e.port.state),enumerateMIDIDevices()}}),(function(e){console.log("MIDI access denied:",e)})):console.warn("Web MIDI API not supported in this browser")}function enumerateMIDIDevices(){if(window.midiAccess){var e=document.getElementById("midiInputList"),t=document.getElementById("midiOutputList");if(e&&t){e.innerHTML='<option value="">None</option>',t.innerHTML='<option value="">None</option>';var n=Array.from(window.midiAccess.inputs.values());n.forEach((function(t){var n=document.createElement("option");n.value=t.id,n.textContent=t.name,e.appendChild(n)}));var o=Array.from(window.midiAccess.outputs.values());o.forEach((function(e){var n=document.createElement("option");n.value=e.id,n.textContent=e.name,t.appendChild(n)})),console.log("MIDI devices enumerated:",n.length,"inputs,",o.length,"outputs")}else console.error("MIDI device lists not found in DOM")}else console.warn("MIDI access not available")}async function enumerateAudioDevices(){try{const e=(await navigator.mediaDevices.enumerateDevices()).filter((e=>"audiooutput"===e.kind)),t=document.getElementById("outputDeviceList");t.innerHTML='<option value="">Default Output</option>',e.forEach((e=>{const n=document.createElement("option");n.value=e.deviceId,n.textContent=e.label||`Output ${t.options.length}`,t.appendChild(n)})),console.log("Audio output devices enumerated:",e.length)}catch(e){console.warn("Could not enumerate audio devices:",e)}}canvas.addEventListener("webglcontextlost",(function(e){console.error("WebGL context lost! Preventing default and attempting restore..."),e.preventDefault()}),!1),canvas.addEventListener("webglcontextrestored",(function(){if(console.log("WebGL context restored! Calling C++ to reinitialize..."),Module._wasm_restore_gl_context)try{Module._wasm_restore_gl_context(),console.log("GL context reinitialized successfully")}catch(e){console.error("Error during GL context restoration:",e)}else console.error("wasm_restore_gl_context function not found")}),!1),document.getElementById("fileInput").addEventListener("change",(function(e){var t=e.target.files[0];if(t){var n=new FileReader;n.onload=function(n){var o=new Uint8Array(n.target.result),i=t.name;if(void 0!==Module.FS){try{Module.FS.mkdir("/tmp")}catch(e){}var c="/tmp/"+i;Module.FS.writeFile(c,o);var s=document.getElementById("welcomeMessage");s&&(s.style.display="none"),Module.ccall&&Module.ccall("wasm_load_module_callback","void",["string"],[c]),e.target.value=""}else console.error("WASM not ready yet")},n.readAsArrayBuffer(t)}})),window.openFileDialog=function(){document.getElementById("fileInput").click()},document.getElementById("outputDeviceList").addEventListener("change",(async function(e){const t=e.target.value||"";try{var n=window.regrooveAudioContext;if(!n)return void console.warn("AudioContext not found - audio may not be initialized yet");"function"==typeof n.setSinkId?(await n.setSinkId(t),console.log("Output device changed to:",e.target.options[e.target.selectedIndex].text)):console.warn("setSinkId not supported in this browser")}catch(e){console.error("Failed to set output device:",e)}})),"serviceWorker"in navigator&&window.addEventListener("load",(function(){navigator.serviceWorker.register("./service-worker.js").then((function(e){console.log("ServiceWorker registered:",e.scope)}),(function(e){console.log("ServiceWorker registration failed:",e)}))}))</script>
+    <script async src=schwungspiel.js></script>
+</body>
+</html>
