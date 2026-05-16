@@ -1,4 +1,4 @@
-const CACHE_NAME = 'schwungspiel-v1';
+const CACHE_NAME = 'schwungspiel-v3';
 const urlsToCache = [
   './index.html',
   './schwungspiel.js',

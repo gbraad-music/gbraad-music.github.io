@@ -4,11 +4,11 @@
     <meta charset=utf-8>
     <meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
     <meta name=description content="live performance tool">
-    <meta name=theme-color content=#CF1A37>
-    <meta name=apple-mobile-web-app-capable content=yes>
-    <meta name=apple-mobile-web-app-status-bar-style content=black-translucent>
-    <meta name=apple-mobile-web-app-title content=Schwungspiel>
-    <title>Schwungspiel</title>
+    <meta name=theme-color content="#CF1A37">
+    <meta name=apple-mobile-web-app-capable content="yes">
+    <meta name=apple-mobile-web-app-status-bar-style content="black-translucent">
+    <meta name=apple-mobile-web-app-title content="Schwungspiel Lite">
+    <title>Schwungspiel lite</title>
 
     <!-- PWA Manifest -->
     <link rel=manifest href=manifest.json>
@@ -84,11 +84,6 @@
 
     <!-- Content area with canvas -->
     <div class=content>
-        <div id=welcomeMessage style=position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#aaa;font-size:18px;z-index:50>
-            <p style=font-size:24px;margin-bottom:20px>Welcome to Schwungspiel</p>
-            <p>Click the ☰ menu button and select <strong>📁 Load Song</strong> to begin</p>
-            <p style=font-size:14px;margin-top:20px;color:#777>Supported formats: .mad, .ablbundle, .dawproject</p>
-        </div>
         <canvas id=canvas oncontextmenu=event.preventDefault() tabindex=-1></canvas>
         <input type=file id=fileInput accept=*>
     </div>
